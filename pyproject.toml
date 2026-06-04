@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tl-fairness"
+version = "0.1.0"
+description = "Targeted learning for inference on data fairness."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "numpy",
+  "pandas",
+  "scipy",
+  "scikit-learn",
+  "ipykernel",
+  "seaborn>=0.13.2",
+  "matplotlib>=3.10.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tl_fairness*", "tlfair*", "experiments*"]
+namespaces = true
