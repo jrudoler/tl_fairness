@@ -1,8 +1,20 @@
 import numpy as np
 import pandas as pd
 import random
+import copy
+from math import factorial
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
+
+
+def _clone_estimator(estimator):
+    if estimator is None:
+        return None
+    try:
+        return clone(estimator)
+    except TypeError:
+        return copy.deepcopy(estimator)
 
 def parity(
     xtr,
@@ -69,19 +81,14 @@ def cmi(
     lte[np.intersect1d(np.where(gte==1), np.where(yte==0))] = 1
     lte[np.intersect1d(np.where(gte==0), np.where(yte==1))] = 2
     lte[np.intersect1d(np.where(gte==1), np.where(yte==1))] = 3
-    tol = 1e-2
     preds = outcome.predict_proba(xte)
-    for i in range(len(preds)):
-        numerator = preds[i, lte[i]]
-        if lte[i] == 0:
-            denominator = (preds[i,0]+preds[i,2]) * (preds[i,0]+preds[i,1])
-        elif lte[i] == 1:
-            denominator = (preds[i,1]+preds[i,3]) * (preds[i,0]+preds[i,1])
-        elif lte[i] == 2:
-            denominator = (preds[i,0]+preds[i,2]) * (preds[i,2]+preds[i,3])
-        elif lte[i] == 3:
-            denominator = (preds[i,1]+preds[i,3]) * (preds[i,2]+preds[i,3])
-        est_vec[i] = np.log((numerator)/(denominator))
+    numerator = preds[np.arange(len(preds)), lte]
+    y0 = preds[:,0] + preds[:,1]
+    y1 = preds[:,2] + preds[:,3]
+    g0 = preds[:,0] + preds[:,2]
+    g1 = preds[:,1] + preds[:,3]
+    denominator = np.choose(lte, [g0*y0, g1*y0, g0*y1, g1*y1])
+    est_vec = np.log(numerator/denominator)
     est = np.mean(est_vec)
     eif = (est_vec - est)
     ci = (est - 1.96*np.sqrt(np.var(eif)/len(eif)), est + 1.96*np.sqrt(np.var(eif)/len(eif)))
@@ -115,21 +122,20 @@ def cmi_separate(
     lte[np.intersect1d(np.where(gte==1), np.where(yte==0))] = 1
     lte[np.intersect1d(np.where(gte==0), np.where(yte==1))] = 2
     lte[np.intersect1d(np.where(gte==1), np.where(yte==1))] = 3
-    tol = 1e-2
     preds = outcome.predict_proba(xte)
     ypreds = y_model.predict_proba(xte)
     gpreds = g_model.predict_proba(xte)
-    for i in range(len(preds)):
-        numerator = preds[i, lte[i]]
-        if lte[i] == 0:
-            denominator = gpreds[i,0] * ypreds[i,0]
-        elif lte[i] == 1:
-            denominator = gpreds[i,1] * ypreds[i,0]
-        elif lte[i] == 2:
-            denominator = gpreds[i,0] * ypreds[i,1]
-        elif lte[i] == 3:
-            denominator = gpreds[i,1] * ypreds[i,1]
-        est_vec[i] = np.log((numerator)/(denominator))
+    numerator = preds[np.arange(len(preds)), lte]
+    denominator = np.choose(
+        lte,
+        [
+            gpreds[:,0] * ypreds[:,0],
+            gpreds[:,1] * ypreds[:,0],
+            gpreds[:,0] * ypreds[:,1],
+            gpreds[:,1] * ypreds[:,1],
+        ],
+    )
+    est_vec = np.log(numerator/denominator)
     est = np.mean(est_vec)
     eif = (est_vec - est)
     ci = (est - 1.96*np.sqrt(np.var(eif)/len(eif)), est + 1.96*np.sqrt(np.var(eif)/len(eif)))
@@ -211,12 +217,20 @@ def perm_importance(
     outcome,
     propensity,
     n_samples = 10,
-    rng = None
+    rng = None,
+    cache = False
     ):
     if rng is None:
         rng = np.random.default_rng()
 
-    seq = xtr.columns
+    seq = list(xtr.columns)
+    max_perms = factorial(len(seq))
+    if n_samples > max_perms:
+        raise ValueError(
+            f"Requested {n_samples} unique permutations, but only {max_perms} "
+            f"exist for {len(seq)} variables."
+        )
+
     seen = set()
     perms = []
     while len(perms) < n_samples:
@@ -227,6 +241,7 @@ def perm_importance(
 
     values = []
     importance = {}
+    value_cache = {}
     for col in seq:
         importance[col] = 0
         
@@ -234,19 +249,27 @@ def perm_importance(
         prev = 0
         v = []
         for i in range(len(perm)):
-            htr = xtr[list(perm[:i+1])]
-            hte = xte[list(perm[:i+1])]
-            res = metric(
-                xtr = htr,
-                xte = hte,
-                ytr = ytr,
-                yte = yte,
-                gtr = gtr,
-                gte = gte,
-                outcome = outcome,
-                propensity = propensity
-                )
-            est = res[0]
+            subset = frozenset(perm[:i+1])
+            cache_key = subset if cache else None
+            if cache and cache_key in value_cache:
+                est = value_cache[cache_key]
+            else:
+                cols = [col for col in seq if col in subset]
+                htr = xtr[cols]
+                hte = xte[cols]
+                res = metric(
+                    xtr = htr,
+                    xte = hte,
+                    ytr = ytr,
+                    yte = yte,
+                    gtr = gtr,
+                    gte = gte,
+                    outcome = _clone_estimator(outcome),
+                    propensity = _clone_estimator(propensity)
+                    )
+                est = res[0]
+                if cache:
+                    value_cache[cache_key] = est
             importance[perm[i]] += (est-prev) / n_samples
             prev = est
             v.append(est)
