@@ -1,9 +1,7 @@
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-import sys
 import pandas as pd
 
-sys.path.append('..')
 from tlfair.metrics import *
 
 def sim1(
@@ -35,10 +33,10 @@ def sim1(
 
     y = (1/(1+np.exp(-xg_input@coef)) > 0.5).astype(np.int8)
 
-    xgtrain = xg[:n,:]
+    xgtrain = pd.DataFrame(xg[:n,:])
     gtrain = g[:n]
     ytrain = y[:n]
-    xgtest = xg[n:,:]
+    xgtest = pd.DataFrame(xg[n:,:])
     gtest = g[n:]
     ytest = y[n:]
 
@@ -47,11 +45,10 @@ def sim1(
         xte = xgtest,
         ytr = ytrain,
         yte = ytest,
-        gtr = gtest,
         gtr = gtrain,
+        gte = gtest,
         outcome = LogisticRegression(solver='liblinear'),
         propensity = LogisticRegression(solver='liblinear')
     )
     return res
-
 

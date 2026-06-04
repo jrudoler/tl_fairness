@@ -1,82 +1,106 @@
 import numpy as np
 import pandas as pd
-import random
+import argparse
+import time
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import train_test_split
-import sys
 import pickle
 
-sys.path.append('..')
 from tl_fairness.tlfair.metrics import *
 from tl_fairness.tlfair.superlearner import *
 
-law = pd.read_csv(
-    "https://raw.githubusercontent.com/tailequy/fairness_dataset/refs/heads/main/experiments/data/law_school_clean.csv"
-)
 
-target = np.array(law[['pass_bar']]).ravel()
-data = law.copy().drop(columns=['pass_bar'])
-race_encoder = LabelEncoder().fit(data['race'])
-data['race'] = race_encoder.transform(data['race'])
-
-xtr, xte, ytr, yte = train_test_split(data, target, test_size=0.40, random_state=123)
-gtr = np.array(xtr[['race']]).ravel()
-gte = np.array(xte[['race']]).ravel()
-
-xtr = xtr.drop(columns = ['race'])
-xte = xte.drop(columns = ['race'])
-
-metrics = [
-    parity,
-    prob_parity,
-    opportunity,
-    prob_opportunity,
-    cmi
-]
-metric_title = [
-    'parity',
-    'prob_parity',
-    'opportunity',
-    'prob_opp',
-    'cmi'
-    ]
-results = dict()
-results['inference'] = dict()
-results['importance'] = dict()
-print('Beginning Law Experiment')
-for i in range(len(metrics)):
-    metric = metrics[i]
-    title = metric_title[i]
-    if title == 'cmi':
-        outcome = HistGradientBoostingClassifier()
-    else:
-        outcome = SuperLearnerClassifier()
-    
-    inference = metric(
-        xtr = xtr,
-        xte = xte,
-        ytr = ytr,
-        yte = yte,
-        gtr = gtr,
-        gte = gte,
-        outcome = outcome,
-        propensity = SuperLearnerClassifier(),
+def load_data(seed, max_rows=None):
+    law = pd.read_csv(
+        "https://raw.githubusercontent.com/tailequy/fairness_dataset/refs/heads/main/experiments/data/law_school_clean.csv"
     )
-    importance = perm_importance(
-        xtr = xtr,
-        xte = xte,
-        ytr = ytr,
-        yte = yte,
-        gtr = gtr,
-        gte = gte,
-        outcome = HistGradientBoostingClassifier(),
-        propensity= HistGradientBoostingClassifier(),
-        metric = metrics[i],
-        n_samples = 1000
+    if max_rows is not None and max_rows < len(law):
+        law = law.sample(n=max_rows, random_state=seed)
+    target = np.array(law[['pass_bar']]).ravel()
+    data = law.copy().drop(columns=['pass_bar'])
+    race_encoder = LabelEncoder().fit(data['race'])
+    data['race'] = race_encoder.transform(data['race'])
+    xtr, xte, ytr, yte = train_test_split(data, target, test_size=0.40, random_state=seed)
+    gtr = np.array(xtr[['race']]).ravel()
+    gte = np.array(xte[['race']]).ravel()
+    xtr = xtr.drop(columns=['race'])
+    xte = xte.drop(columns=['race'])
+    return xtr, xte, ytr, yte, gtr, gte
+
+
+def run_experiment(importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None):
+    xtr, xte, ytr, yte, gtr, gte = load_data(seed, max_rows=max_rows)
+    metric_map = {
+        'parity': parity,
+        'prob_parity': prob_parity,
+        'opportunity': opportunity,
+        'prob_opp': prob_opportunity,
+        'cmi': cmi,
+    }
+    if metrics_to_run is None:
+        metrics_to_run = list(metric_map)
+
+    results = {'inference': {}, 'importance': {}, 'timing': {}}
+    for title in metrics_to_run:
+        started = time.perf_counter()
+        metric = metric_map[title]
+        if title == 'cmi':
+            outcome = HistGradientBoostingClassifier(random_state=seed)
+        else:
+            outcome = SuperLearnerClassifier(random_state=seed)
+
+        inference = metric(
+            xtr=xtr,
+            xte=xte,
+            ytr=ytr,
+            yte=yte,
+            gtr=gtr,
+            gte=gte,
+            outcome=outcome,
+            propensity=SuperLearnerClassifier(random_state=seed),
+        )
+        importance = perm_importance(
+            xtr=xtr,
+            xte=xte,
+            ytr=ytr,
+            yte=yte,
+            gtr=gtr,
+            gte=gte,
+            outcome=HistGradientBoostingClassifier(random_state=seed),
+            propensity=HistGradientBoostingClassifier(random_state=seed),
+            metric=metric,
+            n_samples=importance_samples,
+            rng=np.random.default_rng(seed),
+            cache=cache_importance,
+        )
+        results['inference'][title] = inference
+        results['importance'][title] = importance
+        results['timing'][title] = time.perf_counter() - started
+        print(f"{title}: {results['timing'][title]:.2f}s", flush=True)
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', default='law_results.pkl')
+    parser.add_argument('--importance-samples', type=int, default=1000)
+    parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--cache-importance', action='store_true')
+    parser.add_argument('--metrics', nargs='+', default=None)
+    parser.add_argument('--max-rows', type=int, default=None)
+    args = parser.parse_args()
+    print('Beginning Law Experiment', flush=True)
+    results = run_experiment(
+        importance_samples=args.importance_samples,
+        seed=args.seed,
+        cache_importance=args.cache_importance,
+        metrics_to_run=args.metrics,
+        max_rows=args.max_rows,
     )
-    results['inference'][title] = inference
-    results['importance'][title] = importance
-    
-with open('law_results.pkl', 'wb') as f:
-    pickle.dump(results, f)
+    with open(args.output, 'wb') as f:
+        pickle.dump(results, f)
+
+
+if __name__ == '__main__':
+    main()

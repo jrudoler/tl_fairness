@@ -1,65 +1,114 @@
 import numpy as np
 import scipy as sp
+import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
-import sys
+import argparse
+import time
 import pickle
 
-sys.path.append('..')
 from tl_fairness.tlfair.metrics import *
 from tl_fairness.tlfair.superlearner import *
 from tl_fairness.tlfair.knncmi import *
 from tl_fairness.experiments.cmi_helper import *
 
-weights = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4]
-sizes = [500, 750, 1000, 1750, 2500, 3750, 5000, 7500, 10000]
-n_truth = 1000000
-sims = 100
-rng = np.random.default_rng()
-results = pd.DataFrame()
-truth_dict = dict()
+def run_experiment(
+    weights,
+    sizes,
+    n_truth=1000000,
+    sims=100,
+    compare_repeats=10,
+    seed=123,
+    conditional_truth=False,
+):
+    rng = np.random.default_rng(seed)
+    results = []
+    truth_dict = {}
+    timings = {}
 
-for i in range(len(weights)):
-    c = weights[i]
-    truth = cmi_ground_truth(
-        c = c,
-        d = 3,
-        n = n_truth,
-        rng = rng
-    )
-    truth_dict[c] = truth
-    for j in range(len(sizes)):
-        s = sizes[j]
-        r = cmi_coverage_sim(
-            n = s,
-            c = c,
-            ground_truth = truth,
-            rng = rng,
-            sims = sims
+    for c in weights:
+        started = time.perf_counter()
+        truth = cmi_ground_truth(
+            c=c,
+            d=3,
+            n=n_truth,
+            rng=rng,
+            conditional=conditional_truth,
         )
-        here = pd.DataFrame(
-            {
-                "sample_size" : [s],
-                "c" : [c],
-                "error" : [r[1]],
-                "coverage" : [r[0]]
-            }
-        )
-        results = pd.concat([results,here])
+        truth_dict[c] = truth
+        timings[f'truth_{c}'] = time.perf_counter() - started
+        print(f"truth c={c}: {truth:.4f} in {timings[f'truth_{c}']:.2f}s", flush=True)
+        for s in sizes:
+            started = time.perf_counter()
+            coverage, error = cmi_coverage_sim(
+                n=s,
+                c=c,
+                ground_truth=truth,
+                rng=rng,
+                sims=sims,
+            )
+            timings[f'coverage_c={c}_n={s}'] = time.perf_counter() - started
+            results.append({
+                "sample_size": s,
+                "c": c,
+                "error": error,
+                "coverage": coverage,
+            })
+            print(
+                f"coverage c={c}, n={s}: {timings[f'coverage_c={c}_n={s}']:.2f}s",
+                flush=True,
+            )
 
-results.to_csv('cmi_coverage.csv')
+    compare_results = []
+    for s in sizes:
+        started = time.perf_counter()
+        compare_results.append(cmi_compare(
+            n=s,
+            params=weights,
+            repeats=compare_repeats,
+            rng=rng,
+        ))
+        timings[f'compare_n={s}'] = time.perf_counter() - started
+        print(f"compare n={s}: {timings[f'compare_n={s}']:.2f}s", flush=True)
 
-compare_results = pd.DataFrame()
-
-for i in range(len(sizes)):
-    s = sizes[i]
-    res = cmi_compare(
-        n = s,
-        params = weights,
-        repeats = 10,
-        rng = rng
+    return (
+        pd.DataFrame(results),
+        pd.concat(compare_results, ignore_index=True),
+        truth_dict,
+        timings,
     )
-    compare_results = pd.concat([compare_results,res])
 
-compare_results.to_csv('cmi_compare.csv')
-with open('truth_dict.pkl', 'wb') as f:
-    pickle.dump(truth_dict, f)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', nargs='+', type=float, default=[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
+    parser.add_argument('--sizes', nargs='+', type=int, default=[500, 750, 1000, 1750, 2500, 3750, 5000, 7500, 10000])
+    parser.add_argument('--n-truth', type=int, default=1000000)
+    parser.add_argument('--sims', type=int, default=100)
+    parser.add_argument('--compare-repeats', type=int, default=10)
+    parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--conditional-truth', action='store_true')
+    parser.add_argument('--coverage-output', default='cmi_coverage.csv')
+    parser.add_argument('--compare-output', default='cmi_compare.csv')
+    parser.add_argument('--truth-output', default='truth_dict.pkl')
+    parser.add_argument('--timing-output', default='cmi_timing.pkl')
+    args = parser.parse_args()
+
+    coverage, compare, truth, timings = run_experiment(
+        weights=args.weights,
+        sizes=args.sizes,
+        n_truth=args.n_truth,
+        sims=args.sims,
+        compare_repeats=args.compare_repeats,
+        seed=args.seed,
+        conditional_truth=args.conditional_truth,
+    )
+    coverage.to_csv(args.coverage_output, index=False)
+    compare.to_csv(args.compare_output, index=False)
+    with open(args.truth_output, 'wb') as f:
+        pickle.dump(truth, f)
+    with open(args.timing_output, 'wb') as f:
+        pickle.dump(timings, f)
+
+
+if __name__ == '__main__':
+    main()

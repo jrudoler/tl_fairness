@@ -1,95 +1,112 @@
 import numpy as np
 import pandas as pd
-import random
+import argparse
+import time
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import train_test_split
-import sys
 import pickle
 
-sys.path.append('..')
 from tl_fairness.tlfair.metrics import *
 from tl_fairness.tlfair.superlearner import *
 
-adult = pd.read_csv(
-    "https://raw.githubusercontent.com/socialfoundations/folktables/main/adult_reconstruction.csv"
-)
-thres = 50000
-data = adult.copy()
 
-target = (data["income"] > thres).astype(int)
-data = data.drop(columns=['income'])
-
-xtr, xte, ytr, yte = train_test_split(data, target, test_size=0.40, random_state=123)
-gtr = (xtr['gender'] == 'Male').astype(np.int8)
-gte = (xte['gender'] == 'Male').astype(np.int8)
-
-continuous = ["hours-per-week", "age", "capital-gain", "capital-loss"]
-categorical = []
-label_encoders = {}
-
-xtr = xtr.drop(columns=['education-num', 'gender'])
-xte = xte.drop(columns=['education-num', 'gender'])
-
-for col in xtr.columns:
-    if col in continuous:
-        continue
-    categorical.append(col)
-    enc = LabelEncoder()
-    label_encoders[col] = enc.fit(xtr[col])
-    xtr[col] = enc.transform(xtr[col])
-    xte[col] = enc.transform(xte[col])
-
-metrics = [
-    parity,
-    prob_parity,
-    opportunity,
-    prob_opportunity,
-    cmi
-]
-metric_title = [
-    'parity',
-    'prob_parity',
-    'opportunity',
-    'prob_opp',
-    'cmi'
-    ]
-results = dict()
-results['inference'] = dict()
-results['importance'] = dict()
-print('Beginning Adult Experiment')
-for i in range(len(metrics)):
-    metric = metrics[i]
-    title = metric_title[i]
-    if title == 'cmi':
-        outcome = HistGradientBoostingClassifier()
-    else:
-        outcome = SuperLearnerClassifier()
-    
-    inference = metric(
-        xtr = xtr,
-        xte = xte,
-        ytr = ytr,
-        yte = yte,
-        gtr = gtr,
-        gte = gte,
-        outcome = outcome,
-        propensity = SuperLearnerClassifier(),
+def load_data(seed, max_rows=None):
+    adult = pd.read_csv(
+        "https://raw.githubusercontent.com/socialfoundations/folktables/main/adult_reconstruction.csv"
     )
-    importance = perm_importance(
-        xtr = xtr,
-        xte = xte,
-        ytr = ytr,
-        yte = yte,
-        gtr = gtr,
-        gte = gte,
-        outcome = HistGradientBoostingClassifier(),
-        propensity = HistGradientBoostingClassifier(),
-        metric = metrics[i],
-        n_samples = 1000
-    )
-    results['inference'][title] = inference
-    results['importance'][title] = importance
+    if max_rows is not None and max_rows < len(adult):
+        adult = adult.sample(n=max_rows, random_state=seed)
+    data = adult.copy()
+    target = (data["income"] > 50000).astype(int)
+    data = data.drop(columns=['income'])
+    xtr, xte, ytr, yte = train_test_split(data, target, test_size=0.40, random_state=seed)
+    gtr = (xtr['gender'] == 'Male').astype(np.int8)
+    gte = (xte['gender'] == 'Male').astype(np.int8)
+    continuous = ["hours-per-week", "age", "capital-gain", "capital-loss"]
+    xtr = xtr.drop(columns=['education-num', 'gender'])
+    xte = xte.drop(columns=['education-num', 'gender'])
+    for col in xtr.columns:
+        if col in continuous:
+            continue
+        enc = LabelEncoder().fit(pd.concat([xtr[col], xte[col]]))
+        xtr[col] = enc.transform(xtr[col])
+        xte[col] = enc.transform(xte[col])
+    return xtr, xte, ytr, yte, gtr, gte
 
-with open('adult_results.pkl', 'wb') as f:
-    pickle.dump(results, f)
+
+def run_experiment(importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None):
+    xtr, xte, ytr, yte, gtr, gte = load_data(seed, max_rows=max_rows)
+    metric_map = {
+        'parity': parity,
+        'prob_parity': prob_parity,
+        'opportunity': opportunity,
+        'prob_opp': prob_opportunity,
+        'cmi': cmi,
+    }
+    if metrics_to_run is None:
+        metrics_to_run = list(metric_map)
+
+    results = {'inference': {}, 'importance': {}, 'timing': {}}
+    for title in metrics_to_run:
+        started = time.perf_counter()
+        metric = metric_map[title]
+        if title == 'cmi':
+            outcome = HistGradientBoostingClassifier(random_state=seed)
+        else:
+            outcome = SuperLearnerClassifier(random_state=seed)
+
+        inference = metric(
+            xtr=xtr,
+            xte=xte,
+            ytr=ytr,
+            yte=yte,
+            gtr=gtr,
+            gte=gte,
+            outcome=outcome,
+            propensity=SuperLearnerClassifier(random_state=seed),
+        )
+        importance = perm_importance(
+            xtr=xtr,
+            xte=xte,
+            ytr=ytr,
+            yte=yte,
+            gtr=gtr,
+            gte=gte,
+            outcome=HistGradientBoostingClassifier(random_state=seed),
+            propensity=HistGradientBoostingClassifier(random_state=seed),
+            metric=metric,
+            n_samples=importance_samples,
+            rng=np.random.default_rng(seed),
+            cache=cache_importance,
+        )
+        results['inference'][title] = inference
+        results['importance'][title] = importance
+        results['timing'][title] = time.perf_counter() - started
+        print(f"{title}: {results['timing'][title]:.2f}s", flush=True)
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', default='adult_results.pkl')
+    parser.add_argument('--importance-samples', type=int, default=1000)
+    parser.add_argument('--seed', type=int, default=123)
+    parser.add_argument('--cache-importance', action='store_true')
+    parser.add_argument('--metrics', nargs='+', default=None)
+    parser.add_argument('--max-rows', type=int, default=None)
+    args = parser.parse_args()
+    print('Beginning Adult Experiment', flush=True)
+    results = run_experiment(
+        importance_samples=args.importance_samples,
+        seed=args.seed,
+        cache_importance=args.cache_importance,
+        metrics_to_run=args.metrics,
+        max_rows=args.max_rows,
+    )
+    with open(args.output, 'wb') as f:
+        pickle.dump(results, f)
+
+
+if __name__ == '__main__':
+    main()

@@ -104,29 +104,91 @@ def cmi_ground_truth(
     c,
     d,
     n,
-    rng):
-    z = rng.normal(size=(n,d))
-    beta = np.ones(d)
-    res = []
-    for i in range(n):
-        inside = n
-        zi = z[i,:]
-        
-        c_prob = c*rng.uniform(size=inside)
-        x_prob = (c_prob + rng.uniform(size=inside) + 1/(1+np.exp(-z@beta)))/(c+2)
-        y_prob = (c_prob + rng.uniform(size=inside) + 1/(1+np.exp(-z@beta)))/(c+2)
+    rng,
+    conditional=False,
+    batch_size=100000,
+    inner_samples=2048):
+    if conditional:
+        return cmi_ground_truth_conditional(
+            c=c,
+            d=d,
+            n=n,
+            rng=rng,
+            batch_size=min(batch_size, 1024),
+            inner_samples=inner_samples,
+        )
 
-        x = (x_prob > 0.5).astype(np.int8)
-        y = (y_prob > 0.5).astype(np.int8)
-        
+    # Paper-compatible MC target. This intentionally estimates the unconditional
+    # mutual information induced by the shared simulated covariates; it matches
+    # the values reported in Appendix A of the paper.
+    remaining = n
+    totals = np.zeros(4, dtype=np.float64)
+    while remaining:
+        m = min(batch_size, remaining)
+        z = rng.normal(size=(m,d))
+        beta = np.ones(d)
+        shared = c*rng.uniform(size=m)
+        logits = 1/(1+np.exp(-z@beta))
+        x_prob = (shared + rng.uniform(size=m) + logits)/(c+2)
+        y_prob = (shared + rng.uniform(size=m) + logits)/(c+2)
+        x = (x_prob > 0.5)
+        y = (y_prob > 0.5)
+        totals[0] += np.count_nonzero(x & y)
+        totals[1] += np.count_nonzero(~x & y)
+        totals[2] += np.count_nonzero(x & ~y)
+        totals[3] += np.count_nonzero(~x & ~y)
+        remaining -= m
 
-        p1 = np.mean((x==1)*(y==1)) * np.log(np.mean((x==1)*(y==1)) / (np.mean(x==1)*np.mean(y==1)))
-        p2 = np.mean((x==0)*(y==1)) * np.log(np.mean((x==0)*(y==1)) / (np.mean(x==0)*np.mean(y==1)))
-        p3 = np.mean((x==1)*(y==0)) * np.log(np.mean((x==1)*(y==0)) / (np.mean(x==1)*np.mean(y==0)))
-        p4 = np.mean((x==0)*(y==0)) * np.log(np.mean((x==0)*(y==0)) / (np.mean(x==0)*np.mean(y==0)))
-        res.append(p1+p2+p3+p4)
+    p11, p01, p10, p00 = totals / n
+    px1 = p11 + p10
+    px0 = p01 + p00
+    py1 = p11 + p01
+    py0 = p10 + p00
+    terms = [
+        (p11, px1, py1),
+        (p01, px0, py1),
+        (p10, px1, py0),
+        (p00, px0, py0),
+    ]
+    return sum(p * np.log(p / (px * py)) for p, px, py in terms if p > 0)
 
-    return(np.mean(res))
+
+def cmi_ground_truth_conditional(
+    c,
+    d,
+    n,
+    rng,
+    batch_size=1024,
+    inner_samples=2048):
+    if c == 0:
+        return 0.0
+
+    remaining = n
+    total = 0.0
+    while remaining:
+        m = min(batch_size, remaining)
+        z = rng.normal(size=(m,d))
+        beta = np.ones(d)
+        logits = 1/(1+np.exp(-z@beta))
+        s = rng.uniform(size=(m, inner_samples))
+        probs = np.clip(logits[:, None] - c/2 + c*s, 0, 1)
+        p11 = np.mean(probs**2, axis=1)
+        p10 = np.mean(probs * (1-probs), axis=1)
+        p01 = p10
+        p00 = np.mean((1-probs)**2, axis=1)
+        px1 = p11 + p10
+        px0 = p01 + p00
+        py1 = p11 + p01
+        py0 = p10 + p00
+        terms = [
+            np.where(p11 > 0, p11 * np.log(p11 / (px1 * py1)), 0),
+            np.where(p01 > 0, p01 * np.log(p01 / (px0 * py1)), 0),
+            np.where(p10 > 0, p10 * np.log(p10 / (px1 * py0)), 0),
+            np.where(p00 > 0, p00 * np.log(p00 / (px0 * py0)), 0),
+        ]
+        total += np.sum(terms)
+        remaining -= m
+    return total / n
 
 def cmi_compare(
     n,
