@@ -5,9 +5,8 @@
 #SBATCH --cpus-per-task=16          # perm-importance + CMI sims parallelise over these
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-# TODO: set these to your SEAS/locust partition + account before submitting.
-##SBATCH --partition=<partition>
-##SBATCH --account=<account>
+#SBATCH --partition=whartonstat
+#SBATCH --account=jrudoler
 
 # Full-data real analysis (Adult + Law) and Table 1, to compare against the
 # paper's Table 1. Run from the repo root on the cluster:
