@@ -24,9 +24,8 @@ import pandas as pd
 from tlfair.simulations import parity_ground_truth, parity_sim, coverage_sim_parity
 
 
-def run_fig1(truth, seed, lo=1.5, hi=4.0, step=0.01):
+def run_fig1(truth, rng, lo=1.5, hi=4.0, step=0.01):
     """Dense log grid, one draw per size: estimate + SE (threshold parity)."""
-    rng = np.random.default_rng(seed)
     sizes = np.unique(np.round(10 ** np.arange(lo, hi, step)).astype(int))
     rows = []
     started = time.perf_counter()
@@ -40,9 +39,8 @@ def run_fig1(truth, seed, lo=1.5, hi=4.0, step=0.01):
     return pd.DataFrame(rows)
 
 
-def run_fig3(seed, sizes, reps):
+def run_fig3(rng, sizes, reps):
     """Small linear grid: mean TL var vs mean naive var (probabilistic parity)."""
-    rng = np.random.default_rng(seed)
     rows = []
     started = time.perf_counter()
     for size in sizes:
@@ -68,12 +66,15 @@ def main():
     parser.add_argument('--fig3-output', default='data/generated/parity_fig3.csv')
     args = parser.parse_args()
 
-    threshold_truth, _ = parity_ground_truth(n=args.truth_n, rng=np.random.default_rng(args.seed))
+    # Single Generator threaded through all phases: reproducible from --seed and
+    # non-overlapping draws across ground truth, fig1, and fig3.
+    rng = np.random.default_rng(args.seed)
+    threshold_truth, _ = parity_ground_truth(n=args.truth_n, rng=rng)
     print(f"threshold ground truth: {threshold_truth:.5f}", flush=True)
 
-    run_fig1(threshold_truth, args.seed).to_csv(args.fig1_output, index=False)
+    run_fig1(threshold_truth, rng).to_csv(args.fig1_output, index=False)
     print(f'Wrote {args.fig1_output}', flush=True)
-    run_fig3(args.seed, args.fig3_sizes, args.fig3_reps).to_csv(args.fig3_output, index=False)
+    run_fig3(rng, args.fig3_sizes, args.fig3_reps).to_csv(args.fig3_output, index=False)
     print(f'Wrote {args.fig3_output}', flush=True)
 
 

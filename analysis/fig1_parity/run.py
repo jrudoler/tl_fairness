@@ -34,15 +34,19 @@ def main():
 
     axes[0].scatter(df['sample_size'], df['estimate'], s=12, alpha=0.7)
     axes[0].axhline(truth, color='black', linestyle='--')
-    axes[0].set_xscale('log')
     axes[0].set_ylabel('Estimate')
 
     axes[1].errorbar(ci['sample_size'], ci['estimate'],
                      yerr=1.96 * ci['std'], fmt='o', markersize=4, capsize=2)
     axes[1].axhline(truth, color='black', linestyle='--')
-    axes[1].set_xscale('log')
     axes[1].set_xlabel('Sample size')
     axes[1].set_ylabel('Estimate')
+
+    # Log x-axis fit tightly to the data range (no padding to 10^0).
+    for ax in axes:
+        ax.set_xscale('log')
+        ax.margins(x=0)
+        ax.autoscale(enable=True, axis='x', tight=True)
 
     fig.tight_layout()
     fig.savefig(args.output)
