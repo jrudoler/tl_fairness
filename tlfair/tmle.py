@@ -31,6 +31,7 @@ probabilistic metrics here.
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold
 
 # Clip probabilities into [_EPS, 1 - _EPS] before taking a logit so the Newton
@@ -290,3 +291,128 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
                                    return_diagnostics=return_diagnostics)
 
     raise ValueError(f"unknown metric for CV-TMLE: {metric!r}")
+
+
+# ---------------------------------------------------------------------------
+# CMI: substitution estimate, softmax fluctuation, boundary-aware CI.
+# ---------------------------------------------------------------------------
+# Finding (derivation in the plan): the conditional mutual information estimand
+# has the complete efficient influence function phi = log[q/(a b)] - Psi (the
+# paper's Eq. 12). A full point-mass/Gateaux derivation -- perturbing the
+# marginal of X and the conditional joint law q(y,g|x) -- shows the suspected
+# extra correction terms cancel: the inner gradient dh/dq = log[q/(a b)] - 1 is
+# constant across classes after contraction, and the marginal Y|X / G|X
+# perturbations contribute zero at the truth (their gradient is the constant -1
+# and the perturbation direction sums to zero). So:
+#   * Both metrics.cmi and metrics.cmi_separate already solve their empirical EIF
+#     equation by construction (they set Psi_hat = mean of the observed log-ratio,
+#     so mean(EIF) = 0 identically). There is no "missing augmentation" to add.
+#   * The poor coverage near CMI~0 is a BOUNDARY non-regularity: Psi >= 0 and the
+#     sampling distribution is one-sided there, so symmetric Wald CIs under-cover
+#     regardless of the EIF. The fix is positivity + a boundary-aware CI, not a
+#     richer EIF.
+# This module therefore contributes (1) a positivity-respecting substitution
+# estimate, mean_i KL(q(.|x_i) || a (x) b) >= 0, instead of the average raw
+# log-ratio (which can go negative near independence); (2) an optional softmax
+# fluctuation of the joint PMF that drives the empirical EIF mean to zero; and
+# (3) a boundary-aware CI option. cmi_separate's instability is a second-order
+# plug-in bias from using marginals (a_y, b_g) that are not the marginals of the
+# fitted joint q; the principled remedy is the single/joint approach used here.
+#
+# Class indexing matches _encode_joint: class c has g = c % 2, y = c // 2, i.e.
+#   0=(g0,y0)  1=(g1,y0)  2=(g0,y1)  3=(g1,y1).
+def _cmi_log_ratio(q):
+    """Per-class log-ratio L_c(x) = log[ q_c / (a_{y(c)} b_{g(c)}) ] for q:(n,4)."""
+    a0 = q[:, 0] + q[:, 1]      # P(Y=0|x)
+    a1 = q[:, 2] + q[:, 3]      # P(Y=1|x)
+    b0 = q[:, 0] + q[:, 2]      # P(G=0|x)
+    b1 = q[:, 1] + q[:, 3]      # P(G=1|x)
+    denom = np.column_stack([a0 * b0, a0 * b1, a1 * b0, a1 * b1])
+    return np.log(_clip(q) / _clip(denom))
+
+
+def _softmax_rows(logq):
+    m = logq.max(axis=1, keepdims=True)
+    e = np.exp(logq - m)
+    return e / e.sum(axis=1, keepdims=True)
+
+
+def _cmi_target(q, lte, *, fluctuate=True, max_iter=50, tol=1e-8):
+    """Substitution CMI estimate (+ optional softmax targeting) and its EIF.
+
+    Returns ``(est, eif, info)`` where ``est = mean_i h(x_i)`` with
+    ``h(x) = sum_c q_c log[q_c/(a_y b_g)] = KL(q(.|x) || a(.|x) (x) b(.|x)) >= 0``,
+    and the (complete, paper Eq. 12) EIF evaluated at the observed class,
+    ``phi_i = L_{C_i}(x_i) - est``. The optional fluctuation reweights q on the
+    softmax scale with clever covariate ``H_c = L_c - h`` so the empirical EIF
+    mean is driven to zero.
+    """
+    q = _clip(np.asarray(q, dtype=float))
+    q = q / q.sum(axis=1, keepdims=True)
+    n = len(q)
+    idx = np.arange(n)
+    eps_final = 0.0
+
+    if fluctuate:
+        logq = np.log(q)
+        for _ in range(max_iter):
+            q = _softmax_rows(logq)
+            L = _cmi_log_ratio(q)
+            h = np.sum(q * L, axis=1)
+            H = L - h[:, None]                 # E_q[H] = 0 by construction
+            score = np.sum(H[idx, lte])        # = sum_i (L_{C_i} - h_i)
+            info = np.sum(q * H ** 2)           # = sum_i Var_q(H_i)
+            if not np.isfinite(info) or info < 1e-12:
+                break
+            eps = score / info
+            logq = logq + eps * H
+            eps_final = eps
+            if abs(eps) < tol:
+                break
+        q = _softmax_rows(logq)
+
+    L = _cmi_log_ratio(q)
+    h = np.sum(q * L, axis=1)
+    est = float(np.mean(h))
+    eif = L[idx, lte] - est
+    info = {
+        "eps": eps_final,
+        "eif_mean": float(np.mean(eif)),
+        "naive_mean_logratio": float(np.mean(L[idx, lte])),
+        "pointwise_min": float(h.min()),
+    }
+    return est, eif, info
+
+
+def cmi_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None, *,
+             fluctuate=True, boundary_ci=False, max_iter=50, tol=1e-8,
+             return_diagnostics=False):
+    """TMLE-style CMI estimator: positivity-respecting substitution + targeting.
+
+    Mirrors :func:`tlfair.metrics.cmi` (single, joint 4-class approach) but:
+      * the point estimate is the substitution form ``mean_i h(x_i) >= 0`` rather
+        than the average raw log-ratio, which can go negative near independence;
+      * an optional softmax fluctuation of the calibrated joint PMF drives the
+        empirical EIF mean to zero;
+      * ``boundary_ci=True`` truncates the lower confidence limit at 0, a simple
+        boundary-aware adjustment for the near-independence (CMI~0) regime where
+        the sampling distribution is one-sided and symmetric Wald under-covers.
+
+    The ``(xtr, ytr, gtr)`` naming follows the metric API: ``ytr``/``gte`` are the
+    two discrete variables whose conditional MI given ``X`` is estimated.
+    """
+    ltr = _encode_joint(gtr, ytr)
+    model = CalibratedClassifierCV(outcome, cv=3).fit(xtr, ltr)
+    q = _aligned_joint_proba(model, xte)
+    lte = _encode_joint(gte, yte)
+
+    est, eif, info = _cmi_target(q, lte, fluctuate=fluctuate,
+                                 max_iter=max_iter, tol=tol)
+    se = np.sqrt(np.var(eif) / len(eif))
+    lower, upper = est - 1.96 * se, est + 1.96 * se
+    if boundary_ci:
+        lower = max(0.0, lower)
+    ci = (lower, upper)
+    if return_diagnostics:
+        return est, ci, info
+    return est, ci
