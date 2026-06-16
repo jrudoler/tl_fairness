@@ -8,6 +8,27 @@ from tlfair.metrics import *
 from tlfair.superlearner import *
 from tlfair.knncmi import *
 
+
+def _draw_until_valid(fn, n, c, rng, max_attempts=20, **kwargs):
+    """Evaluate ``fn`` on a fresh draw, redrawing if a degenerate sample makes
+    the estimator undefined.
+
+    At large c the joint (G, Y) classes become correlated, so a small-n draw can
+    leave a class with too few members for the cv=3 calibration in cmi() /
+    cmi_separate(), which raises ValueError. Such draws are rare (<1%); redrawing
+    rejects them and estimates coverage conditional on a computable estimate.
+    Deterministic because ``rng`` is seeded (each retry advances it). If every
+    attempt fails the last error is re-raised so genuine bugs still surface.
+    """
+    last_err = None
+    for _ in range(max_attempts):
+        try:
+            return fn(n=n, c=c, rng=rng, **kwargs)
+        except ValueError as err:
+            last_err = err
+    raise last_err
+
+
 def cmi_sim(
     n,
     c,
@@ -112,7 +133,7 @@ def cmi_coverage_sim(
         coverage = np.zeros(sims)
         error = 0
         for i in range(sims):
-            res = fn(n=n, c=c, rng=rng)
+            res = _draw_until_valid(fn, n, c, rng)
             error += (res[0] - ground_truth)
             if (res[1][0] <= ground_truth) and (res[1][1] >= ground_truth):
                 coverage[i] = 1
@@ -123,7 +144,7 @@ def cmi_coverage_sim(
     # matter how the simulations are scheduled across workers.
     child_rngs = rng.spawn(sims)
     def _one(child):
-        res = fn(n=n, c=c, rng=child)
+        res = _draw_until_valid(fn, n, c, child)
         covered = 1.0 if (res[1][0] <= ground_truth <= res[1][1]) else 0.0
         return res[0] - ground_truth, covered
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(child) for child in child_rngs)
@@ -251,9 +272,9 @@ def cmi_compare(
             sep_res = []
             knn_res = []
             for _ in range(repeats):
-                res = cmi_sim(c = params[i], n = n, rng = rng)
+                res = _draw_until_valid(cmi_sim, n, params[i], rng)
                 cmi_res.append(res[0])
-                res = cmi_sim(c = params[i], n = n, rng = rng, sep = True)
+                res = _draw_until_valid(cmi_sim, n, params[i], rng, sep=True)
                 sep_res.append(res[0])
                 res = knncmi_sim(c = params[i], n = n, rng = rng)
                 knn_res.append(res)
@@ -268,8 +289,8 @@ def cmi_compare(
     child_rngs = rng.spawn(len(tasks))
     def _one(task, child):
         i, _rep = task
-        tl = cmi_sim(c = params[i], n = n, rng = child)[0]
-        sep = cmi_sim(c = params[i], n = n, rng = child, sep = True)[0]
+        tl = _draw_until_valid(cmi_sim, n, params[i], child)[0]
+        sep = _draw_until_valid(cmi_sim, n, params[i], child, sep=True)[0]
         knn = knncmi_sim(c = params[i], n = n, rng = child)
         return i, tl, sep, knn
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(t, c) for t, c in zip(tasks, child_rngs))

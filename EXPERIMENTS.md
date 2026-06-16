@@ -112,20 +112,20 @@ Robust probe, n=250 and 2 reps: ~0.4s for the simulation loop
 CMI probe, n=500 and 2 coverage sims: ~1.0s per c value
 ```
 
-Approximate paper-size runtime:
+Measured paper-size runtime (`--cache-importance`, default `n_samples=1000`):
 
 ```text
-Adult data analysis, original uncached importance: ~50-60 hours
-Adult data analysis, --cache-importance: ~10-12 hours
-Law data analysis, original uncached importance: ~30 hours
-Law data analysis, --cache-importance: ~3-4 hours
-Robust simulation: ~5-10 minutes
-CMI simulation: likely 10+ hours, with possible memory pressure in KNN at n=10000
+Law data analysis,  8 cores (--config njobs=8): ~4.9 hours  (cmi metric ~3.7h of it)
+Adult data analysis, 8 cores: ~12-20 hours (extrapolated; ~2x Law's subsets on larger data)
+Adult/Law, ~64-core node: roughly 2-3 hours
+sim_cmi, 8 cores: ~45-60 minutes (coverage ~30 min; compare adds the knncmi pass)
+Robust simulation: ~5-10 minutes (single-threaded)
 ```
 
-The data-analysis estimates are dominated by permutation importance. With
-`n_samples=1000`, Adult asks for 11,000 prefix fits per metric and Law asks for
-10,000 prefix fits per metric. `--cache-importance` reuses repeated subset
-values, reducing the ceiling to 2,047 fits per Adult metric and 1,023 fits per
-Law metric. The `analyze_*` rules pass `--importance-samples`/`--cache-importance`
-defaults from the entrypoint; adjust them there or via the Snakefile.
+The data-analysis cost is dominated by the **cmi importance metric**: it wraps
+the booster in a 3-fold `CalibratedClassifierCV`, so each feature-subset is
+~3 fits. With caching, Adult explores up to 2,047 subsets per metric and Law up
+to 1,023, single-threaded per worker (~100s/subset for cmi on Law). Serial, the
+cmi metric alone is ~28h on Law -- the `--config njobs` parallelism is what makes
+these tractable, and scales near-linearly with cores. For Adult, prefer a
+many-core node; `--importance-samples` trades importance precision for speed.
