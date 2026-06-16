@@ -16,9 +16,10 @@ dependencies = [
   "ipykernel",
   "seaborn>=0.13.2",
   "matplotlib>=3.10.9",
+  "snakemake>=8",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["tl_fairness*", "tlfair*", "experiments*"]
+include = ["tlfair*"]
 namespaces = true

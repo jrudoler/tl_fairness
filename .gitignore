@@ -1,5 +1,23 @@
 .venv/
 __pycache__/
 .ipynb_checkpoints/
+.snakemake/
 *.egg-info/
 outputs/*
+
+# Workflow artifacts (regenerable via Snakemake); keep the directory structure
+# via the tracked .gitkeep files but ignore their contents.
+/data/raw/*
+/data/generated/*
+/results/data/*
+/results/figures/*
+!**/.gitkeep
+
+# Legacy root-level outputs from the pre-Snakemake layout
+/robust_res.csv
+/cmi_coverage.csv
+/cmi_compare.csv
+/truth_dict.pkl
+/cmi_timing.pkl
+/adult_results.pkl
+/law_results.pkl
