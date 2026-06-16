@@ -19,7 +19,8 @@ EXPECTED_PICKLES = [
     'law_results.pkl',
 ]
 
-EXPECTED_METRICS = ['parity', 'prob_parity', 'opportunity', 'prob_opp', 'cmi']
+EXPECTED_METRICS = ['parity', 'prob_parity', 'opportunity', 'prob_opp', 'cmi',
+                    'prob_parity_tmle', 'prob_opp_tmle', 'cmi_tmle']
 
 
 def validate_csv(path, columns):
