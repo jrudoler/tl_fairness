@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 from sklearn.ensemble import GradientBoostingClassifier
+from joblib import Parallel, delayed
 
 from tlfair.metrics import *
 from tlfair.superlearner import *
@@ -35,21 +36,35 @@ def cmi_sim(
     label[np.intersect1d(np.where(x==0), np.where(y==1))] = 2
     label[np.intersect1d(np.where(x==1), np.where(y==1))] = 3
 
+    # Seed the estimator from the (deterministic) RNG so the fit is reproducible.
+    # Without this, GradientBoostingClassifier falls back to the global numpy
+    # singleton, which makes results vary run-to-run and across worker processes.
+    model_seed = int(rng.integers(0, 2**31 - 1))
+    outcome = GradientBoostingClassifier(random_state=model_seed)
+
     if sep:
-        fn = cmi_separate
+        res = cmi_separate(
+            xtr = z[:n,:],
+            xte = z[n:,:],
+            ytr = x[:n],
+            yte = x[n:],
+            gtr = y[:n],
+            gte = y[n:],
+            outcome = outcome,
+            propensity = None,
+            random_state = model_seed,
+        )
     else:
-        fn = cmi
-        
-    res = fn(
-        xtr = z[:n,:],
-        xte = z[n:,:], 
-        ytr = x[:n], 
-        yte = x[n:],
-        gtr = y[:n],
-        gte = y[n:],
-        outcome = GradientBoostingClassifier(),
-        propensity=None
-    )
+        res = cmi(
+            xtr = z[:n,:],
+            xte = z[n:,:],
+            ytr = x[:n],
+            yte = x[n:],
+            gtr = y[:n],
+            gte = y[n:],
+            outcome = outcome,
+            propensity = None,
+        )
     return res
 
 def knncmi_sim(
@@ -86,18 +101,35 @@ def cmi_coverage_sim(
     ground_truth,
     sims=100,
     fn = cmi_sim,
-    rng=None):
+    rng=None,
+    n_jobs=1):
 
     if rng is None:
         rng = np.random.default_rng(123)
-    coverage = np.zeros(sims)
-    error = 0
-    for i in range(sims):
-        res = fn(n=n, c=c, rng=rng)
-        error += (res[0] - ground_truth)
-        if (res[1][0] <= ground_truth) and (res[1][1] >= ground_truth):
-            coverage[i] = 1
-    return np.mean(coverage), error/sims
+
+    if n_jobs == 1:
+        # Serial path: identical to the original implementation.
+        coverage = np.zeros(sims)
+        error = 0
+        for i in range(sims):
+            res = fn(n=n, c=c, rng=rng)
+            error += (res[0] - ground_truth)
+            if (res[1][0] <= ground_truth) and (res[1][1] >= ground_truth):
+                coverage[i] = 1
+        return np.mean(coverage), error/sims
+
+    # Parallel path: each simulation gets its own independent, deterministic RNG
+    # stream via spawn(), so the result is reproducible from the parent seed no
+    # matter how the simulations are scheduled across workers.
+    child_rngs = rng.spawn(sims)
+    def _one(child):
+        res = fn(n=n, c=c, rng=child)
+        covered = 1.0 if (res[1][0] <= ground_truth <= res[1][1]) else 0.0
+        return res[0] - ground_truth, covered
+    out = Parallel(n_jobs=n_jobs)(delayed(_one)(child) for child in child_rngs)
+    errors = np.array([o[0] for o in out])
+    coverage = np.array([o[1] for o in out])
+    return float(np.mean(coverage)), float(np.sum(errors) / sims)
 
 def cmi_ground_truth(
     c,
@@ -193,48 +225,62 @@ def cmi_compare(
     n,
     repeats = 1,
     params = [0.5, 1, 1.25, 1.5, 1.75, 2, 2.5, 3],
-    rng = None):
+    rng = None,
+    n_jobs = 1):
 
     if rng is None:
         rng = np.random.default_rng()
-    
-    df = pd.DataFrame()
-    for i in range(len(params)):
-        cmi_res = []
-        sep_res = []
-        knn_res = []
-        for _ in range(repeats):
-            res = cmi_sim(
-                c = params[i],
-                n = n,
-                rng= rng
-            )
-            cmi_res.append(res[0])
 
-            res = cmi_sim(
-                c = params[i],
-                n = n,
-                rng= rng,
-                sep = True
-            )
-            sep_res.append(res[0])
-
-            res = knncmi_sim(
-                c = params[i],
-                n = n,
-                rng=rng
-            )
-            knn_res.append(res)
-
-        data = pd.DataFrame(
+    def _summary(cmi_res, sep_res, knn_res, c):
+        return pd.DataFrame(
             {
                 "sample size" : [n] * 3,
                 "type": ["TL", "TL-sep", "KNN"],
-                "c" : [params[i]] * 3,
+                "c" : [c] * 3,
                 "mean" : [np.mean(cmi_res), np.mean(sep_res), np.mean(knn_res)],
                 "bottom_five": [np.quantile(cmi_res, 0.05), np.quantile(sep_res, 0.05), np.quantile(knn_res, 0.05)],
                 "top_five" : [np.quantile(cmi_res, 0.95), np.quantile(sep_res, 0.95), np.quantile(knn_res, 0.95)]
             }
         )
-        df = pd.concat([df,data])
+
+    if n_jobs == 1:
+        # Serial path: identical to the original implementation.
+        df = pd.DataFrame()
+        for i in range(len(params)):
+            cmi_res = []
+            sep_res = []
+            knn_res = []
+            for _ in range(repeats):
+                res = cmi_sim(c = params[i], n = n, rng = rng)
+                cmi_res.append(res[0])
+                res = cmi_sim(c = params[i], n = n, rng = rng, sep = True)
+                sep_res.append(res[0])
+                res = knncmi_sim(c = params[i], n = n, rng = rng)
+                knn_res.append(res)
+            df = pd.concat([df, _summary(cmi_res, sep_res, knn_res, params[i])])
+        return df
+
+    # Parallel path: one task per (param, repeat), each with its own independent
+    # deterministic RNG via spawn(). NOTE: knncmi_sim allocates an O(p * n^2)
+    # distance array (~4 GB at n=10000), so the caller should keep n_jobs small
+    # for large n to avoid exhausting memory.
+    tasks = [(i, rep) for i in range(len(params)) for rep in range(repeats)]
+    child_rngs = rng.spawn(len(tasks))
+    def _one(task, child):
+        i, _rep = task
+        tl = cmi_sim(c = params[i], n = n, rng = child)[0]
+        sep = cmi_sim(c = params[i], n = n, rng = child, sep = True)[0]
+        knn = knncmi_sim(c = params[i], n = n, rng = child)
+        return i, tl, sep, knn
+    out = Parallel(n_jobs=n_jobs)(delayed(_one)(t, c) for t, c in zip(tasks, child_rngs))
+
+    by_param = {i: {"tl": [], "sep": [], "knn": []} for i in range(len(params))}
+    for i, tl, sep, knn in out:
+        by_param[i]["tl"].append(tl)
+        by_param[i]["sep"].append(sep)
+        by_param[i]["knn"].append(knn)
+
+    df = pd.DataFrame()
+    for i in range(len(params)):
+        df = pd.concat([df, _summary(by_param[i]["tl"], by_param[i]["sep"], by_param[i]["knn"], params[i])])
     return df
