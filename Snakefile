@@ -29,6 +29,12 @@ NJOBS = int(config.get("njobs", 1))
 # Memory budget (GB) for concurrent knncmi distance arrays in sim_cmi; caps the
 # comparison workers at large n to avoid OOM (~4 GB per worker at n=10000).
 COMPARE_MEM_GB = float(config.get("compare_mem_gb", 16))
+# Permutation feature-importance (Figure 5) is an optional, expensive analysis
+# that is NOT central to the paper, so it is OFF by default. The analyze rules
+# run inference-only unless you opt in by setting a positive permutation count,
+# which also pulls fig5_importance into the default `all` build, e.g.:
+#   uv run snakemake --cores 16 --config njobs=16 importance_samples=1000
+IMPORTANCE_SAMPLES = int(config.get("importance_samples", 0))
 
 FIGURES = [
     "results/figures/fig1_parity.pdf",
@@ -36,9 +42,11 @@ FIGURES = [
     "results/figures/fig3_variance.pdf",
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
-    "results/figures/fig5_importance.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
 ]
+# Only build the feature-importance figure when the importance analysis is on.
+if IMPORTANCE_SAMPLES > 0:
+    FIGURES.append("results/figures/fig5_importance.pdf")
 
 TABLES = [
     "results/data/table1_inference.csv",
@@ -121,7 +129,8 @@ rule analyze_adult:
     threads: NJOBS
     shell:
         "{RUN} analysis/analyze_adult/run.py --input {input} --output {output} "
-        "--cache-importance --n-jobs {threads}"
+        "--importance-samples {IMPORTANCE_SAMPLES} --cache-importance "
+        "--n-jobs {threads}"
 
 
 rule analyze_law:
@@ -132,7 +141,8 @@ rule analyze_law:
     threads: NJOBS
     shell:
         "{RUN} analysis/analyze_law/run.py --input {input} --output {output} "
-        "--cache-importance --n-jobs {threads}"
+        "--importance-samples {IMPORTANCE_SAMPLES} --cache-importance "
+        "--n-jobs {threads}"
 
 
 # ----------------------------------------------------------------------------

@@ -42,10 +42,13 @@ def validate_results_pickle(path):
     for key in ['inference', 'importance']:
         if key not in data:
             raise ValueError(f'{path}: missing key {key}')
+    # Feature importance is optional (off by default); only validate it when the
+    # run actually produced importance results.
+    has_importance = bool(data['importance'])
     for metric in EXPECTED_METRICS:
         if metric not in data['inference']:
             raise ValueError(f'{path}: missing inference metric {metric}')
-        if metric not in data['importance']:
+        if has_importance and metric not in data['importance']:
             raise ValueError(f'{path}: missing importance metric {metric}')
         est, ci = data['inference'][metric]
         if not (np.isfinite(est) and np.all(np.isfinite(ci))):

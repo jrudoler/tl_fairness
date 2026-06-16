@@ -46,6 +46,14 @@ def main():
     configure_matplotlib()
     adult = _load(args.adult_input)
     law = _load(args.law_input)
+    if not law.get('importance') or not adult.get('importance'):
+        sys.exit(
+            "No feature-importance results in the analyze_* pickles. The "
+            "importance analysis is off by default; regenerate with a positive "
+            "permutation count, e.g.:\n"
+            "  uv run snakemake --forcerun analyze_adult analyze_law "
+            "fig5_importance --cores 16 --config njobs=16 importance_samples=1000"
+        )
     metrics = list(law['importance'].keys())
 
     fig, axs = plt.subplots(2, len(metrics), figsize=(FULL_WIDTH * 2.3, 8))

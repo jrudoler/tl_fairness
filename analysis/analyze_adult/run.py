@@ -39,7 +39,7 @@ def load_data(input_path, seed, max_rows=None):
     return xtr, xte, ytr, yte, gtr, gte
 
 
-def run_experiment(input_path, importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None, n_jobs=1):
+def run_experiment(input_path, importance_samples=0, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None, n_jobs=1):
     xtr, xte, ytr, yte, gtr, gte = load_data(input_path, seed, max_rows=max_rows)
     metric_map = {
         'parity': parity,
@@ -75,23 +75,26 @@ def run_experiment(input_path, importance_samples=1000, seed=123, cache_importan
             outcome=outcome,
             propensity=SuperLearnerClassifier(random_state=seed),
         )
-        importance = perm_importance(
-            xtr=xtr,
-            xte=xte,
-            ytr=ytr,
-            yte=yte,
-            gtr=gtr,
-            gte=gte,
-            outcome=HistGradientBoostingClassifier(random_state=seed),
-            propensity=HistGradientBoostingClassifier(random_state=seed),
-            metric=metric,
-            n_samples=importance_samples,
-            rng=np.random.default_rng(seed),
-            cache=cache_importance,
-            n_jobs=n_jobs,
-        )
         results['inference'][title] = inference
-        results['importance'][title] = importance
+        # Permutation feature-importance is an optional, expensive analysis
+        # (one figure, not central to the paper). importance_samples=0 skips it
+        # so a typical run is inference-only.
+        if importance_samples and importance_samples > 0:
+            results['importance'][title] = perm_importance(
+                xtr=xtr,
+                xte=xte,
+                ytr=ytr,
+                yte=yte,
+                gtr=gtr,
+                gte=gte,
+                outcome=HistGradientBoostingClassifier(random_state=seed),
+                propensity=HistGradientBoostingClassifier(random_state=seed),
+                metric=metric,
+                n_samples=importance_samples,
+                rng=np.random.default_rng(seed),
+                cache=cache_importance,
+                n_jobs=n_jobs,
+            )
         results['timing'][title] = time.perf_counter() - started
         print(f"{title}: {results['timing'][title]:.2f}s", flush=True)
     return results
@@ -101,7 +104,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', default='data/raw/adult.csv')
     parser.add_argument('--output', default='data/generated/adult_results.pkl')
-    parser.add_argument('--importance-samples', type=int, default=1000)
+    parser.add_argument('--importance-samples', type=int, default=0,
+                        help='permutations for feature importance; 0 (default) '
+                             'skips the importance analysis entirely')
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--cache-importance', action='store_true')
     parser.add_argument('--metrics', nargs='+', default=None)
