@@ -19,6 +19,17 @@ import os
 PYTHON = os.environ.get("TLFAIR_PYTHON", ".venv/bin/python")
 RUN = f"PYTHONPATH=. {PYTHON}"
 
+# CPU parallelism for the expensive rules (perm-importance fits and CMI sims).
+# Default is serial (1) so a plain run is unchanged; on a fat node request cores
+# and matching workers, e.g.:
+#   uv run snakemake --cores 64 --config njobs=64 analyze_adult
+# Each expensive rule declares threads: NJOBS, so Snakemake runs them one at a
+# time (each reserving all the cores) rather than co-scheduling them.
+NJOBS = int(config.get("njobs", 1))
+# Memory budget (GB) for concurrent knncmi distance arrays in sim_cmi; caps the
+# comparison workers at large n to avoid OOM (~4 GB per worker at n=10000).
+COMPARE_MEM_GB = float(config.get("compare_mem_gb", 16))
+
 FIGURES = [
     "results/figures/fig1_parity.pdf",
     "results/figures/fig2_robust_coverage.pdf",
@@ -83,8 +94,10 @@ rule sim_cmi:
         compare=protected("data/generated/cmi_compare.csv"),
         truth=protected("data/generated/truth_dict.pkl"),
         timing=protected("data/generated/cmi_timing.pkl"),
+    threads: NJOBS
     shell:
         "{RUN} analysis/sim_cmi/run.py "
+        "--n-jobs {threads} --compare-mem-gb {COMPARE_MEM_GB} "
         "--coverage-output {output.coverage} "
         "--compare-output {output.compare} "
         "--truth-output {output.truth} "
@@ -96,8 +109,10 @@ rule analyze_adult:
         "data/raw/adult.csv"
     output:
         protected("data/generated/adult_results.pkl")
+    threads: NJOBS
     shell:
-        "{RUN} analysis/analyze_adult/run.py --input {input} --output {output}"
+        "{RUN} analysis/analyze_adult/run.py --input {input} --output {output} "
+        "--cache-importance --n-jobs {threads}"
 
 
 rule analyze_law:
@@ -105,8 +120,10 @@ rule analyze_law:
         "data/raw/law.csv"
     output:
         protected("data/generated/law_results.pkl")
+    threads: NJOBS
     shell:
-        "{RUN} analysis/analyze_law/run.py --input {input} --output {output}"
+        "{RUN} analysis/analyze_law/run.py --input {input} --output {output} "
+        "--cache-importance --n-jobs {threads}"
 
 
 # ----------------------------------------------------------------------------

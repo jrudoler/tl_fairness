@@ -38,7 +38,7 @@ def load_data(input_path, seed, max_rows=None):
     return xtr, xte, ytr, yte, gtr, gte
 
 
-def run_experiment(input_path, importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None):
+def run_experiment(input_path, importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None, n_jobs=1):
     xtr, xte, ytr, yte, gtr, gte = load_data(input_path, seed, max_rows=max_rows)
     metric_map = {
         'parity': parity,
@@ -82,6 +82,7 @@ def run_experiment(input_path, importance_samples=1000, seed=123, cache_importan
             n_samples=importance_samples,
             rng=np.random.default_rng(seed),
             cache=cache_importance,
+            n_jobs=n_jobs,
         )
         results['inference'][title] = inference
         results['importance'][title] = importance
@@ -99,6 +100,9 @@ def main():
     parser.add_argument('--cache-importance', action='store_true')
     parser.add_argument('--metrics', nargs='+', default=None)
     parser.add_argument('--max-rows', type=int, default=None)
+    parser.add_argument('--n-jobs', type=int, default=1,
+                        help='parallel workers for permutation-importance fits '
+                             '(bit-identical to serial; loky caps inner threads)')
     args = parser.parse_args()
     print('Beginning Adult Experiment', flush=True)
     results = run_experiment(
@@ -108,6 +112,7 @@ def main():
         cache_importance=args.cache_importance,
         metrics_to_run=args.metrics,
         max_rows=args.max_rows,
+        n_jobs=args.n_jobs,
     )
     with open(args.output, 'wb') as f:
         pickle.dump(results, f)
