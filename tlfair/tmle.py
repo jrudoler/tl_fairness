@@ -58,6 +58,15 @@ def _expit(z):
     return out
 
 
+def _concat_rows(a, b):
+    """Row-concatenate two feature blocks that may be DataFrames or ndarrays."""
+    if isinstance(a, pd.DataFrame) or isinstance(b, pd.DataFrame):
+        return pd.concat([pd.DataFrame(a).reset_index(drop=True),
+                          pd.DataFrame(b).reset_index(drop=True)],
+                         ignore_index=True)
+    return np.concatenate([np.asarray(a), np.asarray(b)], axis=0)
+
+
 def _encode_joint(g, y):
     """Encode binary (G, Y) into 4 classes: 0=(0,0),1=(1,0),2=(0,1),3=(1,1)."""
     g = np.asarray(g).astype(np.int8)
@@ -186,7 +195,7 @@ def prob_parity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
             "tlfair.tmle_jax / tlfair.tmle_sim)."
         )
     if cross_fit:
-        X = pd.concat([xtr, xte], ignore_index=True)
+        X = _concat_rows(xtr, xte)
         y = np.concatenate([np.asarray(ytr), np.asarray(yte)])
         g = np.concatenate([np.asarray(gtr), np.asarray(gte)])
         return cross_fit_tmle(X, y, g, outcome, propensity,
@@ -212,7 +221,7 @@ def prob_opportunity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None
             "tlfair.tmle_jax / tlfair.tmle_sim)."
         )
     if cross_fit:
-        X = pd.concat([xtr, xte], ignore_index=True)
+        X = _concat_rows(xtr, xte)
         y = np.concatenate([np.asarray(ytr), np.asarray(yte)])
         g = np.concatenate([np.asarray(gtr), np.asarray(gte)])
         return cross_fit_tmle(X, y, g, outcome, propensity,

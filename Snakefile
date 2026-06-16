@@ -37,6 +37,7 @@ FIGURES = [
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig5_importance.pdf",
+    "results/figures/fig6_tmle_coverage.pdf",
 ]
 
 TABLES = [
@@ -86,6 +87,14 @@ rule sim_robust:
         protected("data/generated/robust_res.csv")
     shell:
         "{RUN} analysis/sim_robust/run.py --output {output}"
+
+
+rule sim_tmle:
+    output:
+        protected("data/generated/tmle_coverage.csv")
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_tmle/run.py --n-jobs {threads} --output {output}"
 
 
 rule sim_cmi:
@@ -173,6 +182,15 @@ rule fig4_cmi:
         "--coverage-output {output.coverage}"
 
 
+rule fig6_tmle:
+    input:
+        "data/generated/tmle_coverage.csv"
+    output:
+        "results/figures/fig6_tmle_coverage.pdf"
+    shell:
+        "{RUN} analysis/fig6_tmle/run.py --input {input} --output {output}"
+
+
 rule fig5_importance:
     input:
         adult="data/generated/adult_results.pkl",
@@ -214,6 +232,7 @@ rule table2_cmi_truth:
 rule validate:
     input:
         "data/generated/robust_res.csv",
+        "data/generated/tmle_coverage.csv",
         "data/generated/cmi_coverage.csv",
         "data/generated/cmi_compare.csv",
         "data/generated/truth_dict.pkl",
