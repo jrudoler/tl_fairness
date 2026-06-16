@@ -1,20 +1,23 @@
+import argparse
+import sys
+import time
+import pickle
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import numpy as np
 import pandas as pd
-import argparse
-import time
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import train_test_split
-import pickle
 
-from tl_fairness.tlfair.metrics import *
-from tl_fairness.tlfair.superlearner import *
+from tlfair.metrics import *
+from tlfair.superlearner import *
 
 
-def load_data(seed, max_rows=None):
-    adult = pd.read_csv(
-        "https://raw.githubusercontent.com/socialfoundations/folktables/main/adult_reconstruction.csv"
-    )
+def load_data(input_path, seed, max_rows=None):
+    adult = pd.read_csv(input_path)
     if max_rows is not None and max_rows < len(adult):
         adult = adult.sample(n=max_rows, random_state=seed)
     data = adult.copy()
@@ -35,8 +38,8 @@ def load_data(seed, max_rows=None):
     return xtr, xte, ytr, yte, gtr, gte
 
 
-def run_experiment(importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None):
-    xtr, xte, ytr, yte, gtr, gte = load_data(seed, max_rows=max_rows)
+def run_experiment(input_path, importance_samples=1000, seed=123, cache_importance=False, metrics_to_run=None, max_rows=None):
+    xtr, xte, ytr, yte, gtr, gte = load_data(input_path, seed, max_rows=max_rows)
     metric_map = {
         'parity': parity,
         'prob_parity': prob_parity,
@@ -89,7 +92,8 @@ def run_experiment(importance_samples=1000, seed=123, cache_importance=False, me
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output', default='adult_results.pkl')
+    parser.add_argument('--input', default='data/raw/adult.csv')
+    parser.add_argument('--output', default='data/generated/adult_results.pkl')
     parser.add_argument('--importance-samples', type=int, default=1000)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--cache-importance', action='store_true')
@@ -98,6 +102,7 @@ def main():
     args = parser.parse_args()
     print('Beginning Adult Experiment', flush=True)
     results = run_experiment(
+        input_path=args.input,
         importance_samples=args.importance_samples,
         seed=args.seed,
         cache_importance=args.cache_importance,
