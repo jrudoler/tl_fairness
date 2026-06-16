@@ -17,7 +17,18 @@ import matplotlib.pyplot as plt
 
 from tlfair.plotting import configure_matplotlib, FULL_WIDTH
 
-TITLES = ['Parity', 'Prob. Parity', 'Opportunity', 'Prob. Opportunity', 'CMI']
+# Map importance-dict keys to display titles. Robust to extra metrics (e.g. the
+# TMLE variants) being present: unknown keys fall back to the key itself.
+METRIC_TITLES = {
+    'parity': 'Parity',
+    'prob_parity': 'Prob. Parity',
+    'opportunity': 'Opportunity',
+    'prob_opp': 'Prob. Opportunity',
+    'cmi': 'CMI',
+    'prob_parity_tmle': 'Prob. Parity (TMLE)',
+    'prob_opp_tmle': 'Prob. Opportunity (TMLE)',
+    'cmi_tmle': 'CMI (TMLE)',
+}
 
 
 def _load(path):
@@ -46,7 +57,7 @@ def main():
 
         sns.barplot(adult_df, y='Variable', x='Importance', ax=axs[0, i])
         sns.barplot(law_df, y='Variable', x='Importance', ax=axs[1, i])
-        axs[0, i].set_title(TITLES[i], fontsize=11)
+        axs[0, i].set_title(METRIC_TITLES.get(m, m), fontsize=11)
         axs[0, i].set_xlabel('')
         if i >= 1:
             axs[0, i].set_yticklabels([])

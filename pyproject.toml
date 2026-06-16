@@ -19,6 +19,14 @@ dependencies = [
   "snakemake>=8",
 ]
 
+[project.optional-dependencies]
+# GPU/CPU-accelerated backend for the coverage simulations and TMLE targeting.
+# Optional: the core pipeline never imports JAX.
+jax = ["jax>=0.4.30"]
+jax-cuda = ["jax[cuda12]>=0.4.30"]
+# Development / test tooling.
+dev = ["pytest>=8"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["tlfair*"]

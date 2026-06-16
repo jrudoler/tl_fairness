@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 
 from tlfair.metrics import *
 from tlfair.superlearner import *
+from tlfair.tmle import prob_parity_tmle, prob_opportunity_tmle, cmi_tmle
 
 
 def load_data(input_path, seed, max_rows=None):
@@ -46,6 +47,11 @@ def run_experiment(input_path, importance_samples=1000, seed=123, cache_importan
         'opportunity': opportunity,
         'prob_opp': prob_opportunity,
         'cmi': cmi,
+        # TMLE counterparts of the doubly-robust metrics, reported alongside the
+        # one-step estimators in Table 1.
+        'prob_parity_tmle': prob_parity_tmle,
+        'prob_opp_tmle': prob_opportunity_tmle,
+        'cmi_tmle': cmi_tmle,
     }
     if metrics_to_run is None:
         metrics_to_run = list(metric_map)
@@ -54,7 +60,7 @@ def run_experiment(input_path, importance_samples=1000, seed=123, cache_importan
     for title in metrics_to_run:
         started = time.perf_counter()
         metric = metric_map[title]
-        if title == 'cmi':
+        if title in ('cmi', 'cmi_tmle'):
             outcome = HistGradientBoostingClassifier(random_state=seed)
         else:
             outcome = SuperLearnerClassifier(random_state=seed)
