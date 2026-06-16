@@ -63,9 +63,11 @@ rule download_law:
 # ----------------------------------------------------------------------------
 rule sim_parity:
     output:
-        "data/generated/parity_sim.csv"
+        fig1="data/generated/parity_fig1.csv",
+        fig3="data/generated/parity_fig3.csv",
     shell:
-        "{RUN} analysis/sim_parity/run.py --output {output}"
+        "{RUN} analysis/sim_parity/run.py "
+        "--fig1-output {output.fig1} --fig3-output {output.fig3}"
 
 
 rule sim_robust:
@@ -112,7 +114,7 @@ rule analyze_law:
 # ----------------------------------------------------------------------------
 rule fig1_parity:
     input:
-        "data/generated/parity_sim.csv"
+        "data/generated/parity_fig1.csv"
     output:
         "results/figures/fig1_parity.pdf"
     shell:
@@ -130,7 +132,7 @@ rule fig2_robust:
 
 rule fig3_variance:
     input:
-        "data/generated/parity_sim.csv"
+        "data/generated/parity_fig3.csv"
     output:
         "results/figures/fig3_variance.pdf"
     shell:

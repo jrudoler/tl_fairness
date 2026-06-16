@@ -36,7 +36,7 @@ to rebuild them deliberately.
 | Rule | Output(s) | Paper artifact |
 |---|---|---|
 | `download_adult` / `download_law` | `data/raw/{adult,law}.csv` | raw inputs (Section 5) |
-| `sim_parity` | `data/generated/parity_sim.csv` | Figures 1 & 3 inputs (Setting 1) |
+| `sim_parity` | `data/generated/parity_fig1.csv`, `parity_fig3.csv` | Figure 1 (dense threshold sweep) & Figure 3 (prob-parity variance) |
 | `sim_robust` | `data/generated/robust_res.csv` | Figure 2 (Setting 3 coverage) |
 | `sim_cmi` | `data/generated/cmi_coverage.csv`, `cmi_compare.csv`, `truth_dict.pkl`, `cmi_timing.pkl` | Figure 4, Table 2 |
 | `analyze_adult` / `analyze_law` | `data/generated/{adult,law}_results.pkl` | Table 1, Figure 5 |

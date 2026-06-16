@@ -1,7 +1,8 @@
 """Figure 3: TL variance vs naive difference-in-means variance (Section 4.1.1).
 
-The TL variance estimate is larger than the naive t-test variance because TL
-accounts for estimating the conditional distribution, not just the mean.
+Probabilistic parity, linear sample-size axis. The TL variance estimate is much
+larger than the naive t-test variance because TL accounts for estimating the
+conditional distribution, not just the group means.
 """
 
 import argparse
@@ -18,7 +19,7 @@ from tlfair.plotting import configure_matplotlib, FULL_WIDTH
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', default='data/generated/parity_sim.csv')
+    parser.add_argument('--input', default='data/generated/parity_fig3.csv')
     parser.add_argument('--output', default='results/figures/fig3_variance.pdf')
     args = parser.parse_args()
 
@@ -30,6 +31,7 @@ def main():
     ax.plot(df['sample_size'], df['naive_var'], marker='o', linestyle='--', label='Naive')
     ax.set_xlabel('Sample Size')
     ax.set_ylabel('Variance')
+    ax.set_ylim(bottom=0)
     ax.legend()
     fig.tight_layout()
     fig.savefig(args.output)

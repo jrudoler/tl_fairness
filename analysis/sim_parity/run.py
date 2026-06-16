@@ -1,9 +1,14 @@
-"""Setting-1 parity simulation sweep (paper Section 4.1, Figures 1 and 3).
+"""Setting-1 parity simulations (paper Section 4.1, Figures 1 and 3).
 
-For each sample size we run ``n_sim`` replicates and record:
-  - the mean TL estimate and mean standard error (Figure 1: estimate + CI vs n)
-  - the mean TL variance and mean naive difference-in-means variance (Figure 3)
-relative to the Monte Carlo ground truth.
+Two outputs, each matching how the paper builds its figure:
+
+  parity_fig1.csv  -- threshold parity over a dense log-spaced sample-size grid,
+                      ONE simulated dataset per size (estimate + Wald SE). The
+                      many single-draw points form the funnel in Figure 1.
+
+  parity_fig3.csv  -- probabilistic parity over a small linear grid; per size we
+                      average the TL variance and the naive difference-in-means
+                      variance over several replicates (Figure 3).
 """
 
 import argparse
@@ -16,69 +21,60 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import numpy as np
 import pandas as pd
 
-from tlfair.simulations import (
-    parity_ground_truth,
-    parity_sim,
-    coverage_sim_parity,
-)
+from tlfair.simulations import parity_ground_truth, parity_sim, coverage_sim_parity
 
 
-def run_experiment(sample_sizes, parity, n_sim, truth_n, seed):
+def run_fig1(truth, seed, lo=1.5, hi=4.0, step=0.01):
+    """Dense log grid, one draw per size: estimate + SE (threshold parity)."""
     rng = np.random.default_rng(seed)
-    threshold_truth, prob_truth = parity_ground_truth(n=truth_n, rng=rng)
-    truth = threshold_truth if parity == 'threshold' else prob_truth
-    print(f"ground truth ({parity}): {truth:.5f}", flush=True)
-
+    sizes = np.unique(np.round(10 ** np.arange(lo, hi, step)).astype(int))
     rows = []
-    for size in sample_sizes:
-        started = time.perf_counter()
-        # Figure 1: estimate + CI across replicates.
-        _, estimates, std, upper, lower = coverage_sim_parity(
-            ground_truth=truth, parity=parity, n_sim=n_sim, n_samples=size, rng=rng,
+    started = time.perf_counter()
+    for size in sizes:
+        _, est, std, _, _ = coverage_sim_parity(
+            ground_truth=truth, parity='threshold', n_sim=1, n_samples=int(size), rng=rng,
         )
-        # Figure 3: TL vs naive variance across replicates.
+        rows.append({'sample_size': int(size), 'estimate': float(est[0]),
+                     'std': float(std[0]), 'truth': truth})
+    print(f"fig1: {len(sizes)} sizes in {time.perf_counter() - started:.2f}s", flush=True)
+    return pd.DataFrame(rows)
+
+
+def run_fig3(seed, sizes, reps):
+    """Small linear grid: mean TL var vs mean naive var (probabilistic parity)."""
+    rng = np.random.default_rng(seed)
+    rows = []
+    started = time.perf_counter()
+    for size in sizes:
         tl_vars, naive_vars = [], []
-        for _ in range(n_sim):
-            _, var, _, naive_var = parity_sim(n=size // 2, parity=parity, rng=rng)
+        for _ in range(reps):
+            _, var, _, naive_var = parity_sim(n=int(size), parity='prob', rng=rng)
             tl_vars.append(var)
             naive_vars.append(naive_var)
-
-        rows.append({
-            'sample_size': size,
-            'parity': parity,
-            'truth': truth,
-            'estimate': float(np.mean(estimates)),
-            'std': float(np.mean(std)),
-            'ci_lower': float(np.mean(lower)),
-            'ci_upper': float(np.mean(upper)),
-            'coverage': float(np.mean((upper >= truth) & (lower <= truth))),
-            'tl_var': float(np.mean(tl_vars)),
-            'naive_var': float(np.mean(naive_vars)),
-        })
-        print(f"n={size}: {time.perf_counter() - started:.2f}s", flush=True)
+        rows.append({'sample_size': int(size),
+                     'tl_var': float(np.mean(tl_vars)),
+                     'naive_var': float(np.mean(naive_vars))})
+    print(f"fig3: {len(sizes)} sizes x {reps} reps in {time.perf_counter() - started:.2f}s", flush=True)
     return pd.DataFrame(rows)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sample-sizes', nargs='+', type=int,
-                        default=[50, 100, 250, 500, 1000, 2500, 5000, 10000])
-    parser.add_argument('--parity', choices=['threshold', 'prob'], default='threshold')
-    parser.add_argument('--n-sim', type=int, default=100)
     parser.add_argument('--truth-n', type=int, default=100000)
     parser.add_argument('--seed', type=int, default=123)
-    parser.add_argument('--output', default='data/generated/parity_sim.csv')
+    parser.add_argument('--fig3-sizes', nargs='+', type=int, default=[50, 100, 250, 500, 1000])
+    parser.add_argument('--fig3-reps', type=int, default=50)
+    parser.add_argument('--fig1-output', default='data/generated/parity_fig1.csv')
+    parser.add_argument('--fig3-output', default='data/generated/parity_fig3.csv')
     args = parser.parse_args()
 
-    res = run_experiment(
-        sample_sizes=args.sample_sizes,
-        parity=args.parity,
-        n_sim=args.n_sim,
-        truth_n=args.truth_n,
-        seed=args.seed,
-    )
-    res.to_csv(args.output, index=False)
-    print(f'Wrote {args.output}', flush=True)
+    threshold_truth, _ = parity_ground_truth(n=args.truth_n, rng=np.random.default_rng(args.seed))
+    print(f"threshold ground truth: {threshold_truth:.5f}", flush=True)
+
+    run_fig1(threshold_truth, args.seed).to_csv(args.fig1_output, index=False)
+    print(f'Wrote {args.fig1_output}', flush=True)
+    run_fig3(args.seed, args.fig3_sizes, args.fig3_reps).to_csv(args.fig3_output, index=False)
+    print(f'Wrote {args.fig3_output}', flush=True)
 
 
 if __name__ == '__main__':
