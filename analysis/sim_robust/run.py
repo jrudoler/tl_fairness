@@ -1,12 +1,16 @@
 import argparse
+import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 
-from tl_fairness.tlfair.metrics import prob_parity
+from tlfair.metrics import prob_parity
 
 
 def robust_sim_all(n, truth, rng):
@@ -109,7 +113,7 @@ def main():
     parser.add_argument('--reps', type=int, default=100)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--truth-n', type=int, default=10000000)
-    parser.add_argument('--output', default='robust_res.csv')
+    parser.add_argument('--output', default='data/generated/robust_res.csv')
     args = parser.parse_args()
 
     res = robust_exp(

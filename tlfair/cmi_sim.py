@@ -1,12 +1,11 @@
 import numpy as np
+import pandas as pd
 import scipy as sp
 from sklearn.ensemble import GradientBoostingClassifier
-import sys
 
-sys.path.append('..')
-from tl_fairness.tlfair.metrics import *
-from tl_fairness.tlfair.superlearner import *
-from tl_fairness.tlfair.knncmi import *
+from tlfair.metrics import *
+from tlfair.superlearner import *
+from tlfair.knncmi import *
 
 def cmi_sim(
     n,

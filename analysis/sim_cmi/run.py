@@ -1,15 +1,20 @@
+import argparse
+import sys
+import time
+import pickle
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import numpy as np
 import scipy as sp
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
-import argparse
-import time
-import pickle
 
-from tl_fairness.tlfair.metrics import *
-from tl_fairness.tlfair.superlearner import *
-from tl_fairness.tlfair.knncmi import *
-from tl_fairness.experiments.cmi_helper import *
+from tlfair.metrics import *
+from tlfair.superlearner import *
+from tlfair.knncmi import *
+from tlfair.cmi_sim import *
 
 def run_experiment(
     weights,
@@ -87,10 +92,10 @@ def main():
     parser.add_argument('--compare-repeats', type=int, default=10)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--conditional-truth', action='store_true')
-    parser.add_argument('--coverage-output', default='cmi_coverage.csv')
-    parser.add_argument('--compare-output', default='cmi_compare.csv')
-    parser.add_argument('--truth-output', default='truth_dict.pkl')
-    parser.add_argument('--timing-output', default='cmi_timing.pkl')
+    parser.add_argument('--coverage-output', default='data/generated/cmi_coverage.csv')
+    parser.add_argument('--compare-output', default='data/generated/cmi_compare.csv')
+    parser.add_argument('--truth-output', default='data/generated/truth_dict.pkl')
+    parser.add_argument('--timing-output', default='data/generated/cmi_timing.pkl')
     args = parser.parse_args()
 
     coverage, compare, truth, timings = run_experiment(
