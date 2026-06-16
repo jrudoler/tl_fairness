@@ -16,6 +16,19 @@ from tlfair.superlearner import *
 from tlfair.knncmi import *
 from tlfair.cmi_sim import *
 
+def _safe_compare_jobs(n, n_jobs, mem_gb):
+    """Cap parallel workers so concurrent knncmi distance arrays fit in memory.
+
+    knncmi builds an O(p * n^2) float64 array (p=5 here -> ~4 GB at n=10000),
+    so running too many at once on a large n exhausts RAM. The coverage step has
+    no such footprint and always uses the full n_jobs.
+    """
+    per_worker_gb = 5 * (n ** 2) * 8 / 1e9
+    if per_worker_gb <= 0:
+        return n_jobs
+    return max(1, min(n_jobs, int(mem_gb / per_worker_gb)))
+
+
 def run_experiment(
     weights,
     sizes,
@@ -24,6 +37,8 @@ def run_experiment(
     compare_repeats=10,
     seed=123,
     conditional_truth=False,
+    n_jobs=1,
+    compare_mem_gb=16.0,
 ):
     rng = np.random.default_rng(seed)
     results = []
@@ -50,6 +65,7 @@ def run_experiment(
                 ground_truth=truth,
                 rng=rng,
                 sims=sims,
+                n_jobs=n_jobs,
             )
             timings[f'coverage_c={c}_n={s}'] = time.perf_counter() - started
             results.append({
@@ -66,14 +82,20 @@ def run_experiment(
     compare_results = []
     for s in sizes:
         started = time.perf_counter()
+        compare_jobs = _safe_compare_jobs(s, n_jobs, compare_mem_gb)
         compare_results.append(cmi_compare(
             n=s,
             params=weights,
             repeats=compare_repeats,
             rng=rng,
+            n_jobs=compare_jobs,
         ))
         timings[f'compare_n={s}'] = time.perf_counter() - started
-        print(f"compare n={s}: {timings[f'compare_n={s}']:.2f}s", flush=True)
+        print(
+            f"compare n={s} ({compare_jobs} workers): "
+            f"{timings[f'compare_n={s}']:.2f}s",
+            flush=True,
+        )
 
     return (
         pd.DataFrame(results),
@@ -92,6 +114,12 @@ def main():
     parser.add_argument('--compare-repeats', type=int, default=10)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--conditional-truth', action='store_true')
+    parser.add_argument('--n-jobs', type=int, default=1,
+                        help='parallel workers for coverage sims and the '
+                             'comparison (deterministic via per-task RNG spawn)')
+    parser.add_argument('--compare-mem-gb', type=float, default=16.0,
+                        help='memory budget for concurrent knncmi distance '
+                             'arrays; caps compare workers at large n')
     parser.add_argument('--coverage-output', default='data/generated/cmi_coverage.csv')
     parser.add_argument('--compare-output', default='data/generated/cmi_compare.csv')
     parser.add_argument('--truth-output', default='data/generated/truth_dict.pkl')
@@ -106,6 +134,8 @@ def main():
         compare_repeats=args.compare_repeats,
         seed=args.seed,
         conditional_truth=args.conditional_truth,
+        n_jobs=args.n_jobs,
+        compare_mem_gb=args.compare_mem_gb,
     )
     coverage.to_csv(args.coverage_output, index=False)
     compare.to_csv(args.compare_output, index=False)

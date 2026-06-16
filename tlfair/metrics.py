@@ -6,6 +6,7 @@ from math import factorial
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
+from joblib import Parallel, delayed
 
 
 def _clone_estimator(estimator):
@@ -115,13 +116,14 @@ def cmi(
 
 def cmi_separate(
     xtr,
-    xte, 
-    ytr, 
+    xte,
+    ytr,
     yte,
     gtr,
     gte,
     outcome,
-    propensity=None):
+    propensity=None,
+    random_state=None):
 
     # Same CMI estimand as `cmi`, but estimate the joint distribution via
     # separate binary models for Y|X and G|X rather than a single 4-class model.
@@ -130,11 +132,13 @@ def cmi_separate(
     label[np.intersect1d(np.where(gtr==1), np.where(ytr==0))] = 1
     label[np.intersect1d(np.where(gtr==0), np.where(ytr==1))] = 2
     label[np.intersect1d(np.where(gtr==1), np.where(ytr==1))] = 3
-    
+
     outcome = CalibratedClassifierCV(outcome, cv=3).fit(xtr, label)
-    base = LogisticRegression(solver='liblinear')
+    # liblinear seeds its coordinate-descent shuffle from random_state; pass one
+    # through so the fit is reproducible.
+    base = LogisticRegression(solver='liblinear', random_state=random_state)
     y_model = CalibratedClassifierCV(base, cv=3).fit(xtr, ytr)
-    base = LogisticRegression(solver='liblinear')
+    base = LogisticRegression(solver='liblinear', random_state=random_state)
     g_model = CalibratedClassifierCV(base, cv=3).fit(xtr, gtr)
 
     est_vec = np.zeros(len(gte))
@@ -249,7 +253,8 @@ def perm_importance(
     propensity,
     n_samples = 10,
     rng = None,
-    cache = False
+    cache = False,
+    n_jobs = 1
     ):
     # Shapley-style feature importance for a fairness metric:
     # average the marginal change in the metric as features are added in
@@ -273,40 +278,84 @@ def perm_importance(
             perms.append(perm)
             seen.add(perm)
 
+    importance = {col: 0 for col in seq}
+
+    if n_jobs == 1:
+        # Serial path: byte-for-byte identical to the original implementation.
+        values = []
+        value_cache = {}
+        for perm in perms:
+            prev = 0
+            v = []
+            for i in range(len(perm)):
+                subset = frozenset(perm[:i+1])
+                cache_key = subset if cache else None
+                if cache and cache_key in value_cache:
+                    est = value_cache[cache_key]
+                else:
+                    cols = [col for col in seq if col in subset]
+                    htr = xtr[cols]
+                    hte = xte[cols]
+                    res = metric(
+                        xtr = htr,
+                        xte = hte,
+                        ytr = ytr,
+                        yte = yte,
+                        gtr = gtr,
+                        gte = gte,
+                        outcome = _clone_estimator(outcome),
+                        propensity = _clone_estimator(propensity)
+                        )
+                    est = res[0]
+                    if cache:
+                        value_cache[cache_key] = est
+                importance[perm[i]] += (est-prev) / n_samples
+                prev = est
+                v.append(est)
+            values.append(v)
+        return importance, values, perms
+
+    # Parallel path. A metric value depends only on the *set* of features and
+    # the estimator's fixed random_state, never on the RNG stream, so each
+    # distinct prefix-subset can be evaluated exactly once, in any order. We
+    # farm those independent fits out across processes and then run the cheap
+    # aggregation serially. The result is bit-identical to the cached serial
+    # path (and to the uncached path, since the fits are deterministic).
+    def _eval(subset):
+        cols = [col for col in seq if col in subset]
+        res = metric(
+            xtr = xtr[cols],
+            xte = xte[cols],
+            ytr = ytr,
+            yte = yte,
+            gtr = gtr,
+            gte = gte,
+            outcome = _clone_estimator(outcome),
+            propensity = _clone_estimator(propensity)
+            )
+        return subset, res[0]
+
+    unique_subsets = []
+    seen_subsets = set()
+    for perm in perms:
+        for i in range(len(perm)):
+            subset = frozenset(perm[:i+1])
+            if subset not in seen_subsets:
+                seen_subsets.add(subset)
+                unique_subsets.append(subset)
+
+    evaluated = Parallel(n_jobs=n_jobs)(delayed(_eval)(s) for s in unique_subsets)
+    value_cache = dict(evaluated)
+
     values = []
-    importance = {}
-    value_cache = {}
-    for col in seq:
-        importance[col] = 0
-        
     for perm in perms:
         prev = 0
         v = []
         for i in range(len(perm)):
-            subset = frozenset(perm[:i+1])
-            cache_key = subset if cache else None
-            if cache and cache_key in value_cache:
-                est = value_cache[cache_key]
-            else:
-                cols = [col for col in seq if col in subset]
-                htr = xtr[cols]
-                hte = xte[cols]
-                res = metric(
-                    xtr = htr,
-                    xte = hte,
-                    ytr = ytr,
-                    yte = yte,
-                    gtr = gtr,
-                    gte = gte,
-                    outcome = _clone_estimator(outcome),
-                    propensity = _clone_estimator(propensity)
-                    )
-                est = res[0]
-                if cache:
-                    value_cache[cache_key] = est
-            importance[perm[i]] += (est-prev) / n_samples
+            est = value_cache[frozenset(perm[:i+1])]
+            importance[perm[i]] += (est - prev) / n_samples
             prev = est
             v.append(est)
         values.append(v)
-    
+
     return importance, values, perms
