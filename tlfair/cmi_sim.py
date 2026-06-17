@@ -152,6 +152,119 @@ def cmi_coverage_sim(
     coverage = np.array([o[1] for o in out])
     return float(np.mean(coverage)), float(np.sum(errors) / sims)
 
+# ---------------------------------------------------------------------------
+# One-step vs TMLE coverage comparison for CMI.
+#
+# Motivation: the manuscript reports (Figure 4) that the one-step CMI estimator
+# has poor coverage at small c, and TMLE iteration was hoped to fix it. This
+# harness draws the SAME paper DGP as cmi_sim and evaluates four estimators on a
+# single shared calibrated density q_hat per draw, so any coverage difference is
+# the estimator, not the fit or the draw:
+#   * one_step      -- metrics.cmi (mean observed log-ratio, Wald CI)
+#   * tmle_notarget -- substitution mean KL >= 0, NO fluctuation
+#   * tmle          -- substitution + softmax fluctuation (the iteration)
+#   * tmle_bdry     -- tmle + lower CI truncated at 0 (boundary-aware)
+# The shared q_hat is exact: metrics.cmi's observed-class log-ratio equals
+# _cmi_log_ratio(q)[i, lte], so one_step here is byte-identical to metrics.cmi.
+from sklearn.calibration import CalibratedClassifierCV
+from tlfair.tmle import (
+    _encode_joint, _aligned_joint_proba, _cmi_log_ratio, _cmi_target,
+)
+
+CMI_TMLE_ESTIMATORS = ("one_step", "tmle_notarget", "tmle", "tmle_bdry")
+
+
+def _cmi_tmle_draw(n, c, d, rng):
+    """Draw one CMI dataset (identical DGP to cmi_sim) and the model seed."""
+    n = n // 2  # sample splitting, matching cmi_sim
+    z = rng.normal(size=(2 * n, d))
+    beta = np.ones(d)
+    c_prob = c * rng.uniform(size=2 * n)
+    logits = 1 / (1 + np.exp(-z @ beta))
+    x_prob = (c_prob + rng.uniform(size=2 * n) + logits) / (c + 2)
+    y_prob = (c_prob + rng.uniform(size=2 * n) + logits) / (c + 2)
+    x = (x_prob > 0.5).astype(np.int8)
+    y = (y_prob > 0.5).astype(np.int8)
+    model_seed = int(rng.integers(0, 2 ** 31 - 1))
+    return {"ztr": z[:n], "zte": z[n:], "xtr": x[:n], "xte": x[n:],
+            "ytr": y[:n], "yte": y[n:], "seed": model_seed}
+
+
+def _wald(est, eif):
+    se = np.sqrt(np.var(eif) / len(eif))
+    return est - 1.96 * se, est + 1.96 * se
+
+
+def _cmi_estimate_shared(draw, estimators):
+    """Fit q_hat once and return ``{name: (est, (lo, hi))}`` for each estimator.
+
+    Mirrors the metric-API mapping used in cmi_sim: Z is the conditioning
+    covariate, and the two discrete variables are x (-> ytr) and y (-> gtr).
+    """
+    ltr = _encode_joint(draw["ytr"], draw["xtr"])   # _encode_joint(g, y)=g+2y
+    lte = _encode_joint(draw["yte"], draw["xte"])
+    model = CalibratedClassifierCV(
+        GradientBoostingClassifier(random_state=draw["seed"]), cv=3,
+    ).fit(draw["ztr"], ltr)
+    q = _aligned_joint_proba(model, draw["zte"])
+    idx = np.arange(len(q))
+
+    out = {}
+    if "one_step" in estimators:
+        L = _cmi_log_ratio(q)
+        ev = L[idx, lte]
+        est = float(np.mean(ev))
+        out["one_step"] = (est, _wald(est, ev - est))
+    if "tmle_notarget" in estimators:
+        est, eif, _ = _cmi_target(q, lte, fluctuate=False)
+        out["tmle_notarget"] = (est, _wald(est, eif))
+    if "tmle" in estimators or "tmle_bdry" in estimators:
+        est, eif, _ = _cmi_target(q, lte, fluctuate=True)
+        lo, hi = _wald(est, eif)
+        if "tmle" in estimators:
+            out["tmle"] = (est, (lo, hi))
+        if "tmle_bdry" in estimators:
+            out["tmle_bdry"] = (est, (max(0.0, lo), hi))
+    return out
+
+
+def cmi_tmle_coverage_sim(n, c, ground_truth, *,
+                          estimators=CMI_TMLE_ESTIMATORS, sims=100,
+                          rng=None, n_jobs=1, max_attempts=20):
+    """Coverage + signed error of each estimator at (n, c), over ``sims`` draws.
+
+    All estimators share each draw and its single calibrated fit. Degenerate
+    small-n draws (a joint class with < 3 members breaks the cv=3 calibration)
+    are rejected and redrawn, matching cmi_coverage_sim's _draw_until_valid.
+    Returns ``{name: {"coverage": float, "error": float}}``.
+    """
+    if rng is None:
+        rng = np.random.default_rng(123)
+    child_rngs = rng.spawn(sims)
+
+    def _one(child):
+        last_err = None
+        for _ in range(max_attempts):
+            try:
+                ests = _cmi_estimate_shared(_cmi_tmle_draw(n, c, 3, child),
+                                            estimators)
+                return {name: (est - ground_truth,
+                               1.0 if ci[0] <= ground_truth <= ci[1] else 0.0)
+                        for name, (est, ci) in ests.items()}
+            except ValueError as err:
+                last_err = err
+        raise last_err
+
+    out = Parallel(n_jobs=n_jobs)(delayed(_one)(c_) for c_ in child_rngs)
+    res = {}
+    for name in estimators:
+        errs = np.array([o[name][0] for o in out])
+        cov = np.array([o[name][1] for o in out])
+        res[name] = {"coverage": float(np.mean(cov)),
+                     "error": float(np.mean(errs))}
+    return res
+
+
 def cmi_ground_truth(
     c,
     d,
