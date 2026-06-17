@@ -187,7 +187,11 @@ def _target_opportunity(d_hat, rho0, rho1, y, g, *, return_diagnostics=False):
 def prob_parity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
                      *, cross_fit=False, n_folds=5, rng=None, backend="numpy",
                      return_diagnostics=False):
-    """TMLE for probabilistic demographic parity (paper Eq. 8-10)."""
+    """TMLE for probabilistic demographic parity.
+
+    Targets the estimand/EIF from the paper's "Probabilistic Metrics" section
+    (Sec. 3.1): EIF residual multiplier ``pi/P(G=1) - (1-pi)/P(G=0)``.
+    """
     if backend != "numpy":
         raise NotImplementedError(
             "JAX backend for the single-split estimators is not provided; the "
@@ -213,7 +217,12 @@ def prob_parity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
 def prob_opportunity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
                           *, cross_fit=False, n_folds=5, rng=None,
                           backend="numpy", return_diagnostics=False):
-    """TMLE for probabilistic equal opportunity (paper Appendix B / Eq. 17-19)."""
+    """TMLE for probabilistic equal opportunity.
+
+    Targets the estimand/EIF from the paper's "Derivations for Equal
+    Opportunity" appendix: EIF residual multiplier
+    ``rho_1/P(Y=1,G=1) - rho_0/P(Y=1,G=0)`` with ``rho_g(x)=P(Y=1,G=g|X)``.
+    """
     if backend != "numpy":
         raise NotImplementedError(
             "JAX backend for the single-split estimators is not provided; the "
@@ -306,8 +315,12 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
 # CMI: substitution estimate, softmax fluctuation, boundary-aware CI.
 # ---------------------------------------------------------------------------
 # Finding (derivation in the plan): the conditional mutual information estimand
-# has the complete efficient influence function phi = log[q/(a b)] - Psi (the
-# paper's Eq. 12). A full point-mass/Gateaux derivation -- perturbing the
+# has the complete efficient influence function phi = log[q/(a b)] - Psi. (The
+# paper's "Causal Explanation Formula" subsection, where this would be derived,
+# is an unwritten stub in the current manuscript draft, so there is no equation
+# number to cite; the EIF below is standard and matches metrics.cmi, which sets
+# Psi_hat = mean of the observed log-ratio.) A full point-mass/Gateaux derivation
+# -- perturbing the
 # marginal of X and the conditional joint law q(y,g|x) -- shows the suspected
 # extra correction terms cancel: the inner gradient dh/dq = log[q/(a b)] - 1 is
 # constant across classes after contraction, and the marginal Y|X / G|X
@@ -351,7 +364,7 @@ def _cmi_target(q, lte, *, fluctuate=True, max_iter=50, tol=1e-8):
 
     Returns ``(est, eif, info)`` where ``est = mean_i h(x_i)`` with
     ``h(x) = sum_c q_c log[q_c/(a_y b_g)] = KL(q(.|x) || a(.|x) (x) b(.|x)) >= 0``,
-    and the (complete, paper Eq. 12) EIF evaluated at the observed class,
+    and the complete EIF evaluated at the observed class,
     ``phi_i = L_{C_i}(x_i) - est``. The optional fluctuation reweights q on the
     softmax scale with clever covariate ``H_c = L_c - h`` so the empirical EIF
     mean is driven to zero.
