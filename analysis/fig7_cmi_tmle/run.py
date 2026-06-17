@@ -23,7 +23,10 @@ LABELS = {
     'tmle': 'TMLE (iterated)',
     'tmle_bdry': 'TMLE + boundary CI',
 }
-ORDER = ['one_step', 'tmle_notarget', 'tmle', 'tmle_bdry']
+# Only the two EIF-solving estimators are shown: the un-iterated substitution
+# and the boundary-CI variant were diagnostic (they isolated the plug-in bias
+# and proved redundant, respectively) and are omitted from the final figure.
+ORDER = ['one_step', 'tmle']
 
 
 def main():
