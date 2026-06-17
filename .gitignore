@@ -3,6 +3,7 @@ __pycache__/
 .ipynb_checkpoints/
 .snakemake/
 *.egg-info/
+slurm/logs/
 outputs/*
 
 # Workflow artifacts (regenerable via Snakemake); keep the directory structure
