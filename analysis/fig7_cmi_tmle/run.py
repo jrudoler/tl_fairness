@@ -38,29 +38,37 @@ def main():
     configure_matplotlib()
     df = pd.read_csv(args.input)
     estimators = [e for e in ORDER if e in df['estimator'].unique()]
+    # Back-compat: a single-benchmark CSV with no truth_type column is treated
+    # as the conditional (honest) benchmark.
+    if 'truth_type' not in df.columns:
+        df['truth_type'] = 'cond'
+    truth_rows = [('uncond', 'Unconditional MI benchmark (mismatched)'),
+                  ('cond', 'Conditional CMI benchmark (honest)')]
+    truth_rows = [(t, lab) for t, lab in truth_rows
+                  if t in df['truth_type'].unique()]
 
-    # --- Coverage heatmaps, one per estimator, shared 0-1 color scale ---
-    fig, axs = plt.subplots(1, len(estimators),
-                            figsize=(FULL_WIDTH * 1.9, 3.6), sharey=True)
-    if len(estimators) == 1:
-        axs = [axs]
-    for i, e in enumerate(estimators):
-        piv = (df[df['estimator'] == e]
-               .pivot(index='sample_size', columns='c', values='coverage'))
-        sns.heatmap(piv, ax=axs[i], vmin=0, vmax=1, cmap='viridis',
-                    cbar=(i == len(estimators) - 1),
-                    cbar_kws={'label': 'coverage'})
-        axs[i].set_title(LABELS.get(e, e), fontsize=10)
-        axs[i].set_xlabel('c')
-        axs[i].set_ylabel('Sample Size' if i == 0 else '')
+    # --- Coverage heatmaps: rows = benchmark, cols = estimator, shared scale ---
+    nrow, ncol = len(truth_rows), len(estimators)
+    fig, axs = plt.subplots(nrow, ncol, figsize=(FULL_WIDTH * 1.9, 3.4 * nrow),
+                            squeeze=False)
+    for r, (tt, row_label) in enumerate(truth_rows):
+        for i, e in enumerate(estimators):
+            piv = (df[(df['estimator'] == e) & (df['truth_type'] == tt)]
+                   .pivot(index='sample_size', columns='c', values='coverage'))
+            sns.heatmap(piv, ax=axs[r][i], vmin=0, vmax=1, cmap='viridis',
+                        cbar=(i == ncol - 1), cbar_kws={'label': 'coverage'})
+            if r == 0:
+                axs[r][i].set_title(LABELS.get(e, e), fontsize=10)
+            axs[r][i].set_xlabel('c')
+            axs[r][i].set_ylabel(f'{row_label}\nSample Size' if i == 0 else '')
     fig.suptitle('95% CI coverage of CMI (nominal 0.95)', fontsize=11)
     fig.tight_layout()
     fig.savefig(args.coverage_output)
     plt.close(fig)
     print(f'Wrote {args.coverage_output}', flush=True)
 
-    # --- Signed error vs c, faceted by sample size, one line per estimator ---
-    df2 = df.copy()
+    # --- Signed error vs c (honest conditional benchmark), faceted by size ---
+    df2 = df[df['truth_type'] == 'cond'].copy()
     df2['Estimator'] = df2['estimator'].map(lambda e: LABELS.get(e, e))
     g = sns.FacetGrid(df2, col='sample_size', col_wrap=3, hue='Estimator',
                       hue_order=[LABELS[e] for e in estimators])

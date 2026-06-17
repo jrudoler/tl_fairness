@@ -228,15 +228,20 @@ def _cmi_estimate_shared(draw, estimators):
     return out
 
 
-def cmi_tmle_coverage_sim(n, c, ground_truth, *,
+def cmi_tmle_coverage_sim(n, c, ground_truths, *,
                           estimators=CMI_TMLE_ESTIMATORS, sims=100,
                           rng=None, n_jobs=1, max_attempts=20):
     """Coverage + signed error of each estimator at (n, c), over ``sims`` draws.
 
-    All estimators share each draw and its single calibrated fit. Degenerate
-    small-n draws (a joint class with < 3 members breaks the cv=3 calibration)
-    are rejected and redrawn, matching cmi_coverage_sim's _draw_until_valid.
-    Returns ``{name: {"coverage": float, "error": float}}``.
+    ``ground_truths`` is a dict ``{label: value}``; each estimator's CI is scored
+    against every benchmark (the CIs are identical across benchmarks -- only the
+    target value differs -- so the unconditional vs conditional comparison costs
+    nothing beyond the shared fit). All estimators share each draw and its single
+    calibrated fit. Degenerate small-n draws (a joint class with < 3 members
+    breaks the cv=3 calibration) are rejected and redrawn, matching
+    cmi_coverage_sim's _draw_until_valid.
+
+    Returns ``{name: {label: {"coverage": float, "error": float}}}``.
     """
     if rng is None:
         rng = np.random.default_rng(123)
@@ -248,8 +253,7 @@ def cmi_tmle_coverage_sim(n, c, ground_truth, *,
             try:
                 ests = _cmi_estimate_shared(_cmi_tmle_draw(n, c, 3, child),
                                             estimators)
-                return {name: (est - ground_truth,
-                               1.0 if ci[0] <= ground_truth <= ci[1] else 0.0)
+                return {name: (est, ci[0], ci[1])
                         for name, (est, ci) in ests.items()}
             except ValueError as err:
                 last_err = err
@@ -258,10 +262,14 @@ def cmi_tmle_coverage_sim(n, c, ground_truth, *,
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(c_) for c_ in child_rngs)
     res = {}
     for name in estimators:
-        errs = np.array([o[name][0] for o in out])
-        cov = np.array([o[name][1] for o in out])
-        res[name] = {"coverage": float(np.mean(cov)),
-                     "error": float(np.mean(errs))}
+        est = np.array([o[name][0] for o in out])
+        lo = np.array([o[name][1] for o in out])
+        hi = np.array([o[name][2] for o in out])
+        res[name] = {}
+        for label, truth in ground_truths.items():
+            covered = (lo <= truth) & (hi >= truth)
+            res[name][label] = {"coverage": float(np.mean(covered)),
+                                "error": float(np.mean(est - truth))}
     return res
 
 

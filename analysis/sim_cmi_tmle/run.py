@@ -29,20 +29,30 @@ def run_experiment(weights, sizes, *, n_truth=1_000_000, sims=100, seed=123,
     rows = []
     truth_dict = {}
     for c in weights:
-        truth = cmi_ground_truth(c=c, d=3, n=n_truth, rng=rng)
-        truth_dict[c] = truth
-        print(f"truth c={c}: {truth:.4f}", flush=True)
+        # Two benchmarks: the unconditional MI I(X;Y) (what the paper's table and
+        # Fig 4 use) and the conditional CMI I(X;Y|Z) (the estimand the estimators
+        # actually target). They differ most at small c; see cmi_sim notes.
+        truths = {
+            "uncond": cmi_ground_truth(c=c, d=3, n=n_truth, rng=rng),
+            "cond": cmi_ground_truth(c=c, d=3, n=n_truth, rng=rng,
+                                     conditional=True),
+        }
+        truth_dict[c] = truths
+        print(f"truth c={c}: uncond={truths['uncond']:.4f} "
+              f"cond={truths['cond']:.4f}", flush=True)
         for s in sizes:
             t = time.perf_counter()
-            res = cmi_tmle_coverage_sim(n=s, c=c, ground_truth=truth, sims=sims,
-                                        rng=rng, n_jobs=n_jobs)
+            res = cmi_tmle_coverage_sim(n=s, c=c, ground_truths=truths,
+                                        sims=sims, rng=rng, n_jobs=n_jobs)
             for name in CMI_TMLE_ESTIMATORS:
-                rows.append({"c": c, "sample_size": s, "estimator": name,
-                             "coverage": res[name]["coverage"],
-                             "error": res[name]["error"]})
-            cov = ", ".join(f"{n_}={res[n_]['coverage']:.2f}"
+                for tt in ("uncond", "cond"):
+                    rows.append({"c": c, "sample_size": s, "estimator": name,
+                                 "truth_type": tt,
+                                 "coverage": res[name][tt]["coverage"],
+                                 "error": res[name][tt]["error"]})
+            cov = ", ".join(f"{n_}={res[n_]['cond']['coverage']:.2f}"
                             for n_ in CMI_TMLE_ESTIMATORS)
-            print(f"  c={c} n={s} [{time.perf_counter()-t:.0f}s] cov: {cov}",
+            print(f"  c={c} n={s} [{time.perf_counter()-t:.0f}s] cond cov: {cov}",
                   flush=True)
     return pd.DataFrame(rows), truth_dict
 
