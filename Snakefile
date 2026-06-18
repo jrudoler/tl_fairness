@@ -57,6 +57,23 @@ TABLES = [
     "results/data/table2_cmi_truth.tex",
 ]
 
+# Generated figure -> basename used by \includegraphics in the paper submodule.
+# The `paper` target copies each into paper/figs/<name>.pdf and recompiles, so
+# fixing an analysis and running `snakemake paper` flows updated figures into the
+# manuscript. main.tex references these extensionless, so the PDFs take
+# precedence over any same-named legacy PNG. fig5_importance is opt-in, so the
+# paper keeps using the committed importance.png unless importance is rebuilt.
+PAPER_FIG_MAP = {
+    "results/figures/fig1_parity.pdf":            "paper/figs/asymptotic.pdf",
+    "results/figures/fig2_robust_coverage.pdf":   "paper/figs/robust_coverage.pdf",
+    "results/figures/fig3_variance.pdf":          "paper/figs/naive_var.pdf",
+    "results/figures/fig4_cmi_error.pdf":         "paper/figs/cmi_error.pdf",
+    "results/figures/fig4_cmi_coverage.pdf":      "paper/figs/cmi_coverage.pdf",
+    "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
+    "results/figures/fig7_cmi_tmle_coverage.pdf": "paper/figs/cmi_tmle_coverage.pdf",
+    "results/figures/fig7_cmi_tmle_error.pdf":    "paper/figs/cmi_tmle_error.pdf",
+}
+
 
 rule all:
     input:
@@ -257,6 +274,39 @@ rule table2_cmi_truth:
     shell:
         "{RUN} analysis/table2_cmi_truth/run.py "
         "--input {input} --csv-output {output.csv} --tex-output {output.tex}"
+
+
+# ----------------------------------------------------------------------------
+# Paper: sync generated figures into the submodule and compile main.pdf.
+# `paper` is intentionally NOT in `rule all` -- the cluster figure jobs run
+# `snakemake all` on compute nodes without a TeX toolchain. Run `snakemake paper`
+# (on a host with latexmk on PATH) to rebuild any stale figures and recompile.
+#
+# Requires a LaTeX toolchain with the acmart class + font stack. With TinyTeX:
+#   tlmgr install acmart xstring totpages everyshi setspace hyperxmp ncctools \
+#       cmap comment fancyhdr appendix upquote libertine newtx fontaxes \
+#       mweights inconsolata cm-super stix2-otf stix2-type1 microtype
+# ----------------------------------------------------------------------------
+rule sync_paper_figures:
+    input:
+        list(PAPER_FIG_MAP.keys())
+    output:
+        list(PAPER_FIG_MAP.values())
+    run:
+        import shutil
+        for src, dst in PAPER_FIG_MAP.items():
+            shutil.copyfile(src, dst)
+
+
+rule paper:
+    input:
+        figs=list(PAPER_FIG_MAP.values()),
+        tex="paper/main.tex",
+        bib="paper/refs.bib",
+    output:
+        "paper/main.pdf"
+    shell:
+        "latexmk -pdf -interaction=nonstopmode -cd {input.tex}"
 
 
 # ----------------------------------------------------------------------------
