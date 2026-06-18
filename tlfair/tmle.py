@@ -337,9 +337,8 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
 #     richer EIF.
 # This module therefore contributes (1) a positivity-respecting substitution
 # estimate, mean_i KL(q(.|x_i) || a (x) b) >= 0, instead of the average raw
-# log-ratio (which can go negative near independence); (2) an optional softmax
-# fluctuation of the joint PMF that drives the empirical EIF mean to zero; and
-# (3) a boundary-aware CI option.
+# log-ratio (which can go negative near independence); and (2) an optional
+# softmax fluctuation of the joint PMF that drives the empirical EIF mean to zero.
 #
 # Class indexing matches _encode_joint: class c has g = c % 2, y = c // 2, i.e.
 #   0=(g0,y0)  1=(g1,y0)  2=(g0,y1)  3=(g1,y1).
@@ -408,7 +407,7 @@ def _cmi_target(q, lte, *, fluctuate=True, max_iter=50, tol=1e-8):
 
 def cmi_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
              outcome, propensity=None, *,
-             fluctuate=True, boundary_ci=False, max_iter=50, tol=1e-8,
+             fluctuate=True, max_iter=50, tol=1e-8,
              return_diagnostics=False):
     """TMLE-style CMI estimator: positivity-respecting substitution + targeting.
 
@@ -416,10 +415,7 @@ def cmi_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
       * the point estimate is the substitution form ``mean_i h(x_i) >= 0`` rather
         than the average raw log-ratio, which can go negative near independence;
       * an optional softmax fluctuation of the calibrated joint PMF drives the
-        empirical EIF mean to zero;
-      * ``boundary_ci=True`` truncates the lower confidence limit at 0, a simple
-        boundary-aware adjustment for the near-independence (CMI~0) regime where
-        the sampling distribution is one-sided and symmetric Wald under-covers.
+        empirical EIF mean to zero.
 
     Following the metric API, ``y_*``/``group_*`` are the two discrete variables
     whose conditional MI given ``X`` is estimated.
@@ -432,10 +428,7 @@ def cmi_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
     est, eif, info = _cmi_target(q, lte, fluctuate=fluctuate,
                                  max_iter=max_iter, tol=tol)
     se = np.sqrt(np.var(eif) / len(eif))
-    lower, upper = est - 1.96 * se, est + 1.96 * se
-    if boundary_ci:
-        lower = max(0.0, lower)
-    ci = (lower, upper)
+    ci = (est - 1.96 * se, est + 1.96 * se)
     if return_diagnostics:
         return est, ci, info
     return est, ci

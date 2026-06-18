@@ -239,17 +239,6 @@ def test_cmi_substitution_nonnegative_at_independence():
     assert negatives == 0
 
 
-def test_cmi_boundary_ci_truncates_at_zero():
-    rng = np.random.default_rng(3)
-    xtr, xte, ytr, yte, gtr, gte = _draw_cmi(600, c=0.0, rng=rng)
-    seed = int(rng.integers(0, 2 ** 31 - 1))
-    _, ci = cmi_tmle(
-        xtr, xte, ytr, yte, gtr, gte,
-        GradientBoostingClassifier(random_state=seed), boundary_ci=True,
-    )
-    assert ci[0] >= 0.0
-
-
 def test_cmi_target_without_fluctuation_is_substitution():
     # With fluctuate=False the estimate is the plain KL substitution mean and
     # eps stays 0; it is still non-negative.
