@@ -42,8 +42,10 @@ def main():
 
     g = sns.FacetGrid(cmp, col='sample size', col_wrap=3, hue='type')
     g.map_dataframe(sns.lineplot, x='c', y='error')
-    g.map(plt.axhline, y=0, color='black', linestyle='--')
-    g.add_legend()
+    g.add_legend(title='Estimator')
+    # refline draws the y=0 reference on every facet without joining the hue
+    # legend (g.map(axhline) would, turning every legend entry into a black dash).
+    g.refline(y=0, color='black', linestyle='--')
     g.savefig(args.error_output)
     plt.close(g.figure)
     print(f'Wrote {args.error_output}', flush=True)
