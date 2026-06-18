@@ -14,8 +14,8 @@ def _draw_until_valid(fn, n, c, rng, max_attempts=20, **kwargs):
     the estimator undefined.
 
     At large c the joint (G, Y) classes become correlated, so a small-n draw can
-    leave a class with too few members for the cv=3 calibration in cmi() /
-    cmi_separate(), which raises ValueError. Such draws are rare (<1%); redrawing
+    leave a class with too few members for the cv=3 calibration in cmi(), which
+    raises ValueError. Such draws are rare (<1%); redrawing
     rejects them and estimates coverage conditional on a computable estimate.
     Deterministic because ``rng`` is seeded (each retry advances it). If every
     attempt fails the last error is re-raised so genuine bugs still surface.
@@ -33,13 +33,11 @@ def cmi_sim(
     n,
     c,
     d=3,
-    rng=None,
-    sep=False
+    rng=None
     ):
 
     n = n //2 #sample splitting
     if rng is None:
-        # np.random.seed(123)
         rng = np.random.default_rng()
     z = rng.normal(size=(2*n,d))
     beta = np.array([1,1,1])
@@ -49,44 +47,22 @@ def cmi_sim(
     x = (x_prob > 0.5).astype(np.int8)
     y = (y_prob > 0.5).astype(np.int8)
 
-    
-
-    label = np.zeros(shape=(2*n,)).astype(np.int8)
-    label[np.intersect1d(np.where(x==0), np.where(y==0))] = 0
-    label[np.intersect1d(np.where(x==1), np.where(y==0))] = 1
-    label[np.intersect1d(np.where(x==0), np.where(y==1))] = 2
-    label[np.intersect1d(np.where(x==1), np.where(y==1))] = 3
-
     # Seed the estimator from the (deterministic) RNG so the fit is reproducible.
     # Without this, GradientBoostingClassifier falls back to the global numpy
     # singleton, which makes results vary run-to-run and across worker processes.
     model_seed = int(rng.integers(0, 2**31 - 1))
     outcome = GradientBoostingClassifier(random_state=model_seed)
 
-    if sep:
-        res = cmi_separate(
-            X_train = z[:n,:],
-            X_test = z[n:,:],
-            y_train = x[:n],
-            y_test = x[n:],
-            group_train = y[:n],
-            group_test = y[n:],
-            outcome = outcome,
-            propensity = None,
-            random_state = model_seed,
-        )
-    else:
-        res = cmi(
-            X_train = z[:n,:],
-            X_test = z[n:,:],
-            y_train = x[:n],
-            y_test = x[n:],
-            group_train = y[:n],
-            group_test = y[n:],
-            outcome = outcome,
-            propensity = None,
-        )
-    return res
+    return cmi(
+        X_train = z[:n,:],
+        X_test = z[n:,:],
+        y_train = x[:n],
+        y_test = x[n:],
+        group_train = y[:n],
+        group_test = y[n:],
+        outcome = outcome,
+        propensity = None,
+    )
 
 def knncmi_sim(
     n,
@@ -253,33 +229,29 @@ def cmi_compare(
     if rng is None:
         rng = np.random.default_rng()
 
-    def _summary(cmi_res, sep_res, knn_res, c):
+    def _summary(cmi_res, knn_res, c):
         return pd.DataFrame(
             {
-                "sample size" : [n] * 3,
-                "type": ["TL", "TL-sep", "KNN"],
-                "c" : [c] * 3,
-                "mean" : [np.mean(cmi_res), np.mean(sep_res), np.mean(knn_res)],
-                "bottom_five": [np.quantile(cmi_res, 0.05), np.quantile(sep_res, 0.05), np.quantile(knn_res, 0.05)],
-                "top_five" : [np.quantile(cmi_res, 0.95), np.quantile(sep_res, 0.95), np.quantile(knn_res, 0.95)]
+                "sample size" : [n] * 2,
+                "type": ["TL", "KNN"],
+                "c" : [c] * 2,
+                "mean" : [np.mean(cmi_res), np.mean(knn_res)],
+                "bottom_five": [np.quantile(cmi_res, 0.05), np.quantile(knn_res, 0.05)],
+                "top_five" : [np.quantile(cmi_res, 0.95), np.quantile(knn_res, 0.95)]
             }
         )
 
     if n_jobs == 1:
-        # Serial path: identical to the original implementation.
         df = pd.DataFrame()
         for i in range(len(params)):
             cmi_res = []
-            sep_res = []
             knn_res = []
             for _ in range(repeats):
                 res = _draw_until_valid(cmi_sim, n, params[i], rng)
                 cmi_res.append(res[0])
-                res = _draw_until_valid(cmi_sim, n, params[i], rng, sep=True)
-                sep_res.append(res[0])
                 res = knncmi_sim(c = params[i], n = n, rng = rng)
                 knn_res.append(res)
-            df = pd.concat([df, _summary(cmi_res, sep_res, knn_res, params[i])])
+            df = pd.concat([df, _summary(cmi_res, knn_res, params[i])])
         return df
 
     # Parallel path: one task per (param, repeat), each with its own independent
@@ -291,18 +263,16 @@ def cmi_compare(
     def _one(task, child):
         i, _rep = task
         tl = _draw_until_valid(cmi_sim, n, params[i], child)[0]
-        sep = _draw_until_valid(cmi_sim, n, params[i], child, sep=True)[0]
         knn = knncmi_sim(c = params[i], n = n, rng = child)
-        return i, tl, sep, knn
+        return i, tl, knn
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(t, c) for t, c in zip(tasks, child_rngs))
 
-    by_param = {i: {"tl": [], "sep": [], "knn": []} for i in range(len(params))}
-    for i, tl, sep, knn in out:
+    by_param = {i: {"tl": [], "knn": []} for i in range(len(params))}
+    for i, tl, knn in out:
         by_param[i]["tl"].append(tl)
-        by_param[i]["sep"].append(sep)
         by_param[i]["knn"].append(knn)
 
     df = pd.DataFrame()
     for i in range(len(params)):
-        df = pd.concat([df, _summary(by_param[i]["tl"], by_param[i]["sep"], by_param[i]["knn"], params[i])])
+        df = pd.concat([df, _summary(by_param[i]["tl"], by_param[i]["knn"], params[i])])
     return df

@@ -32,6 +32,9 @@ def main():
 
     # --- Error line plots, faceted by sample size, one line per estimator ---
     cmp = pd.read_csv(args.compare_input)
+    # Compare only the targeted-learning (TL) and KNN estimators; the legacy
+    # separate-marginals variant (TL-sep) was dropped.
+    cmp = cmp[cmp['type'].isin(['TL', 'KNN'])]
     with open(args.truth_input, 'rb') as f:
         truth = pickle.load(f)
     truth_f = {float(k): v for k, v in truth.items()}

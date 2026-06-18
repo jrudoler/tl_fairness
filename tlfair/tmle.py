@@ -328,9 +328,9 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
 # constant across classes after contraction, and the marginal Y|X / G|X
 # perturbations contribute zero at the truth (their gradient is the constant -1
 # and the perturbation direction sums to zero). So:
-#   * Both metrics.cmi and metrics.cmi_separate already solve their empirical EIF
-#     equation by construction (they set Psi_hat = mean of the observed log-ratio,
-#     so mean(EIF) = 0 identically). There is no "missing augmentation" to add.
+#   * metrics.cmi already solves its empirical EIF equation by construction (it
+#     sets Psi_hat = mean of the observed log-ratio, so mean(EIF) = 0
+#     identically). There is no "missing augmentation" to add.
 #   * The poor coverage near CMI~0 is a BOUNDARY non-regularity: Psi >= 0 and the
 #     sampling distribution is one-sided there, so symmetric Wald CIs under-cover
 #     regardless of the EIF. The fix is positivity + a boundary-aware CI, not a
@@ -339,9 +339,7 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
 # estimate, mean_i KL(q(.|x_i) || a (x) b) >= 0, instead of the average raw
 # log-ratio (which can go negative near independence); (2) an optional softmax
 # fluctuation of the joint PMF that drives the empirical EIF mean to zero; and
-# (3) a boundary-aware CI option. cmi_separate's instability is a second-order
-# plug-in bias from using marginals (a_y, b_g) that are not the marginals of the
-# fitted joint q; the principled remedy is the single/joint approach used here.
+# (3) a boundary-aware CI option.
 #
 # Class indexing matches _encode_joint: class c has g = c % 2, y = c // 2, i.e.
 #   0=(g0,y0)  1=(g1,y0)  2=(g0,y1)  3=(g1,y1).

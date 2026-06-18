@@ -18,9 +18,9 @@ interchangeably -- ``perm_importance`` below and the ``metric_map`` in the
 analyze_* scripts call every metric with the full keyword set -- so each must
 accept all of these parameters even when it does not use them. In particular the
 threshold metrics ``parity`` and ``opportunity`` take no ``propensity`` model
-(their decision rule is a hard threshold), and ``cmi``/``cmi_separate`` model the
-joint via ``outcome`` alone, so ``propensity`` is accepted-but-ignored there.
-Removing it would break the uniform dispatch.
+(their decision rule is a hard threshold), and ``cmi`` models the joint via
+``outcome`` alone, so ``propensity`` is accepted-but-ignored there. Removing it
+would break the uniform dispatch.
 
 The estimand for each metric is noted in its docstring with the paper reference.
 """
@@ -31,7 +31,6 @@ from math import factorial
 import numpy as np
 from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.linear_model import LogisticRegression
 from joblib import Parallel, delayed
 
 _Z = 1.96  # standard-normal quantile for a 95% interval
@@ -190,32 +189,6 @@ def cmi(X_train, X_test, y_train, y_test, group_train, group_test,
     # Marginals recovered by summing joint-class probabilities.
     p_y0, p_y1 = proba[:, 0] + proba[:, 1], proba[:, 2] + proba[:, 3]
     p_g0, p_g1 = proba[:, 0] + proba[:, 2], proba[:, 1] + proba[:, 3]
-    log_ratio = _cmi_log_ratio(proba, p_g0, p_g1, p_y0, p_y1,
-                               _encode_joint(group_test, y_test))
-    estimate = np.mean(log_ratio)
-    return estimate, _wald_ci(estimate, log_ratio - estimate)
-
-
-def cmi_separate(X_train, X_test, y_train, y_test, group_train, group_test,
-                 outcome, propensity=None, random_state=None):
-    """CMI with separate binary models for Y|X and G|X (vs the joint `cmi`).
-
-    The joint numerator still comes from a 4-class model; the marginal
-    denominator uses independent calibrated logistic models. ``random_state``
-    seeds liblinear's coordinate-descent shuffle for reproducibility.
-    """
-    # unused (uniform dispatch): propensity
-    joint_model = CalibratedClassifierCV(outcome, cv=3).fit(
-        X_train, _encode_joint(group_train, y_train))
-    y_model = CalibratedClassifierCV(
-        LogisticRegression(solver="liblinear", random_state=random_state),
-        cv=3).fit(X_train, y_train)
-    g_model = CalibratedClassifierCV(
-        LogisticRegression(solver="liblinear", random_state=random_state),
-        cv=3).fit(X_train, group_train)
-    proba = joint_model.predict_proba(X_test)
-    p_y0, p_y1 = y_model.predict_proba(X_test).T
-    p_g0, p_g1 = g_model.predict_proba(X_test).T
     log_ratio = _cmi_log_ratio(proba, p_g0, p_g1, p_y0, p_y1,
                                _encode_joint(group_test, y_test))
     estimate = np.mean(log_ratio)
