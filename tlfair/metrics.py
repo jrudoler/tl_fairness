@@ -13,6 +13,15 @@ classifiers fit internally on the training split and applied to the test split
 (sample splitting). The confidence interval is a 95% Wald interval built from the
 sample variance of the efficient influence function (EIF).
 
+This shared signature is intentional: the estimators are dispatched
+interchangeably -- ``perm_importance`` below and the ``metric_map`` in the
+analyze_* scripts call every metric with the full keyword set -- so each must
+accept all of these parameters even when it does not use them. In particular the
+threshold metrics ``parity`` and ``opportunity`` take no ``propensity`` model
+(their decision rule is a hard threshold), and ``cmi``/``cmi_separate`` model the
+joint via ``outcome`` alone, so ``propensity`` is accepted-but-ignored there.
+Removing it would break the uniform dispatch.
+
 The estimand for each metric is noted in its docstring with the paper reference.
 """
 
