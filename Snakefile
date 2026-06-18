@@ -43,8 +43,6 @@ FIGURES = [
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
-    "results/figures/fig7_cmi_tmle_coverage.pdf",
-    "results/figures/fig7_cmi_tmle_error.pdf",
 ]
 # Only build the feature-importance figure when the importance analysis is on.
 if IMPORTANCE_SAMPLES > 0:
@@ -70,8 +68,6 @@ PAPER_FIG_MAP = {
     "results/figures/fig4_cmi_error.pdf":         "paper/figs/cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf":      "paper/figs/cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
-    "results/figures/fig7_cmi_tmle_coverage.pdf": "paper/figs/cmi_tmle_coverage.pdf",
-    "results/figures/fig7_cmi_tmle_error.pdf":    "paper/figs/cmi_tmle_error.pdf",
 }
 
 
@@ -122,16 +118,6 @@ rule sim_tmle:
     threads: NJOBS
     shell:
         "{RUN} analysis/sim_tmle/run.py --n-jobs {threads} --output {output}"
-
-
-rule sim_cmi_tmle:
-    output:
-        coverage=protected("data/generated/cmi_tmle_coverage.csv"),
-        truth=protected("data/generated/cmi_tmle_truth.pkl"),
-    threads: NJOBS
-    shell:
-        "{RUN} analysis/sim_cmi_tmle/run.py --n-jobs {threads} "
-        "--output {output.coverage} --truth-output {output.truth}"
 
 
 rule sim_cmi:
@@ -228,17 +214,6 @@ rule fig6_tmle:
         "results/figures/fig6_tmle_coverage.pdf"
     shell:
         "{RUN} analysis/fig6_tmle/run.py --input {input} --output {output}"
-
-
-rule fig7_cmi_tmle:
-    input:
-        "data/generated/cmi_tmle_coverage.csv"
-    output:
-        coverage="results/figures/fig7_cmi_tmle_coverage.pdf",
-        error="results/figures/fig7_cmi_tmle_error.pdf",
-    shell:
-        "{RUN} analysis/fig7_cmi_tmle/run.py --input {input} "
-        "--coverage-output {output.coverage} --error-output {output.error}"
 
 
 rule fig5_importance:

@@ -36,7 +36,7 @@ def run_experiment(
     sims=100,
     compare_repeats=10,
     seed=123,
-    conditional_truth=False,
+    conditional_truth=True,
     n_jobs=1,
     compare_mem_gb=16.0,
 ):
@@ -113,7 +113,10 @@ def main():
     parser.add_argument('--sims', type=int, default=100)
     parser.add_argument('--compare-repeats', type=int, default=10)
     parser.add_argument('--seed', type=int, default=123)
-    parser.add_argument('--conditional-truth', action='store_true')
+    parser.add_argument('--unconditional-truth', action='store_true',
+                        help='(legacy) score coverage/error against the '
+                             'unconditional MI I(X;Y) instead of the conditional '
+                             'CMI I(X;Y|Z) that the estimator actually targets')
     parser.add_argument('--n-jobs', type=int, default=1,
                         help='parallel workers for coverage sims and the '
                              'comparison (deterministic via per-task RNG spawn)')
@@ -133,7 +136,7 @@ def main():
         sims=args.sims,
         compare_repeats=args.compare_repeats,
         seed=args.seed,
-        conditional_truth=args.conditional_truth,
+        conditional_truth=not args.unconditional_truth,
         n_jobs=args.n_jobs,
         compare_mem_gb=args.compare_mem_gb,
     )
