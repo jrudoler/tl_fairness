@@ -19,7 +19,7 @@ import os
 PYTHON = os.environ.get("TLFAIR_PYTHON", ".venv/bin/python")
 RUN = f"PYTHONPATH=. {PYTHON}"
 
-# CPU parallelism for the expensive rules (perm-importance fits and CMI sims).
+# CPU parallelism for the expensive rules (CMI sims).
 # Default is serial (1) so a plain run is unchanged; on a fat node request cores
 # and matching workers, e.g.:
 #   uv run snakemake --cores 64 --config njobs=64 analyze_adult
@@ -29,12 +29,10 @@ NJOBS = int(config.get("njobs", 1))
 # Memory budget (GB) for concurrent knncmi distance arrays in sim_cmi; caps the
 # comparison workers at large n to avoid OOM (~4 GB per worker at n=10000).
 COMPARE_MEM_GB = float(config.get("compare_mem_gb", 16))
-# Permutation feature-importance (Figure 5) is an optional, expensive analysis
-# that is NOT central to the paper, so it is OFF by default. The analyze rules
-# run inference-only unless you opt in by setting a positive permutation count,
-# which also pulls fig5_importance into the default `all` build, e.g.:
-#   uv run snakemake --cores 16 --config njobs=16 importance_samples=1000
-IMPORTANCE_SAMPLES = int(config.get("importance_samples", 0))
+# NOTE: permutation feature-importance was cut from the paper. The analyze rules
+# now run inference-only; the importance code is retained (commented out) in
+# analysis/analyze_*/run.py, analysis/fig5_importance/run.py, and
+# tlfair.metrics.perm_importance for reference, but is no longer wired in here.
 
 FIGURES = [
     "results/figures/fig1_parity.pdf",
@@ -44,9 +42,6 @@ FIGURES = [
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
 ]
-# Only build the feature-importance figure when the importance analysis is on.
-if IMPORTANCE_SAMPLES > 0:
-    FIGURES.append("results/figures/fig5_importance.pdf")
 
 TABLES = [
     "results/data/table1_inference.csv",
@@ -59,8 +54,7 @@ TABLES = [
 # The `paper` target copies each into paper/figs/<name>.pdf and recompiles, so
 # fixing an analysis and running `snakemake paper` flows updated figures into the
 # manuscript. main.tex references these extensionless, so the PDFs take
-# precedence over any same-named legacy PNG. fig5_importance is opt-in, so the
-# paper keeps using the committed importance.png unless importance is rebuilt.
+# precedence over any same-named legacy PNG.
 PAPER_FIG_MAP = {
     "results/figures/fig1_parity.pdf":            "paper/figs/asymptotic.pdf",
     "results/figures/fig2_robust_coverage.pdf":   "paper/figs/robust_coverage.pdf",
@@ -144,7 +138,6 @@ rule analyze_adult:
     threads: NJOBS
     shell:
         "{RUN} analysis/analyze_adult/run.py --input {input} --output {output} "
-        "--importance-samples {IMPORTANCE_SAMPLES} --cache-importance "
         "--n-jobs {threads}"
 
 
@@ -156,7 +149,6 @@ rule analyze_law:
     threads: NJOBS
     shell:
         "{RUN} analysis/analyze_law/run.py --input {input} --output {output} "
-        "--importance-samples {IMPORTANCE_SAMPLES} --cache-importance "
         "--n-jobs {threads}"
 
 
@@ -214,17 +206,6 @@ rule fig6_tmle:
         "results/figures/fig6_tmle_coverage.pdf"
     shell:
         "{RUN} analysis/fig6_tmle/run.py --input {input} --output {output}"
-
-
-rule fig5_importance:
-    input:
-        adult="data/generated/adult_results.pkl",
-        law="data/generated/law_results.pkl",
-    output:
-        "results/figures/fig5_importance.pdf"
-    shell:
-        "{RUN} analysis/fig5_importance/run.py "
-        "--adult-input {input.adult} --law-input {input.law} --output {output}"
 
 
 rule table1_inference:

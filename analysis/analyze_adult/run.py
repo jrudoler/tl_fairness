@@ -76,25 +76,26 @@ def run_experiment(input_path, importance_samples=0, seed=123, cache_importance=
             propensity=SuperLearnerClassifier(random_state=seed),
         )
         results['inference'][title] = inference
-        # Permutation feature-importance is an optional, expensive analysis
-        # (one figure, not central to the paper). importance_samples=0 skips it
-        # so a typical run is inference-only.
-        if importance_samples and importance_samples > 0:
-            results['importance'][title] = perm_importance(
-                X_train=xtr,
-                X_test=xte,
-                y_train=ytr,
-                y_test=yte,
-                group_train=gtr,
-                group_test=gte,
-                outcome=HistGradientBoostingClassifier(random_state=seed),
-                propensity=HistGradientBoostingClassifier(random_state=seed),
-                metric=metric,
-                n_samples=importance_samples,
-                rng=np.random.default_rng(seed),
-                cache=cache_importance,
-                n_jobs=n_jobs,
-            )
+        # Permutation feature-importance was CUT from the paper (dataset-specific,
+        # orthogonal to the targeted-learning contribution, and lacking valid UQ).
+        # The code is retained, commented out, for reference; see
+        # tlfair.metrics.perm_importance and analysis/fig5_importance/run.py.
+        # if importance_samples and importance_samples > 0:
+        #     results['importance'][title] = perm_importance(
+        #         X_train=xtr,
+        #         X_test=xte,
+        #         y_train=ytr,
+        #         y_test=yte,
+        #         group_train=gtr,
+        #         group_test=gte,
+        #         outcome=HistGradientBoostingClassifier(random_state=seed),
+        #         propensity=HistGradientBoostingClassifier(random_state=seed),
+        #         metric=metric,
+        #         n_samples=importance_samples,
+        #         rng=np.random.default_rng(seed),
+        #         cache=cache_importance,
+        #         n_jobs=n_jobs,
+        #     )
         results['timing'][title] = time.perf_counter() - started
         print(f"{title}: {results['timing'][title]:.2f}s", flush=True)
     return results

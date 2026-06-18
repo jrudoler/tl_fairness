@@ -14,9 +14,11 @@ classifiers fit internally on the training split and applied to the test split
 sample variance of the efficient influence function (EIF).
 
 This shared signature is intentional: the estimators are dispatched
-interchangeably -- ``perm_importance`` below and the ``metric_map`` in the
-analyze_* scripts call every metric with the full keyword set -- so each must
-accept all of these parameters even when it does not use them. In particular the
+interchangeably -- the ``metric_map`` in the analyze_* scripts calls every metric
+with the full keyword set -- so each must accept all of these parameters even
+when it does not use them. (The ``perm_importance`` dispatcher below relied on
+the same contract; it has been commented out, but the uniform signature is still
+required by ``metric_map``.) In particular the
 threshold metrics ``parity`` and ``opportunity`` take no ``propensity`` model
 (their decision rule is a hard threshold), and ``cmi`` models the joint via
 ``outcome`` alone, so ``propensity`` is accepted-but-ignored there. Removing it
@@ -197,95 +199,100 @@ def cmi(X_train, X_test, y_train, y_test, group_train, group_test,
 
 # ---------------------------------------------------------------------------
 # Shapley-style permutation feature importance for any of the metrics above.
+#
+# CUT from the paper: feature importance is dataset-specific, orthogonal to the
+# targeted-learning contribution, and carries no valid uncertainty quantification.
+# The implementation is retained below (commented out) for reference only; it is
+# no longer imported or wired into any analysis or the Snakemake workflow.
 # ---------------------------------------------------------------------------
-def _ordered_subset(features, subset):
-    """Columns of ``subset`` in canonical ``features`` order (fit-stable)."""
-    return [f for f in features if f in subset]
-
-
-def perm_importance(X_train, X_test, y_train, y_test, group_train, group_test,
-                    metric, outcome, propensity, n_samples=10, rng=None,
-                    cache=False, n_jobs=1):
-    """Average marginal contribution of each feature to ``metric``.
-
-    Samples ``n_samples`` distinct feature orderings; for each, adds features one
-    at a time and accumulates the metric's change as that feature's contribution.
-    Returns ``(importance, values, orders)``: a ``{feature: contribution}`` dict,
-    the per-ordering metric trajectories, and the sampled orderings.
-    """
-    if rng is None:
-        rng = np.random.default_rng()
-
-    features = list(X_train.columns)
-    max_orders = factorial(len(features))
-    if n_samples > max_orders:
-        raise ValueError(
-            f"Requested {n_samples} unique permutations, but only {max_orders} "
-            f"exist for {len(features)} variables."
-        )
-
-    seen, orders = set(), []
-    while len(orders) < n_samples:
-        order = tuple(rng.choice(features, size=len(features), replace=False))
-        if order not in seen:
-            orders.append(order)
-            seen.add(order)
-
-    importance = {f: 0 for f in features}
-
-    def evaluate(subset):
-        cols = _ordered_subset(features, subset)
-        est, _ = metric(
-            X_train=X_train[cols], X_test=X_test[cols],
-            y_train=y_train, y_test=y_test,
-            group_train=group_train, group_test=group_test,
-            outcome=_clone_estimator(outcome),
-            propensity=_clone_estimator(propensity),
-        )
-        return est
-
-    if n_jobs == 1:
-        # Serial path, optionally memoizing repeated prefix-subsets.
-        values, value_cache = [], {}
-        for order in orders:
-            prev, trajectory = 0, []
-            for k in range(len(order)):
-                subset = frozenset(order[:k + 1])
-                if cache and subset in value_cache:
-                    est = value_cache[subset]
-                else:
-                    est = evaluate(subset)
-                    if cache:
-                        value_cache[subset] = est
-                importance[order[k]] += (est - prev) / n_samples
-                prev = est
-                trajectory.append(est)
-            values.append(trajectory)
-        return importance, values, orders
-
-    # Parallel path. A metric value depends only on the *set* of features and the
-    # estimator's fixed random_state, never on the RNG stream, so each distinct
-    # prefix-subset is evaluated exactly once (in any order) and the cheap
-    # aggregation runs serially. Bit-identical to the serial path.
-    unique_subsets, seen_subsets = [], set()
-    for order in orders:
-        for k in range(len(order)):
-            subset = frozenset(order[:k + 1])
-            if subset not in seen_subsets:
-                seen_subsets.add(subset)
-                unique_subsets.append(subset)
-    value_cache = dict(zip(
-        unique_subsets,
-        Parallel(n_jobs=n_jobs)(delayed(evaluate)(s) for s in unique_subsets),
-    ))
-
-    values = []
-    for order in orders:
-        prev, trajectory = 0, []
-        for k in range(len(order)):
-            est = value_cache[frozenset(order[:k + 1])]
-            importance[order[k]] += (est - prev) / n_samples
-            prev = est
-            trajectory.append(est)
-        values.append(trajectory)
-    return importance, values, orders
+# def _ordered_subset(features, subset):
+#     """Columns of ``subset`` in canonical ``features`` order (fit-stable)."""
+#     return [f for f in features if f in subset]
+#
+#
+# def perm_importance(X_train, X_test, y_train, y_test, group_train, group_test,
+#                     metric, outcome, propensity, n_samples=10, rng=None,
+#                     cache=False, n_jobs=1):
+#     """Average marginal contribution of each feature to ``metric``.
+#
+#     Samples ``n_samples`` distinct feature orderings; for each, adds features one
+#     at a time and accumulates the metric's change as that feature's contribution.
+#     Returns ``(importance, values, orders)``: a ``{feature: contribution}`` dict,
+#     the per-ordering metric trajectories, and the sampled orderings.
+#     """
+#     if rng is None:
+#         rng = np.random.default_rng()
+#
+#     features = list(X_train.columns)
+#     max_orders = factorial(len(features))
+#     if n_samples > max_orders:
+#         raise ValueError(
+#             f"Requested {n_samples} unique permutations, but only {max_orders} "
+#             f"exist for {len(features)} variables."
+#         )
+#
+#     seen, orders = set(), []
+#     while len(orders) < n_samples:
+#         order = tuple(rng.choice(features, size=len(features), replace=False))
+#         if order not in seen:
+#             orders.append(order)
+#             seen.add(order)
+#
+#     importance = {f: 0 for f in features}
+#
+#     def evaluate(subset):
+#         cols = _ordered_subset(features, subset)
+#         est, _ = metric(
+#             X_train=X_train[cols], X_test=X_test[cols],
+#             y_train=y_train, y_test=y_test,
+#             group_train=group_train, group_test=group_test,
+#             outcome=_clone_estimator(outcome),
+#             propensity=_clone_estimator(propensity),
+#         )
+#         return est
+#
+#     if n_jobs == 1:
+#         # Serial path, optionally memoizing repeated prefix-subsets.
+#         values, value_cache = [], {}
+#         for order in orders:
+#             prev, trajectory = 0, []
+#             for k in range(len(order)):
+#                 subset = frozenset(order[:k + 1])
+#                 if cache and subset in value_cache:
+#                     est = value_cache[subset]
+#                 else:
+#                     est = evaluate(subset)
+#                     if cache:
+#                         value_cache[subset] = est
+#                 importance[order[k]] += (est - prev) / n_samples
+#                 prev = est
+#                 trajectory.append(est)
+#             values.append(trajectory)
+#         return importance, values, orders
+#
+#     # Parallel path. A metric value depends only on the *set* of features and the
+#     # estimator's fixed random_state, never on the RNG stream, so each distinct
+#     # prefix-subset is evaluated exactly once (in any order) and the cheap
+#     # aggregation runs serially. Bit-identical to the serial path.
+#     unique_subsets, seen_subsets = [], set()
+#     for order in orders:
+#         for k in range(len(order)):
+#             subset = frozenset(order[:k + 1])
+#             if subset not in seen_subsets:
+#                 seen_subsets.add(subset)
+#                 unique_subsets.append(subset)
+#     value_cache = dict(zip(
+#         unique_subsets,
+#         Parallel(n_jobs=n_jobs)(delayed(evaluate)(s) for s in unique_subsets),
+#     ))
+#
+#     values = []
+#     for order in orders:
+#         prev, trajectory = 0, []
+#         for k in range(len(order)):
+#             est = value_cache[frozenset(order[:k + 1])]
+#             importance[order[k]] += (est - prev) / n_samples
+#             prev = est
+#             trajectory.append(est)
+#         values.append(trajectory)
+#     return importance, values, orders
