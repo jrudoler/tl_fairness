@@ -44,7 +44,7 @@ def run(load_data, csv):
         outcome = (HistGradientBoostingClassifier(random_state=SEED) if key == "cmi"
                    else SuperLearnerClassifier(random_state=SEED))
         t = time.perf_counter()
-        out[key] = fn(xtr=xtr, xte=xte, ytr=ytr, yte=yte, gtr=gtr, gte=gte,
+        out[key] = fn(X_train=xtr, X_test=xte, y_train=ytr, y_test=yte, group_train=gtr, group_test=gte,
                       outcome=outcome,
                       propensity=SuperLearnerClassifier(random_state=SEED))
         est, ci = out[key]

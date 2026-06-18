@@ -28,12 +28,12 @@ def robust_sim_all(n, truth, rng):
     g = (g_probs >= 0.5).astype(np.int8)
 
     common = {
-        'xtr': x[:n, :],
-        'xte': x[n:, :],
-        'ytr': y[:n],
-        'yte': y[n:],
-        'gtr': g[:n],
-        'gte': g[n:],
+        'X_train': x[:n, :],
+        'X_test': x[n:, :],
+        'y_train': y[:n],
+        'y_test': y[n:],
+        'group_train': g[:n],
+        'group_test': g[n:],
     }
     return (
         prob_parity(

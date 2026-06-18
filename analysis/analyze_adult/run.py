@@ -66,12 +66,12 @@ def run_experiment(input_path, importance_samples=0, seed=123, cache_importance=
             outcome = SuperLearnerClassifier(random_state=seed)
 
         inference = metric(
-            xtr=xtr,
-            xte=xte,
-            ytr=ytr,
-            yte=yte,
-            gtr=gtr,
-            gte=gte,
+            X_train=xtr,
+            X_test=xte,
+            y_train=ytr,
+            y_test=yte,
+            group_train=gtr,
+            group_test=gte,
             outcome=outcome,
             propensity=SuperLearnerClassifier(random_state=seed),
         )
@@ -81,12 +81,12 @@ def run_experiment(input_path, importance_samples=0, seed=123, cache_importance=
         # so a typical run is inference-only.
         if importance_samples and importance_samples > 0:
             results['importance'][title] = perm_importance(
-                xtr=xtr,
-                xte=xte,
-                ytr=ytr,
-                yte=yte,
-                gtr=gtr,
-                gte=gte,
+                X_train=xtr,
+                X_test=xte,
+                y_train=ytr,
+                y_test=yte,
+                group_train=gtr,
+                group_test=gte,
                 outcome=HistGradientBoostingClassifier(random_state=seed),
                 propensity=HistGradientBoostingClassifier(random_state=seed),
                 metric=metric,

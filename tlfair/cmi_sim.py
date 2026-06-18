@@ -65,24 +65,24 @@ def cmi_sim(
 
     if sep:
         res = cmi_separate(
-            xtr = z[:n,:],
-            xte = z[n:,:],
-            ytr = x[:n],
-            yte = x[n:],
-            gtr = y[:n],
-            gte = y[n:],
+            X_train = z[:n,:],
+            X_test = z[n:,:],
+            y_train = x[:n],
+            y_test = x[n:],
+            group_train = y[:n],
+            group_test = y[n:],
             outcome = outcome,
             propensity = None,
             random_state = model_seed,
         )
     else:
         res = cmi(
-            xtr = z[:n,:],
-            xte = z[n:,:],
-            ytr = x[:n],
-            yte = x[n:],
-            gtr = y[:n],
-            gte = y[n:],
+            X_train = z[:n,:],
+            X_test = z[n:,:],
+            y_train = x[:n],
+            y_test = x[n:],
+            group_train = y[:n],
+            group_test = y[n:],
             outcome = outcome,
             propensity = None,
         )

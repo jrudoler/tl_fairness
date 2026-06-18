@@ -61,12 +61,12 @@ def setting1():
     n = 3000
     xg, g, y, _ = _setting1_draw(2 * n, rng, product=True)
     return {
-        "xtr": pd.DataFrame(xg[:n]),
-        "xte": pd.DataFrame(xg[n:]),
-        "ytr": y[:n],
-        "yte": y[n:],
-        "gtr": g[:n],
-        "gte": g[n:],
+        "X_train": pd.DataFrame(xg[:n]),
+        "X_test": pd.DataFrame(xg[n:]),
+        "y_train": y[:n],
+        "y_test": y[n:],
+        "group_train": g[:n],
+        "group_test": g[n:],
     }
 
 

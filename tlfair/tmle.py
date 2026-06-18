@@ -184,7 +184,8 @@ def _target_opportunity(d_hat, rho0, rho1, y, g, *, return_diagnostics=False):
 # ---------------------------------------------------------------------------
 # Public single-split TMLE estimators (metric-API compatible).
 # ---------------------------------------------------------------------------
-def prob_parity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
+def prob_parity_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
+                     outcome, propensity=None,
                      *, cross_fit=False, n_folds=5, rng=None, backend="numpy",
                      return_diagnostics=False):
     """TMLE for probabilistic demographic parity.
@@ -199,22 +200,23 @@ def prob_parity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
             "tlfair.tmle_jax / tlfair.tmle_sim)."
         )
     if cross_fit:
-        X = _concat_rows(xtr, xte)
-        y = np.concatenate([np.asarray(ytr), np.asarray(yte)])
-        g = np.concatenate([np.asarray(gtr), np.asarray(gte)])
+        X = _concat_rows(X_train, X_test)
+        y = np.concatenate([np.asarray(y_train), np.asarray(y_test)])
+        g = np.concatenate([np.asarray(group_train), np.asarray(group_test)])
         return cross_fit_tmle(X, y, g, outcome, propensity,
                               metric="prob_parity", n_folds=n_folds, rng=rng,
                               return_diagnostics=return_diagnostics)
 
-    outcome = outcome.fit(xtr, ytr)
-    propensity = propensity.fit(xtr, gtr)
-    d_hat = outcome.predict_proba(xte)[:, 1]
-    pi1 = propensity.predict_proba(xte)[:, 1]
-    return _target_parity(d_hat, pi1, yte, gte,
+    outcome = outcome.fit(X_train, y_train)
+    propensity = propensity.fit(X_train, group_train)
+    d_hat = outcome.predict_proba(X_test)[:, 1]
+    pi1 = propensity.predict_proba(X_test)[:, 1]
+    return _target_parity(d_hat, pi1, y_test, group_test,
                           return_diagnostics=return_diagnostics)
 
 
-def prob_opportunity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None,
+def prob_opportunity_tmle(X_train, X_test, y_train, y_test, group_train,
+                          group_test, outcome, propensity=None,
                           *, cross_fit=False, n_folds=5, rng=None,
                           backend="numpy", return_diagnostics=False):
     """TMLE for probabilistic equal opportunity.
@@ -230,20 +232,20 @@ def prob_opportunity_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None
             "tlfair.tmle_jax / tlfair.tmle_sim)."
         )
     if cross_fit:
-        X = _concat_rows(xtr, xte)
-        y = np.concatenate([np.asarray(ytr), np.asarray(yte)])
-        g = np.concatenate([np.asarray(gtr), np.asarray(gte)])
+        X = _concat_rows(X_train, X_test)
+        y = np.concatenate([np.asarray(y_train), np.asarray(y_test)])
+        g = np.concatenate([np.asarray(group_train), np.asarray(group_test)])
         return cross_fit_tmle(X, y, g, outcome, propensity,
                               metric="prob_opportunity", n_folds=n_folds,
                               rng=rng, return_diagnostics=return_diagnostics)
 
-    yg_tr = _encode_joint(gtr, ytr)
-    outcome = outcome.fit(xtr, ytr)
-    propensity = propensity.fit(xtr, yg_tr)
-    d_hat = outcome.predict_proba(xte)[:, 1]
-    props = _aligned_joint_proba(propensity, xte)
+    yg_tr = _encode_joint(group_train, y_train)
+    outcome = outcome.fit(X_train, y_train)
+    propensity = propensity.fit(X_train, yg_tr)
+    d_hat = outcome.predict_proba(X_test)[:, 1]
+    props = _aligned_joint_proba(propensity, X_test)
     rho0, rho1 = props[:, 2], props[:, 3]
-    return _target_opportunity(d_hat, rho0, rho1, yte, gte,
+    return _target_opportunity(d_hat, rho0, rho1, y_test, group_test,
                                return_diagnostics=return_diagnostics)
 
 
@@ -406,7 +408,8 @@ def _cmi_target(q, lte, *, fluctuate=True, max_iter=50, tol=1e-8):
     return est, eif, info
 
 
-def cmi_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None, *,
+def cmi_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
+             outcome, propensity=None, *,
              fluctuate=True, boundary_ci=False, max_iter=50, tol=1e-8,
              return_diagnostics=False):
     """TMLE-style CMI estimator: positivity-respecting substitution + targeting.
@@ -420,13 +423,13 @@ def cmi_tmle(xtr, xte, ytr, yte, gtr, gte, outcome, propensity=None, *,
         boundary-aware adjustment for the near-independence (CMI~0) regime where
         the sampling distribution is one-sided and symmetric Wald under-covers.
 
-    The ``(xtr, ytr, gtr)`` naming follows the metric API: ``ytr``/``gte`` are the
-    two discrete variables whose conditional MI given ``X`` is estimated.
+    Following the metric API, ``y_*``/``group_*`` are the two discrete variables
+    whose conditional MI given ``X`` is estimated.
     """
-    ltr = _encode_joint(gtr, ytr)
-    model = CalibratedClassifierCV(outcome, cv=3).fit(xtr, ltr)
-    q = _aligned_joint_proba(model, xte)
-    lte = _encode_joint(gte, yte)
+    ltr = _encode_joint(group_train, y_train)
+    model = CalibratedClassifierCV(outcome, cv=3).fit(X_train, ltr)
+    q = _aligned_joint_proba(model, X_test)
+    lte = _encode_joint(group_test, y_test)
 
     est, eif, info = _cmi_target(q, lte, fluctuate=fluctuate,
                                  max_iter=max_iter, tol=tol)
