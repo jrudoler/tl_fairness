@@ -100,6 +100,7 @@ def _positive_rate(predict, X_test, mask, weight_total):
 def parity(X_train, X_test, y_train, y_test, group_train, group_test,
            outcome, propensity=None):
     """Demographic parity, Ψ = E[D_c(X)|G=1] − E[D_c(X)|G=0] (paper Eq. 5)."""
+    # unused (uniform dispatch): y_test, group_train, propensity
     outcome = outcome.fit(X_train, y_train)
     group_test = np.asarray(group_test)
     phi = np.hstack([
@@ -113,6 +114,7 @@ def parity(X_train, X_test, y_train, y_test, group_train, group_test,
 def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
                 outcome, propensity=None):
     """Equal opportunity, Ψ = E[D_c(X)|Y=1,G=1] − E[D_c(X)|Y=1,G=0] (paper Eq. 14)."""
+    # unused (uniform dispatch): group_train, propensity
     outcome = outcome.fit(X_train, y_train)
     y_test = np.asarray(y_test)
     group_test = np.asarray(group_test)
@@ -181,6 +183,7 @@ def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
 def cmi(X_train, X_test, y_train, y_test, group_train, group_test,
         outcome, propensity=None):
     """CMI via a single calibrated 4-class model of the joint p(G,Y|X)."""
+    # unused (uniform dispatch): propensity
     joint_model = CalibratedClassifierCV(outcome, cv=3).fit(
         X_train, _encode_joint(group_train, y_train))
     proba = joint_model.predict_proba(X_test)        # P(G,Y | X), columns 0..3
@@ -201,6 +204,7 @@ def cmi_separate(X_train, X_test, y_train, y_test, group_train, group_test,
     denominator uses independent calibrated logistic models. ``random_state``
     seeds liblinear's coordinate-descent shuffle for reproducibility.
     """
+    # unused (uniform dispatch): propensity
     joint_model = CalibratedClassifierCV(outcome, cv=3).fit(
         X_train, _encode_joint(group_train, y_train))
     y_model = CalibratedClassifierCV(
