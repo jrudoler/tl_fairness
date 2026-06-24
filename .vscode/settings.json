@@ -1,0 +1,14 @@
+{
+  // Build the paper with the pdflatex-based `latexmk` tool that is defined in
+  // the remote Machine settings. This overrides the `latexmk-xelatex` recipe
+  // from the (client-side) User settings, which referenced an undefined tool
+  // and produced "Invalid toolchain". pdflatex is the correct engine here:
+  // the manuscript uses cmbright (a Type1 font) and the Snakefile `paper`
+  // rule builds with `latexmk -pdf`.
+  "latex-workshop.latex.recipes": [
+    { "name": "latexmk", "tools": ["latexmk"] }
+  ],
+  "latex-workshop.latex.recipe.default": "latexmk",
+  // Keep build artifacts next to paper/main.tex (where they already live).
+  "latex-workshop.latex.outDir": "%DIR%"
+}
