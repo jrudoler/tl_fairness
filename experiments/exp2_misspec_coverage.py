@@ -5,13 +5,20 @@ logistic model is misspecified for both nuisances (paper Figure 2). Two targets,
 reported in two panels because the methods answer different questions:
 
 Panel A -- probabilistic parity Ψ = E[D(X)|G=1] - E[D(X)|G=0] (the data-fairness
-target, truth = ``setting3_truth``):
+target, truth = ``setting3_truth``). All four methods target the SAME estimand;
+the three GLM-standardization (g-computation) variants isolate the two ways a
+model-based parity estimate can fail:
   * TL one-step, flexible nuisances (gradient boosting): double-robust, stays
     calibrated under misspecification.
-  * Naive fixed-model + CLT, flexible model: ~unbiased point estimate but the
-    CLT interval ignores P(Y|X) uncertainty -> under-covers.
-  * Naive fixed-model + CLT, linear model: misspecified -> biased *and* the
-    too-narrow interval under-covers badly.
+  * Std + CLT (correct model): standardize D̂(X)=σ(x²β) by group; correct
+    functional form but the CLT interval treats D̂ as fixed, missing the
+    coefficient-estimation variance -> under-covers. (Variance failure.)
+  * Std + bootstrap (correct model): same estimate, percentile-bootstrap CI that
+    captures both variance sources -> covers. So the CLT failure is purely about
+    variance estimation, not the model.
+  * Std + bootstrap (linear model): misspecified D̂ + proper inference -> still
+    fails, now from bias. (Bias failure.) Only TL handles both at once, because
+    bootstrapping a wrong model cannot fix bias and double robustness can.
 
 Panel B -- GLM "adjusted group effect" (the average marginal effect of G with X
 held fixed; what regression-coefficient practice reports). Here G affects Y only
@@ -43,15 +50,23 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
 
 from tlfair.metrics import prob_parity
 from tlfair.plotting import configure_matplotlib, FULL_WIDTH
 from tlfair.simulations import setting3_draw, setting3_truth
-from experiments.baselines import naive_fixed_model_parity, glm_ame_parity
+from experiments.baselines import glm_ame_parity, glm_standardization_parity
 
-# (method label, target) in display order.
-PARITY_METHODS = ["TL one-step (flexible)", "Naive+CLT (flexible)", "Naive+CLT (linear)"]
+# (method label, target) in display order. The parity panel isolates the two
+# failure modes of a GLM-based parity estimate (standardization / g-computation):
+#   * Std + CLT (correct):       correct model, but the CLT interval misses the
+#                                coefficient-estimation variance -> under-covers.
+#   * Std + bootstrap (correct): correct model + proper (bootstrap) inference ->
+#                                covers. (So the CLT failure is a variance issue.)
+#   * Std + bootstrap (linear):  misspecified model + proper inference -> still
+#                                fails, now from bias. Only TL (double robust)
+#                                handles both at once.
+PARITY_METHODS = ["TL one-step (flexible)", "Std + CLT (correct)",
+                  "Std + bootstrap (correct)", "Std + bootstrap (linear)"]
 # GLM specs: (label, feature_set, cov_type). "correct" -> x**2, "linear" -> x.
 GLM_SPECS = [
     ("GLM correct (robust)", "correct", "HC0"),
@@ -61,7 +76,7 @@ GLM_SPECS = [
 GLM_METHODS = [label for label, _, _ in GLM_SPECS]
 
 
-def _one_rep(n, rng, bernoulli=False):
+def _one_rep(n, rng, bernoulli=False, n_boot=200):
     """One Setting-3 replicate; returns {method: (est, lo, hi)}."""
     h = n // 2
     # Match the manuscript: both Y and G are Bernoulli (the latter also restores
@@ -73,7 +88,7 @@ def _one_rep(n, rng, bernoulli=False):
     seed = int(rng.integers(0, 2**31 - 1))  # reproducible GB fits
 
     out = {}
-    # --- Panel A: probabilistic parity ---
+    # --- Panel A: probabilistic parity (all four target the parity gap) ---
     est, (lo, hi) = prob_parity(
         X_train=Xtr, X_test=Xte, y_train=ytr, y_test=yte,
         group_train=gtr, group_test=gte,
@@ -82,13 +97,16 @@ def _one_rep(n, rng, bernoulli=False):
     )
     out["TL one-step (flexible)"] = (est, lo, hi)
 
-    est, (lo, hi) = naive_fixed_model_parity(
-        GradientBoostingClassifier(random_state=seed), Xtr, ytr, Xte, gte)
-    out["Naive+CLT (flexible)"] = (est, lo, hi)
-
-    est, (lo, hi) = naive_fixed_model_parity(
-        LogisticRegression(max_iter=500), Xtr, ytr, Xte, gte)
-    out["Naive+CLT (linear)"] = (est, lo, hi)
+    # GLM standardization (g-computation) of the parity gap, correct (x**2) model:
+    est, (lo, hi) = glm_standardization_parity(x ** 2, g, y, ci="clt")
+    out["Std + CLT (correct)"] = (est, lo, hi)
+    est, (lo, hi) = glm_standardization_parity(
+        x ** 2, g, y, ci="bootstrap", n_boot=n_boot, rng=rng)
+    out["Std + bootstrap (correct)"] = (est, lo, hi)
+    # ...and a misspecified (linear) model, also bootstrapped:
+    est, (lo, hi) = glm_standardization_parity(
+        x, g, y, ci="bootstrap", n_boot=n_boot, rng=rng)
+    out["Std + bootstrap (linear)"] = (est, lo, hi)
 
     # --- Panel B: GLM adjusted group effect (uses full sample) ---
     glm_feats = {"correct": x ** 2, "linear": x}
@@ -115,7 +133,7 @@ def _aggregate(results, method, target, truth, n):
     }
 
 
-def run(sizes, reps, seed, n_jobs, truth_n, bernoulli=False):
+def run(sizes, reps, seed, n_jobs, truth_n, bernoulli=False, n_boot=200):
     rng = np.random.default_rng(seed)
     parity_truth = setting3_truth(truth_n, rng, bernoulli_group=bernoulli)  # group law must match data
     ace_truth = 0.0  # G affects Y only through X -> adjusted effect is exactly 0
@@ -127,7 +145,8 @@ def run(sizes, reps, seed, n_jobs, truth_n, bernoulli=False):
     rows = []
     for n in sizes:
         children = rng.spawn(reps)
-        results = Parallel(n_jobs=n_jobs)(delayed(_one_rep)(n, c, bernoulli) for c in children)
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(_one_rep)(n, c, bernoulli, n_boot) for c in children)
         for m in PARITY_METHODS:
             rows.append(_aggregate(results, m, "parity", parity_truth, n))
         for m in GLM_METHODS:
@@ -170,6 +189,8 @@ def main():
     parser.add_argument("--seed", type=int, default=123)
     parser.add_argument("--n-jobs", type=int, default=1)
     parser.add_argument("--truth-n", type=int, default=10_000_000)
+    parser.add_argument("--n-boot", type=int, default=200,
+                        help="bootstrap resamples for the GLM-standardization CI.")
     parser.add_argument("--deterministic", action="store_true",
                         help="use the deterministic Bayes-decision outcome instead of "
                              "the default Bernoulli draw (Bernoulli is canonical; it "
@@ -181,7 +202,7 @@ def main():
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     df = run(args.sizes, args.reps, args.seed, args.n_jobs, args.truth_n,
-             bernoulli=not args.deterministic)
+             bernoulli=not args.deterministic, n_boot=args.n_boot)
     df.to_csv(args.output, index=False)
     print(f"Wrote {args.output}", flush=True)
     print(df.to_string(index=False), flush=True)

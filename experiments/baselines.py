@@ -137,6 +137,61 @@ def glm_ame_parity(X, g, y, z=_Z, ridge=1e-8, cov_type="robust"):
     return ame, (ame - hw, ame + hw)
 
 
+def glm_standardization_parity(X, g, y, *, ci="bootstrap", n_boot=200, rng=None, z=_Z):
+    """Demographic parity gap via GLM standardization (g-computation).
+
+    Fits D_hat(x) = sigma(x'beta) by logistic regression of y on X -- the group g
+    is NOT a regressor -- then standardizes over the observed group-conditional X:
+
+        Psi_hat = mean_{i: g_i=1} D_hat(x_i) - mean_{i: g_i=0} D_hat(x_i).
+
+    This targets demographic parity E[D(X)|G=1] - E[D(X)|G=0], the SAME estimand as
+    the TL one-step (unlike ``glm_ame_parity``, whose AME targets the X-adjusted
+    group effect). ``ci`` selects the interval:
+
+      * "bootstrap" -- nonparametric percentile bootstrap over the joint (X,g,y).
+        Captures BOTH the model-estimation and the within-group sampling variance,
+        so it is valid under correct specification -- but it is not doubly robust,
+        so it still fails (bias) when the outcome model is misspecified.
+      * "clt"       -- the two-sample-mean interval treating D_hat as fixed (the
+        variance the naive plug-in uses); it misses the beta-estimation term and
+        therefore under-covers even when the model is correct.
+    """
+    X = np.asarray(X, dtype=float)
+    if X.ndim == 1:
+        X = X[:, None]
+    g = np.asarray(g)
+    y = np.asarray(y)
+    n = len(y)
+    if rng is None:
+        rng = np.random.default_rng()
+
+    def _gap(Xi, gi, yi):
+        clf = LogisticRegression(C=np.inf, max_iter=1000).fit(Xi, yi)  # D_hat, no group
+        d = clf.predict_proba(Xi)[:, 1]
+        m1, m0 = gi == 1, gi == 0
+        if not (m1.any() and m0.any()):
+            return np.nan, d, m1, m0
+        return d[m1].mean() - d[m0].mean(), d, m1, m0
+
+    est, d, m1, m0 = _gap(X, g, y)
+    est = float(est)
+
+    if ci == "clt":
+        var = d[m1].var(ddof=1) / m1.sum() + d[m0].var(ddof=1) / m0.sum()
+        hw = z * np.sqrt(var)
+        return est, (est - hw, est + hw)
+    if ci == "bootstrap":
+        boots = np.empty(n_boot)
+        for b in range(n_boot):
+            idx = rng.integers(0, n, size=n)
+            boots[b] = _gap(X[idx], g[idx], y[idx])[0]
+        boots = boots[np.isfinite(boots)]
+        lo, hi = np.quantile(boots, [0.025, 0.975])
+        return est, (float(lo), float(hi))
+    raise ValueError(f"unknown ci: {ci!r}")
+
+
 def glm_logodds_coef(X, g, y, z=_Z, cov_type="robust"):
     """Raw log-odds coefficient on the group + its Wald CI.
 
