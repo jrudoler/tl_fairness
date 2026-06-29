@@ -32,6 +32,7 @@ def run_fig1(truth, rng, lo=1.5, hi=4.0, step=0.01):
     for size in sizes:
         _, est, std, _, _ = coverage_sim_parity(
             ground_truth=truth, parity='threshold', n_sim=1, n_samples=int(size), rng=rng,
+            bernoulli=True,
         )
         rows.append({'sample_size': int(size), 'estimate': float(est[0]),
                      'std': float(std[0]), 'truth': truth})
@@ -46,7 +47,8 @@ def run_fig3(rng, sizes, reps):
     for size in sizes:
         tl_vars, naive_vars = [], []
         for _ in range(reps):
-            _, var, _, naive_var = parity_sim(n=int(size), parity='prob', rng=rng)
+            _, var, _, naive_var = parity_sim(n=int(size), parity='prob', rng=rng,
+                                              bernoulli=True)
             tl_vars.append(var)
             naive_vars.append(naive_var)
         rows.append({'sample_size': int(size),

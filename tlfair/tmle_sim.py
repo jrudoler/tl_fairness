@@ -34,12 +34,12 @@ def _logreg():
     return LogisticRegression(solver="liblinear")
 
 
-def _draw_replicates(n_samples, reps, rng, proportion=0.5):
+def _draw_replicates(n_samples, reps, rng, proportion=0.5, bernoulli=False):
     """Stack ``reps`` Setting-1 draws of ``n_samples`` rows into (R,n,d) tensors."""
     Xs, Gs, Ys = [], [], []
     for _ in range(reps):
         xg, g, y, _ = _setting1_draw(n_samples, rng, proportion=proportion,
-                                     product=True)
+                                     product=True, bernoulli=bernoulli)
         Xs.append(xg)
         Gs.append(g)
         Ys.append(y)
@@ -76,10 +76,12 @@ def _rows_from_estimates(estimator, sample_size, estimates, lowers, uppers, trut
 
 def coverage_sim_tmle(truth, *, estimators=("one_step", "tmle", "cv_tmle"),
                       sample_sizes=(250, 500, 1000, 2500), n_sim=100, n_folds=5,
-                      backend="numpy", rng=None, proportion=0.5):
+                      backend="numpy", rng=None, proportion=0.5, bernoulli=False):
     """Run the coverage comparison and return a tidy DataFrame.
 
     One row per (estimator, sample_size) with coverage / bias / variance.
+    ``bernoulli`` passes through to the Setting-1 draws (Bernoulli outcome vs.
+    Bayes decision); the truth is unchanged either way.
     """
     if rng is None:
         rng = np.random.default_rng(123)
@@ -97,7 +99,8 @@ def coverage_sim_tmle(truth, *, estimators=("one_step", "tmle", "cv_tmle"),
         started = time.perf_counter()
         n_tr = n_samples // 2
         # All estimators share the same draws for a given size.
-        X, G, Y = _draw_replicates(n_samples, n_sim, rng)
+        X, G, Y = _draw_replicates(n_samples, n_sim, rng, proportion=proportion,
+                                   bernoulli=bernoulli)
 
         acc = {e: {"est": [], "lo": [], "hi": []} for e in estimators}
 

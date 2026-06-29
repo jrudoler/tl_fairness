@@ -11,21 +11,12 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 
 from tlfair.metrics import prob_parity
+from tlfair.simulations import setting3_draw, setting3_truth
 
 
 def robust_sim_all(n, truth, rng):
     n = n // 2
-    d = 5
-    x = rng.normal(size=(2*n, d))
-    xt = x**2
-
-    beta = np.array([4, 2, 1, -3, -4])
-    y_probs = 1/(1+np.exp(-xt@beta))
-    y = (y_probs >= 0.5).astype(np.int8)
-
-    bg = np.array([1, 1, -1, -2, 1])
-    g_probs = 1/(1+np.exp(-xt@bg))
-    g = (g_probs >= 0.5).astype(np.int8)
+    x, g, y, _ = setting3_draw(2 * n, rng, bernoulli=True, bernoulli_group=True)
 
     common = {
         'X_train': x[:n, :],
@@ -60,15 +51,7 @@ def robust_sim_all(n, truth, rng):
 
 
 def robust_truth(n, rng):
-    d = 5
-    x = rng.normal(size=(n, d))
-    xt = x**2
-    beta = np.array([4, 2, 1, -3, -4])
-    y_probs = 1/(1+np.exp(-xt@beta))
-    bg = np.array([1, 1, -1, -2, 1])
-    g_probs = 1/(1+np.exp(-xt@bg))
-    g = (g_probs >= 0.5).astype(np.int8)
-    return np.mean(y_probs[g == 1]) - np.mean(y_probs[g == 0])
+    return setting3_truth(n, rng, bernoulli_group=True)
 
 
 def robust_exp(sample_sizes, reps, seed=123, truth_n=10000000):

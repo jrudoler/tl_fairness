@@ -14,6 +14,10 @@ outputs/*
 /results/figures/*
 !**/.gitkeep
 
+# Exploratory baseline-coverage experiment outputs (scratch; regenerable)
+/experiments/out/*
+!/experiments/out/.gitkeep
+
 # Legacy root-level outputs from the pre-Snakemake layout
 /robust_res.csv
 /cmi_coverage.csv

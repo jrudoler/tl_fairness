@@ -36,6 +36,7 @@ def main():
         n_folds=args.n_folds,
         backend=args.backend,
         rng=np.random.default_rng(args.seed),
+        bernoulli=True,  # match the manuscript: Y ~ Bernoulli(P(Y=1|X))
     )
     res.to_csv(args.output, index=False)
     print(f"Wrote {args.output}", flush=True)
