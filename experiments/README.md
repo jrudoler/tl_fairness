@@ -59,8 +59,8 @@ tests — is bit-identical to before.
 - **`audit_glm.py`** — cross-checks the hand-rolled GLM (coefficients, model SE,
   HC0 SE, discrete AME) against `statsmodels` (matches to ~1e-5), and shows that
   the noiseless DGP makes the *well-specified* feature set perfectly separable,
-  so the MLE diverges (a degenerate fit). Requires `statsmodels`
-  (`uv pip install statsmodels`).
+  so the MLE diverges (a degenerate fit). Requires the `experiments` extra
+  (`uv sync --extra experiments`).
 
 - **Exp 1 — Setting 1, probabilistic parity (well-specified, parametric).** The
   regime most favourable to the straw man. The naive CLT is ~calibrated here and

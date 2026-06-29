@@ -26,6 +26,11 @@ jax = ["jax>=0.4.30"]
 jax-cuda = ["jax[cuda12]>=0.4.30"]
 # Development / test tooling.
 dev = ["pytest>=8"]
+# Exploratory baseline-coverage experiments (experiments/): statsmodels backs the
+# GLM cross-check in audit_glm.py. Not needed for the core pipeline.
+experiments = [
+    "statsmodels>=0.14.6",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
