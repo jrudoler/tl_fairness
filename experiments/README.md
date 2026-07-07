@@ -18,18 +18,22 @@ on known-truth DGPs.
 PYTHONPATH=. .venv/bin/python experiments/exp1_parity_coverage.py --sizes 250 500 --reps 20 --n-jobs 4
 PYTHONPATH=. .venv/bin/python experiments/exp2_misspec_coverage.py --sizes 250 500 --reps 20 --n-jobs 4
 PYTHONPATH=. .venv/bin/python experiments/exp3_cmi_permutation.py --weights 0 1 --sizes 1000 --reps 20 --n-perm 100 --n-jobs 4
+PYTHONPATH=. .venv/bin/python experiments/exp4_feature_selection.py --p 20 --n-confounders 3 --n-outcome 5 --sizes 1000 --reps 20 --n-jobs 4
+PYTHONPATH=. .venv/bin/python experiments/exp5_trainsize_coverage.py --train-sizes 250 1000 --test-size 1000 --reps 20 --n-jobs 4
 
 # paper-scale (minutes on a multi-core node)
 PYTHONPATH=. .venv/bin/python experiments/exp1_parity_coverage.py --reps 500 --n-jobs 24
 PYTHONPATH=. .venv/bin/python experiments/exp2_misspec_coverage.py --reps 300 --n-jobs 24
 PYTHONPATH=. .venv/bin/python experiments/exp3_cmi_permutation.py --reps 200 --n-perm 200 --n-jobs 24
+PYTHONPATH=. .venv/bin/python experiments/exp4_feature_selection.py --reps 200 --signal 1.5 --sizes 2500 5000 --n-jobs 24
+PYTHONPATH=. .venv/bin/python experiments/exp5_trainsize_coverage.py --reps 300 --n-jobs 24
 ```
 
 Each writes a tidy CSV + a PNG to `experiments/out/` and prints a summary table.
 Seeding uses `np.random.default_rng(seed)` + `rng.spawn(reps)`, so results are
 **invariant to `--n-jobs`**.
 
-### Bernoulli outcomes are canonical; `--deterministic` opts out (Exp 1 & 2)
+### Bernoulli outcomes are canonical; `--deterministic` opts out (Exp 1, 2 & 5)
 
 The original Settings 1/3 realised the outcome as the deterministic Bayes
 decision `y = 1{y_probs > 0.5}`, which makes the data noiseless: `Var(Y|X)=0` and
@@ -85,9 +89,53 @@ tests — is bit-identical to before.
   permutation only conditions approximately (coarse bins) and partly recovers
   calibration. Power rises with the dependence strength c.
 
+- **Exp 4 — feature-set selection decides the data-fairness verdict.** A
+  high-dimensional, random-coefficient DGP with genuine confounders `Z` (a common
+  cause of both `G` and `Y`, so `Y ⊥ G | Z` holds *exactly*) plus outcome-only
+  predictors and noise. `G` and `Y` are marginally dependent through the shared
+  `Z` (a nonzero marginal `MI(Y;G)` is printed). Sweeping how many confounders are
+  in the conditioning set — outcome predictors + noise always included — the TL CMI
+  estimate falls monotonically to ~0 and its one-sided Wald test stops flagging:
+  with **all** of `Z` the setup **passes** (flag rate ≈ α, calibrated), but drop
+  the confounders and it is **flagged** as unfair even though you adjusted for many
+  *predictive* features. Point: predictive power is not fairness sufficiency — the
+  minimal sufficient adjustment set is the confounders, and the fairness verdict is
+  only as good as the conditioning set. Complement to Exp 3 (which fixed the
+  feature set and varied the method; Exp 4 fixes the TL CMI method and varies the
+  feature set). The confounded DGP is defined inline in the script; promote it to
+  `tlfair/simulations.py` if the story graduates into the pipeline. Tune `--signal`
+  / `--reps` / `--sizes` to sharpen the with-`Z`/without-`Z` flip.
+
+- **Exp 5 — Setting 3, training size vs. the naive baseline (the "just use more
+  data" objection).** Decouples the nuisance model's *training* size from a
+  *fixed* evaluation set and sweeps `--train-sizes`. The naive fixed-model CLT
+  treats `D_hat` as truth, so its error has a sampling part (the CLT captures it)
+  and a model-error part (it does not). Four curves map how that model-error bias
+  behaves as training data grows:
+  - **Naive, flexible + default GB** — coverage improves (≈0.24 → ≈0.50) then
+    plateaus below nominal. This is *not* an irreducible floor: the default booster
+    (lr=0.1 × 100 rounds) is simply **underfit**. At fixed `n_train` it is cured by
+    more *rounds*, not more *data* — raising `n_estimators` to 1000 at `n_train`=5000
+    drops the bias from ≈−0.030 to ≈−0.003.
+  - **Naive, flexible + tuned GB** (`TUNED_GB`) — with a better-converged learner
+    the bias shrinks with data and coverage **climbs toward nominal**. The
+    objection's real grain of truth: with sample-splitting and a consistent, tuned
+    nuisance the CLT *is* asymptotically valid for the parity point. The catch: you
+    can't tell from the interval whether you're there — the default-GB CI looks
+    just as confident at 0.5 coverage as this one at 0.95.
+  - **Naive, linear (misspecified)** — the one structural failure: `D_hat` → wrong
+    limit, bias frozen at ≈ the full parity gap; neither data nor capacity moves it,
+    coverage stays 0.
+  - **TL one-step, *same* default GB** — the EIF correction debiases that underfit
+    fit automatically; nominal by `n_train`≈250 and calibrated/conservative after.
+  Point: the naive CI *can* be made valid (flexible + tuned + enough data + sample
+  splitting), but its validity is contingent on nuisance quality you cannot verify
+  from the interval; TL delivers validity from the same imperfect nuisance for free.
+
 ## Reused from `tlfair/`
 
 Setting-1 DGP/truth (`_setting1_draw`, `parity_ground_truth`), Setting-3 DGP/truth
 (`setting3_draw`, `setting3_truth` — lifted here from `analysis/sim_robust/run.py`),
 the TL estimators (`metrics.prob_parity`, `metrics.cmi`), the CMI DGP, and the
-plotting defaults (`plotting.configure_matplotlib`).
+plotting defaults (`plotting.configure_matplotlib`). Exp 4 additionally reuses
+`baselines._sigmoid` (loky-safe `expit`) and `baselines._binary_mi`.
