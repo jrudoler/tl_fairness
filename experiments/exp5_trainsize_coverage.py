@@ -173,16 +173,29 @@ def plot(df, output):
     import matplotlib.pyplot as plt
     import seaborn as sns
     configure_matplotlib()
-    test_size = int(df["test_size"].iloc[0])
-    fig, ax = plt.subplots(figsize=(FULL_WIDTH * 0.55, FULL_WIDTH * 0.42))
+    xlabel = "Nuisance-model training size"
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
+    # Left: 95% CI coverage vs training size -- the headline. TL sits at nominal;
+    # the naive curves reveal whether "more data" rescues the fixed-model CLT.
+    ax = axes[0]
     sns.lineplot(data=df, x="train_size", y="coverage", hue="method",
                  marker="o", ax=ax)
     ax.axhline(0.95, ls="--", color="grey", lw=1)
     ax.set_xscale("log")
-    ax.set_xlabel(f"Nuisance-model training size (eval set fixed at n={test_size})")
+    ax.set_xlabel(xlabel)
     ax.set_ylabel("95% CI coverage")
     ax.set_ylim(0, 1.02)
     ax.legend(title=None, fontsize=7)
+    # Right: bias (mean estimate - truth) -- the mechanism behind the coverage
+    # story: the linear bias is frozen, default GB plateaus, tuned GB shrinks to 0,
+    # and TL is debiased by the EIF correction regardless of the nuisance's bias.
+    ax = axes[1]
+    sns.lineplot(data=df, x="train_size", y="bias", hue="method",
+                 marker="o", ax=ax, legend=False)
+    ax.axhline(0.0, ls="--", color="grey", lw=1)
+    ax.set_xscale("log")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(r"Bias  $\overline{\hat{\Psi}} - \Psi$")
     fig.tight_layout()
     fig.savefig(output)
     print(f"Wrote {output}", flush=True)

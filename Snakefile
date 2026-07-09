@@ -42,6 +42,8 @@ FIGURES = [
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
+    "results/figures/fig7_trainsize_coverage.pdf",
+    "results/figures/fig8_conditioning_set.pdf",
 ]
 
 TABLES = [
@@ -63,6 +65,8 @@ PAPER_FIG_MAP = {
     "results/figures/fig4_cmi_error.pdf":         "paper/figs/cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf":      "paper/figs/cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
+    "results/figures/fig7_trainsize_coverage.pdf": "paper/figs/trainsize_coverage.pdf",
+    "results/figures/fig8_conditioning_set.pdf":  "paper/figs/conditioning_set.pdf",
 }
 
 
@@ -129,6 +133,23 @@ rule sim_cmi:
         "--compare-output {output.compare} "
         "--truth-output {output.truth} "
         "--timing-output {output.timing}"
+
+
+rule sim_trainsize:
+    output:
+        protected("data/generated/trainsize_coverage.csv")
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_trainsize/run.py --n-jobs {threads} --output {output}"
+
+
+rule sim_condset:
+    output:
+        protected("data/generated/condset.csv")
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_condset/run.py --n-jobs {threads} "
+        "--signal 1.5 --sizes 2500 5000 --output {output}"
 
 
 rule analyze_adult:
@@ -207,6 +228,24 @@ rule fig6_tmle:
         "results/figures/fig6_tmle_coverage.pdf"
     shell:
         "{RUN} analysis/fig6_tmle/run.py --input {input} --output {output}"
+
+
+rule fig7_trainsize:
+    input:
+        "data/generated/trainsize_coverage.csv"
+    output:
+        "results/figures/fig7_trainsize_coverage.pdf"
+    shell:
+        "{RUN} analysis/fig_trainsize/run.py --input {input} --output {output}"
+
+
+rule fig8_condset:
+    input:
+        "data/generated/condset.csv"
+    output:
+        "results/figures/fig8_conditioning_set.pdf"
+    shell:
+        "{RUN} analysis/fig_condset/run.py --input {input} --output {output}"
 
 
 rule table1_inference:
