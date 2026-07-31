@@ -47,21 +47,57 @@ the reader for every result Sections 3–5 report.
 Each row is one logical commit in the `paper` submodule unless noted. Parent-repo pointer
 bumps are interleaved rather than left to the end.
 
-| # | commit | fixes |
-| --- | --- | --- |
-| 1 | *(parent)* add `docs/` with critique and this plan | — |
-| 2 | revert corrupted line; keep latexindent reindent | C6 |
-| 3 | fix appendix math errors and display typography | D2, D3, D4, D5 |
-| 4 | drop orphaned mediation appendix and dead placeholders | C4, C5 |
-| 5 | adopt one estimand-notation convention | D1 |
-| 6 | add §2.1 Setup | A7, A8, B3, B6, C1, C2, D6 |
-| 7 | restructure §2.2 with DP and EO in parallel | A2, A3, B1, B2 |
-| 8 | promote DR to §2.3 with product-bias framing | A6, B3, B8 |
-| 9 | fix CMI subsection | A1, B4, B5, D7, D8 |
-| 10 | add §2.5 summary-of-estimands table | A4, B7 |
-| 11 | resolve the `c` symbol collision | C3 |
-| 12 | label-bias caveat, margin condition, intro fixes | A5, C6 |
-| 13 | *(parent)* final pointer bump after build verification | — |
+All landed on branch `section2-revision` in both repos.
+
+| # | commit | fixes | sha |
+| --- | --- | --- | --- |
+| 1 | *(parent)* add `docs/` with critique and this plan | — | `3e62e8a` |
+| 2 | reindent CMI derivation displays; discard word-break regression | C6 | `38e7b50` |
+| 3 | fix equal-opportunity derivations and display typography | D2, D3, D4, D5 | `0344183` |
+| 4 | stop shipping mediation appendix; drop dead placeholders | C4, C5 | `1a3b30a` |
+| — | *(parent)* pointer bump | — | `51f91db` |
+| 5 | add §2.1 Setup | A7, A8, B3, B6, C1, C2, D6 | `7b3bdb9` |
+| 6 | parity and EO in parallel; margin condition | A2, A3, B1, B2 | `dcc7147` |
+| 7 | recast DR as product-bias; promote to §2.3 | A6, B3, B8 | `96b1894` |
+| 8 | correct CMI/parity relationship and boundary caveats | A1, B4, B5, D7, D8 | `847f0b7` |
+| — | *(parent)* pointer bump | — | `cc76524` |
+| 9 | add §2.5 summary-of-estimands table | A4, B7 | `8a43430` |
+| 10 | rename CMI coupling weight to `\kappa` | C3 | `f956630` |
+| 11 | label-bias caveat, margin condition, data-fairness definition | A5, C6 | `8ccff6e` |
+| 12 | derive the parity and EO influence functions | D1, B6 | `8afe6a4` |
+
+## Resulting structure
+
+```
+2    Inference for Data Fairness            p. 2
+2.1    Setup                                p. 3
+       Proposition 1 (asymptotic linearity) p. 4
+2.2    Fairness Metrics                     p. 5
+2.2.1    Thresholded Metrics                p. 5
+2.2.2    Probabilistic Metrics              p. 6
+2.3    Double Robustness                    p. 7
+2.4    Conditional Mutual Information       p. 7
+2.5    Summary of Estimands (Table 1)       p. 9
+```
+
+Section 2 grew from ~3.5 pages to ~7. Most of the growth is the Setup subsection and
+the two additions that close logic gaps (the margin condition and the CMI non-nesting
+argument); the ATE material was cut, not expanded.
+
+## Discovered during the revision, beyond the original critique
+
+- **The `associati / on` corruption was never committed.** It existed only in the working
+  tree, introduced alongside a latexindent run. The committed text was correct, so the
+  fix was to discard the change rather than repair the line.
+- **Appendix D was credited with derivations it did not contain.** It listed four
+  equations with no argument, and the probabilistic *demographic parity* EIF was derived
+  nowhere in the paper. All four are now derived from a single ratio rule.
+- **The two commented-out causal paragraphs in `discussion.tex` cited `\cite{causal}` and
+  `\cite{shroud}`, neither of which exists in `refs.bib`** (21 entries). They could not
+  have compiled if uncommented — further evidence they were dead rather than pending.
+- **`tlfair/metrics.py` docstrings cited paper equation numbers** ("paper Eq. 5",
+  "Eqs. 8, 10"), which the renumbering invalidated. They now cite section numbers, which
+  are stable under equation insertion.
 
 ## Decision: the `c` collision is fixed in the paper only
 
