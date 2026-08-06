@@ -156,7 +156,9 @@ def prob_parity(X_train, X_test, y_train, y_test, group_train, group_test,
 
 def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
                      outcome, propensity=None):
-    """Probabilistic equal opportunity (paper §2.2.1, derived in Appendix D).
+    """Probabilistic equal opportunity (paper §2.2.1).
+
+    Derived in the paper appendix "Derivations for Parity and Equal Opportunity".
 
     The propensity model estimates the joint stratum p(G,Y|X) (4 classes); the
     (G0,Y1) and (G1,Y1) columns (2 and 3) supply the clever-covariate weights.

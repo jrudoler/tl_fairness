@@ -149,7 +149,7 @@ def cmi_ground_truth(
 
     # Paper-compatible MC target. This intentionally estimates the unconditional
     # mutual information induced by the shared simulated covariates; it matches
-    # the values reported in Appendix A of the paper.
+    # the values reported in the paper's "CMI Simulation" appendix.
     remaining = n
     totals = np.zeros(4, dtype=np.float64)
     while remaining:

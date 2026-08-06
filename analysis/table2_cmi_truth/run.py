@@ -1,4 +1,7 @@
-"""Table 2 (Appendix A): Monte Carlo ground-truth CMI for each value of c."""
+"""Monte Carlo ground-truth CMI for each value of c.
+
+Produces the table in the paper's "CMI Simulation" appendix.
+"""
 
 import argparse
 import pickle
