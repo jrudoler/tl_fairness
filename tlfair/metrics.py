@@ -102,7 +102,7 @@ def parity(X_train, X_test, y_train, y_test, group_train, group_test,
            outcome, propensity=None):
     """Demographic parity, Ψ = E[D_c(X)|G=1] − E[D_c(X)|G=0].
 
-    Paper section "Thresholded Metrics".
+    Paper section "Thresholded Decisions".
     """
     # unused (uniform dispatch): y_test, group_train, propensity
     outcome = outcome.fit(X_train, y_train)
@@ -119,7 +119,7 @@ def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
                 outcome, propensity=None):
     """Equal opportunity, Ψ = E[D_c(X)|Y=1,G=1] − E[D_c(X)|Y=1,G=0].
 
-    Paper section "Thresholded Metrics".
+    Paper section "Thresholded Decisions".
     """
     # unused (uniform dispatch): group_train, propensity
     outcome = outcome.fit(X_train, y_train)
