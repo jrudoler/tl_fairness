@@ -100,7 +100,10 @@ def _positive_rate(predict, X_test, mask, weight_total):
 # ---------------------------------------------------------------------------
 def parity(X_train, X_test, y_train, y_test, group_train, group_test,
            outcome, propensity=None):
-    """Demographic parity, Ψ = E[D_c(X)|G=1] − E[D_c(X)|G=0] (paper §2.2.2)."""
+    """Demographic parity, Ψ = E[D_c(X)|G=1] − E[D_c(X)|G=0].
+
+    Paper section "Thresholded Metrics".
+    """
     # unused (uniform dispatch): y_test, group_train, propensity
     outcome = outcome.fit(X_train, y_train)
     group_test = np.asarray(group_test)
@@ -114,7 +117,10 @@ def parity(X_train, X_test, y_train, y_test, group_train, group_test,
 
 def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
                 outcome, propensity=None):
-    """Equal opportunity, Ψ = E[D_c(X)|Y=1,G=1] − E[D_c(X)|Y=1,G=0] (paper §2.2.2)."""
+    """Equal opportunity, Ψ = E[D_c(X)|Y=1,G=1] − E[D_c(X)|Y=1,G=0].
+
+    Paper section "Thresholded Metrics".
+    """
     # unused (uniform dispatch): group_train, propensity
     outcome = outcome.fit(X_train, y_train)
     y_test = np.asarray(y_test)
@@ -137,7 +143,11 @@ def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
 # ---------------------------------------------------------------------------
 def prob_parity(X_train, X_test, y_train, y_test, group_train, group_test,
                 outcome, propensity=None):
-    """Probabilistic demographic parity, Ψ = E[D(X)|G=1] − E[D(X)|G=0] (paper §2.2.1)."""
+    """Probabilistic demographic parity, Ψ = E[D(X)|G=1] − E[D(X)|G=0].
+
+    Derived in full in the paper section
+    "Demographic Parity: A Worked Example".
+    """
     outcome = outcome.fit(X_train, y_train)
     propensity = propensity.fit(X_train, group_train)
     y_test = np.asarray(y_test)
@@ -156,9 +166,10 @@ def prob_parity(X_train, X_test, y_train, y_test, group_train, group_test,
 
 def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
                      outcome, propensity=None):
-    """Probabilistic equal opportunity (paper §2.2.1).
+    """Probabilistic equal opportunity.
 
-    Derived in the paper appendix "Derivations for Parity and Equal Opportunity".
+    Paper section "Equal Opportunity"; derived in the appendix
+    "Derivations for Equal Opportunity and Thresholded Metrics".
 
     The propensity model estimates the joint stratum p(G,Y|X) (4 classes); the
     (G0,Y1) and (G1,Y1) columns (2 and 3) supply the clever-covariate weights.
