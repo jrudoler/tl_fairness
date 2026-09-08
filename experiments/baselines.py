@@ -242,7 +242,7 @@ def permutation_mi_test(x, y, rng, n_perm=200):
     Statistic: empirical MI of (x, y) ignoring the conditioning features. The
     null distribution permutes y freely, which destroys every association with
     y -- so this tests marginal independence. When x and y are conditionally
-    independent given Z but share Z (the CMI DGP at c=0), they are still
+    independent given Z but share Z (the CMI DGP at kappa=0), they are still
     marginally dependent, and this test rejects: a Type-I error *for the
     conditional-independence question*.
     """
@@ -263,7 +263,7 @@ def permutation_cmi_test(x, y, z, rng, n_perm=200, n_bins=4, direction=None):
     within strata, so the y--Z relationship is preserved and the test targets
     conditional independence. Statistic: stratum-size-weighted within-stratum MI
     (a plug-in conditional-MI estimate). This is the "fair" conditional analogue
-    of the global permutation test -- it should be calibrated at c=0, making the
+    of the global permutation test -- it should be calibrated at kappa=0, making the
     point that you must condition on Z (which TL does parametrically).
     """
     x = np.asarray(x)

@@ -9,8 +9,8 @@ import pandas as pd
 EXPECTED_CSVS = {
     'robust_res.csv': ['cases', 'sample_size', 'coverage', '95-percentile', '5-percentile', 'mean_estimate', 'error'],
     'tmle_coverage.csv': ['estimator', 'sample_size', 'coverage', 'bias', 'var', 'mean_estimate', 'mean_ci_width'],
-    'cmi_coverage.csv': ['sample_size', 'c', 'error', 'coverage'],
-    'cmi_compare.csv': ['sample size', 'type', 'c', 'mean', 'bottom_five', 'top_five'],
+    'cmi_coverage.csv': ['sample_size', 'kappa', 'error', 'coverage'],
+    'cmi_compare.csv': ['sample size', 'type', 'kappa', 'mean', 'bottom_five', 'top_five'],
 }
 
 EXPECTED_PICKLES = [

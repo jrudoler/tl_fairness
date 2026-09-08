@@ -32,15 +32,15 @@ from tlfair.tmle import (
 from tlfair.simulations import _setting1_draw
 
 
-def _draw_cmi(n, c, rng, d=3):
-    """Setting from cmi_sim: two binary vars with shared dependence scaled by c."""
+def _draw_cmi(n, kappa, rng, d=3):
+    """Setting from cmi_sim: two binary vars with shared dependence scaled by kappa."""
     n2 = n // 2
     z = rng.normal(size=(2 * n2, d))
     beta = np.ones(d)
-    shared = c * rng.uniform(size=2 * n2)
+    shared = kappa * rng.uniform(size=2 * n2)
     logits = 1 / (1 + np.exp(-z @ beta))
-    xp = (shared + rng.uniform(size=2 * n2) + logits) / (c + 2)
-    yp = (shared + rng.uniform(size=2 * n2) + logits) / (c + 2)
+    xp = (shared + rng.uniform(size=2 * n2) + logits) / (kappa + 2)
+    yp = (shared + rng.uniform(size=2 * n2) + logits) / (kappa + 2)
     x = (xp > 0.5).astype(np.int8)
     y = (yp > 0.5).astype(np.int8)
     return z[:n2], z[n2:], x[:n2], x[n2:], y[:n2], y[n2:]
@@ -211,7 +211,7 @@ def test_cmi_exact_eif_discrete_x():
 
 def test_cmi_substitution_nonnegative_and_eif_zero():
     rng = np.random.default_rng(0)
-    xtr, xte, ytr, yte, gtr, gte = _draw_cmi(1500, c=2.0, rng=rng)
+    xtr, xte, ytr, yte, gtr, gte = _draw_cmi(1500, kappa=2.0, rng=rng)
     seed = int(rng.integers(0, 2 ** 31 - 1))
     est, ci, diag = cmi_tmle(
         xtr, xte, ytr, yte, gtr, gte,
@@ -229,7 +229,7 @@ def test_cmi_substitution_nonnegative_at_independence():
     rng = np.random.default_rng(7)
     negatives = 0
     for _ in range(15):
-        xtr, xte, ytr, yte, gtr, gte = _draw_cmi(800, c=0.0, rng=rng)
+        xtr, xte, ytr, yte, gtr, gte = _draw_cmi(800, kappa=0.0, rng=rng)
         seed = int(rng.integers(0, 2 ** 31 - 1))
         est, _ = cmi_tmle(
             xtr, xte, ytr, yte, gtr, gte,

@@ -3,19 +3,19 @@
 CMI DGP (``tlfair.cmi_sim``): a confounder Z drives two binary variables; in the
 data-fairness mapping the *outcome* is ``x``, the *group* is ``y``, and the
 features are ``z``. The TL estimand is conditional mutual information
-I(outcome; group | Z). The dependence strength is ``c``:
+I(outcome; group | Z). The dependence strength is ``kappa``:
 
-  * c = 0  -> outcome and group are *conditionally* independent given Z
+  * kappa = 0  -> outcome and group are *conditionally* independent given Z
              (I = 0, the null), but they remain *marginally* dependent because
              they share Z.
-  * c > 0  -> genuine conditional dependence (I > 0).
+  * kappa > 0  -> genuine conditional dependence (I > 0).
 
 A permutation test is a p-value, not a CI, so we evaluate calibration:
-rejection rate at c=0 is the Type-I error (target ~0.05); rejection rate at
-c>0 is power. Methods:
+rejection rate at kappa=0 is the Type-I error (target ~0.05); rejection rate at
+kappa>0 is power. Methods:
 
   * Global permutation -- permute the group freely; statistic = marginal MI of
-    (outcome, group) ignoring Z. Tests *marginal* independence, so at c=0 it
+    (outcome, group) ignoring Z. Tests *marginal* independence, so at kappa=0 it
     rejects because of the shared-Z dependence: Type-I error for the
     conditional-independence question.
   * Stratified permutation -- permute the group only within Z quantile bins;
@@ -25,7 +25,7 @@ c>0 is power. Methods:
     still inflates as n grows -- it only conditions approximately.
   * TL Wald -- one-sided 0.05 test from the CMI EIF CI (reject if
     est - 1.645*se > 0). Calibrated/conservative away from the boundary; we
-    report it honestly at c=0 given the documented boundary non-regularity.
+    report it honestly at kappa=0 given the documented boundary non-regularity.
 
 Message: you must condition on Z. The naive global permutation does not, so it
 falsely flags conditional dependence (Type-I error ~1.0); TL conditions on Z
@@ -61,21 +61,21 @@ _Z2 = 1.96    # for recovering se from the two-sided 95% CMI CI
 _Z1 = 1.645   # one-sided 0.05 critical value
 
 
-def _draw(n, c, rng, d=3):
+def _draw(n, kappa, rng, d=3):
     z = rng.normal(size=(n, d))
     beta = np.ones(d)
-    shared = c * rng.uniform(size=n)
+    shared = kappa * rng.uniform(size=n)
     logits = _sigmoid(z @ beta)
-    x = ((shared + rng.uniform(size=n) + logits) / (c + 2) > 0.5).astype(np.int8)
-    y = ((shared + rng.uniform(size=n) + logits) / (c + 2) > 0.5).astype(np.int8)
+    x = ((shared + rng.uniform(size=n) + logits) / (kappa + 2) > 0.5).astype(np.int8)
+    y = ((shared + rng.uniform(size=n) + logits) / (kappa + 2) > 0.5).astype(np.int8)
     return x, y, z
 
 
-def _one_rep(n, c, n_perm, rng, d=3, max_attempts=20):
+def _one_rep(n, kappa, n_perm, rng, d=3, max_attempts=20):
     """One replicate; returns {method: reject(0/1)} evaluated on one draw."""
     last_err = None
     for _ in range(max_attempts):
-        x, y, z = _draw(n, c, rng, d)
+        x, y, z = _draw(n, kappa, rng, d)
         h = n // 2
         seed = int(rng.integers(0, 2**31 - 1))
         try:
@@ -106,19 +106,19 @@ def run(weights, sizes, reps, n_perm, seed, n_jobs):
     rng = np.random.default_rng(seed)
     rows = []
     for n in sizes:
-        for c in weights:
+        for kappa in weights:
             children = rng.spawn(reps)
             results = Parallel(n_jobs=n_jobs)(
-                delayed(_one_rep)(n, c, n_perm, ch) for ch in children)
+                delayed(_one_rep)(n, kappa, n_perm, ch) for ch in children)
             for m in METHODS:
                 rate = float(np.mean([r[m] for r in results]))
                 rows.append({
-                    "method": m, "c": c, "sample_size": n,
+                    "method": m, "kappa": kappa, "sample_size": n,
                     "reject_rate": rate,
-                    "kind": "Type-I error" if c == 0 else "power",
+                    "kind": "Type-I error" if kappa == 0 else "power",
                 })
             rates = {r["method"]: r["reject_rate"] for r in rows[-len(METHODS):]}
-            tag = "Type-I @ c=0" if c == 0 else f"power @ c={c}"
+            tag = "Type-I @ kappa=0" if kappa == 0 else f"power @ kappa={kappa}"
             print(f"  n={n} {tag}: "
                   + ", ".join(f"{m}={rates[m]:.3f}" for m in METHODS), flush=True)
     return pd.DataFrame(rows)
@@ -135,10 +135,10 @@ def plot(df, output):
         axes = [axes]
     for ax, n in zip(axes, sizes):
         sub = df[df["sample_size"] == n]
-        sns.lineplot(data=sub, x="c", y="reject_rate", hue="method",
+        sns.lineplot(data=sub, x="kappa", y="reject_rate", hue="method",
                      marker="o", ax=ax)
         ax.axhline(ALPHA, ls="--", color="grey", lw=1)
-        ax.set_xlabel("Dependence strength c  (c=0 is the null)")
+        ax.set_xlabel(r"Dependence strength $\kappa$  ($\kappa=0$ is the null)")
         ax.set_title(f"n={n}")
         ax.set_ylim(-0.02, 1.02)
         ax.legend(title=None, fontsize=7)

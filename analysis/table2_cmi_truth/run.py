@@ -1,4 +1,4 @@
-"""Monte Carlo ground-truth CMI for each value of c.
+"""Monte Carlo ground-truth CMI for each value of kappa.
 
 Produces the table in the paper's "CMI Simulation" appendix.
 """
@@ -24,7 +24,7 @@ def main():
         truth = pickle.load(f)
 
     df = pd.DataFrame(
-        sorted(truth.items()), columns=['c', 'CMI']
+        sorted(truth.items()), columns=['kappa', 'CMI']
     )
     df['CMI'] = df['CMI'].round(4)
     df.to_csv(args.csv_output, index=False)

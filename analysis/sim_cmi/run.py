@@ -45,37 +45,37 @@ def run_experiment(
     truth_dict = {}
     timings = {}
 
-    for c in weights:
+    for kappa in weights:
         started = time.perf_counter()
         truth = cmi_ground_truth(
-            c=c,
+            kappa=kappa,
             d=3,
             n=n_truth,
             rng=rng,
             conditional=conditional_truth,
         )
-        truth_dict[c] = truth
-        timings[f'truth_{c}'] = time.perf_counter() - started
-        print(f"truth c={c}: {truth:.4f} in {timings[f'truth_{c}']:.2f}s", flush=True)
+        truth_dict[kappa] = truth
+        timings[f'truth_{kappa}'] = time.perf_counter() - started
+        print(f"truth kappa={kappa}: {truth:.4f} in {timings[f'truth_{kappa}']:.2f}s", flush=True)
         for s in sizes:
             started = time.perf_counter()
             coverage, error = cmi_coverage_sim(
                 n=s,
-                c=c,
+                kappa=kappa,
                 ground_truth=truth,
                 rng=rng,
                 sims=sims,
                 n_jobs=n_jobs,
             )
-            timings[f'coverage_c={c}_n={s}'] = time.perf_counter() - started
+            timings[f'coverage_kappa={kappa}_n={s}'] = time.perf_counter() - started
             results.append({
                 "sample_size": s,
-                "c": c,
+                "kappa": kappa,
                 "error": error,
                 "coverage": coverage,
             })
             print(
-                f"coverage c={c}, n={s}: {timings[f'coverage_c={c}_n={s}']:.2f}s",
+                f"coverage kappa={kappa}, n={s}: {timings[f'coverage_kappa={kappa}_n={s}']:.2f}s",
                 flush=True,
             )
 

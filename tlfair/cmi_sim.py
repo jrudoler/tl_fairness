@@ -9,13 +9,13 @@ from tlfair.superlearner import *
 from tlfair.knncmi import *
 
 
-def _draw_until_valid(fn, n, c, rng, max_attempts=20, **kwargs):
+def _draw_until_valid(fn, n, kappa, rng, max_attempts=20, **kwargs):
     """Evaluate ``fn`` on a fresh draw, redrawing if a degenerate sample makes
     the estimator undefined.
 
-    At large c the joint (G, Y) classes become correlated, so a small-n draw can
-    leave a class with too few members for the cv=3 calibration in cmi(), which
-    raises ValueError. Such draws are rare (<1%); redrawing
+    At large kappa the joint (G, Y) classes become correlated, so a small-n draw
+    can leave a class with too few members for the cv=3 calibration in cmi(),
+    which raises ValueError. Such draws are rare (<1%); redrawing
     rejects them and estimates coverage conditional on a computable estimate.
     Deterministic because ``rng`` is seeded (each retry advances it). If every
     attempt fails the last error is re-raised so genuine bugs still surface.
@@ -23,7 +23,7 @@ def _draw_until_valid(fn, n, c, rng, max_attempts=20, **kwargs):
     last_err = None
     for _ in range(max_attempts):
         try:
-            return fn(n=n, c=c, rng=rng, **kwargs)
+            return fn(n=n, kappa=kappa, rng=rng, **kwargs)
         except ValueError as err:
             last_err = err
     raise last_err
@@ -31,7 +31,7 @@ def _draw_until_valid(fn, n, c, rng, max_attempts=20, **kwargs):
 
 def cmi_sim(
     n,
-    c,
+    kappa,
     d=3,
     rng=None
     ):
@@ -41,9 +41,9 @@ def cmi_sim(
         rng = np.random.default_rng()
     z = rng.normal(size=(2*n,d))
     beta = np.array([1,1,1])
-    c_prob = c*rng.uniform(size=2*n)
-    x_prob = (c_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(c+2)
-    y_prob = (c_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(c+2)
+    kappa_prob = kappa*rng.uniform(size=2*n)
+    x_prob = (kappa_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
+    y_prob = (kappa_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
     x = (x_prob > 0.5).astype(np.int8)
     y = (y_prob > 0.5).astype(np.int8)
 
@@ -66,7 +66,7 @@ def cmi_sim(
 
 def knncmi_sim(
     n,
-    c,
+    kappa,
     d=3,
     rng=None):
     if rng is None:
@@ -74,9 +74,9 @@ def knncmi_sim(
         rng = np.random.default_rng()
     z = rng.normal(size=(n,d))
     beta = np.array([1,1,1])
-    c_prob = c*rng.uniform(size=n)
-    x_prob = (c_prob + rng.uniform(size=n) + 1/(1+np.exp(-z@beta)))/(c+2)
-    y_prob = (c_prob + rng.uniform(size=n) + 1/(1+np.exp(-z@beta)))/(c+2)
+    kappa_prob = kappa*rng.uniform(size=n)
+    x_prob = (kappa_prob + rng.uniform(size=n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
+    y_prob = (kappa_prob + rng.uniform(size=n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
 
     x = (x_prob > 0.5).astype(np.int8)
     y = (y_prob > 0.5).astype(np.int8)
@@ -94,7 +94,7 @@ def knncmi_sim(
 
 def cmi_coverage_sim(
     n,
-    c,
+    kappa,
     ground_truth,
     sims=100,
     fn = cmi_sim,
@@ -109,7 +109,7 @@ def cmi_coverage_sim(
         coverage = np.zeros(sims)
         error = 0
         for i in range(sims):
-            res = _draw_until_valid(fn, n, c, rng)
+            res = _draw_until_valid(fn, n, kappa, rng)
             error += (res[0] - ground_truth)
             if (res[1][0] <= ground_truth) and (res[1][1] >= ground_truth):
                 coverage[i] = 1
@@ -120,7 +120,7 @@ def cmi_coverage_sim(
     # matter how the simulations are scheduled across workers.
     child_rngs = rng.spawn(sims)
     def _one(child):
-        res = _draw_until_valid(fn, n, c, child)
+        res = _draw_until_valid(fn, n, kappa, child)
         covered = 1.0 if (res[1][0] <= ground_truth <= res[1][1]) else 0.0
         return res[0] - ground_truth, covered
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(child) for child in child_rngs)
@@ -130,7 +130,7 @@ def cmi_coverage_sim(
 
 
 def cmi_ground_truth(
-    c,
+    kappa,
     d,
     n,
     rng,
@@ -139,7 +139,7 @@ def cmi_ground_truth(
     inner_samples=2048):
     if conditional:
         return cmi_ground_truth_conditional(
-            c=c,
+            kappa=kappa,
             d=d,
             n=n,
             rng=rng,
@@ -156,10 +156,10 @@ def cmi_ground_truth(
         m = min(batch_size, remaining)
         z = rng.normal(size=(m,d))
         beta = np.ones(d)
-        shared = c*rng.uniform(size=m)
+        shared = kappa*rng.uniform(size=m)
         logits = 1/(1+np.exp(-z@beta))
-        x_prob = (shared + rng.uniform(size=m) + logits)/(c+2)
-        y_prob = (shared + rng.uniform(size=m) + logits)/(c+2)
+        x_prob = (shared + rng.uniform(size=m) + logits)/(kappa+2)
+        y_prob = (shared + rng.uniform(size=m) + logits)/(kappa+2)
         x = (x_prob > 0.5)
         y = (y_prob > 0.5)
         totals[0] += np.count_nonzero(x & y)
@@ -183,13 +183,13 @@ def cmi_ground_truth(
 
 
 def cmi_ground_truth_conditional(
-    c,
+    kappa,
     d,
     n,
     rng,
     batch_size=1024,
     inner_samples=2048):
-    if c == 0:
+    if kappa == 0:
         return 0.0
 
     remaining = n
@@ -200,7 +200,7 @@ def cmi_ground_truth_conditional(
         beta = np.ones(d)
         logits = 1/(1+np.exp(-z@beta))
         s = rng.uniform(size=(m, inner_samples))
-        probs = np.clip(logits[:, None] - c/2 + c*s, 0, 1)
+        probs = np.clip(logits[:, None] - kappa/2 + kappa*s, 0, 1)
         p11 = np.mean(probs**2, axis=1)
         p10 = np.mean(probs * (1-probs), axis=1)
         p01 = p10
@@ -229,12 +229,12 @@ def cmi_compare(
     if rng is None:
         rng = np.random.default_rng()
 
-    def _summary(cmi_res, knn_res, c):
+    def _summary(cmi_res, knn_res, kappa):
         return pd.DataFrame(
             {
                 "sample size" : [n] * 2,
                 "type": ["TL", "KNN"],
-                "c" : [c] * 2,
+                "kappa" : [kappa] * 2,
                 "mean" : [np.mean(cmi_res), np.mean(knn_res)],
                 "bottom_five": [np.quantile(cmi_res, 0.05), np.quantile(knn_res, 0.05)],
                 "top_five" : [np.quantile(cmi_res, 0.95), np.quantile(knn_res, 0.95)]
@@ -249,7 +249,7 @@ def cmi_compare(
             for _ in range(repeats):
                 res = _draw_until_valid(cmi_sim, n, params[i], rng)
                 cmi_res.append(res[0])
-                res = knncmi_sim(c = params[i], n = n, rng = rng)
+                res = knncmi_sim(kappa = params[i], n = n, rng = rng)
                 knn_res.append(res)
             df = pd.concat([df, _summary(cmi_res, knn_res, params[i])])
         return df
@@ -263,7 +263,7 @@ def cmi_compare(
     def _one(task, child):
         i, _rep = task
         tl = _draw_until_valid(cmi_sim, n, params[i], child)[0]
-        knn = knncmi_sim(c = params[i], n = n, rng = child)
+        knn = knncmi_sim(kappa = params[i], n = n, rng = child)
         return i, tl, knn
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(t, c) for t, c in zip(tasks, child_rngs))
 
