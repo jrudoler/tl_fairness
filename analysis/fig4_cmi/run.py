@@ -56,12 +56,14 @@ def main():
     g.map_dataframe(sns.lineplot, x='kappa', y='error', marker='o', markersize=3)
     g.set_titles(template='n = {col_name}', size=9)
     g.set_axis_labels(KAPPA_LABEL, 'Error')
-    # refline draws the y=0 reference on every facet without joining the hue
-    # legend (g.map(axhline) would, turning every legend entry into a black dash).
-    g.refline(y=0, color='black', linestyle='--', linewidth=0.8)
     for ax in g.axes.flat:
         ax.tick_params(labelsize=8)
+    # The legend must be built before refline: refline's black dashed line
+    # overwrites FacetGrid's cached per-hue legend handles (g._legend_data) if
+    # added first, making every legend entry show up black and dashed instead
+    # of each estimator's actual color.
     g.add_legend(title='Estimator', fontsize=9, title_fontsize=9)
+    g.refline(y=0, color='black', linestyle='--', linewidth=0.8)
     g.savefig(args.error_output)
     plt.close(g.figure)
     print(f'Wrote {args.error_output}', flush=True)
