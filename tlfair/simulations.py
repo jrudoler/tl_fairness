@@ -11,6 +11,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from tlfair.metrics import *  # noqa: F401,F403  (re-exported metrics for sim1)
+from tlfair.metrics import _prob_group_contrast
 
 # Setting 1 covariance: Cov(X2,X3) = -Cov(X4,X5) = 0.5 (paper Section 4.1).
 SETTING1_COV = np.array([
@@ -169,26 +170,28 @@ def parity_sim(n, proportion=0.5, parity='threshold', product=True, rng=None,
 
     if parity == 'threshold':
         preds = model.predict(xgtest)
-        phi0 = -1 / np.mean(gtest == 0) * preds[np.where(gtest == 0)[0]]
-        phi1 = 1 / np.mean(gtest == 1) * preds[np.where(gtest == 1)[0]]
-        phi = np.hstack([phi0, phi1])
-        est = np.mean(phi)
-        eif = phi - np.mean(phi)
-        var = np.var(eif) / n
-        naive_est = np.mean(preds[np.where(gtest == 1)[0]]) - np.mean(preds[np.where(gtest == 0)[0]])
-        naive_var = (np.var(preds[np.where(gtest == 1)[0]]) + np.var(preds[np.where(gtest == 0)[0]])) / n
+        strata = np.column_stack([gtest == 0, gtest == 1])
+        est, (lo, hi) = _prob_group_contrast(
+            preds, np.zeros(n), np.zeros_like(strata, dtype=float), strata,
+        )
+        var = ((hi - lo) / (2 * 1.96)) ** 2
+        naive_est = np.mean(preds[gtest == 1]) - np.mean(preds[gtest == 0])
+        naive_var = sum(np.var(preds[gtest == group], ddof=1) / np.sum(gtest == group)
+                        for group in (0, 1))
     elif parity == 'prob':
         propensity = LogisticRegression().fit(xgtrain, gtrain)
         m_probs = propensity.predict_proba(xgtest)
         f_probs = model.predict_proba(xgtest)[:, 1]
-        phi0 = -1 / (np.mean(gtest == 0)) * (m_probs[:, 0] * ((ytest == 1) - f_probs) + (gtest == 0) * f_probs)
-        phi1 = 1 / (np.mean(gtest == 1)) * (m_probs[:, 1] * ((ytest == 1) - f_probs) + (gtest == 1) * f_probs)
-        phi = phi0 + phi1
-        est = np.mean(phi)
-        eif = phi - est
-        var = np.var(eif) / n
+        est, (lo, hi) = _prob_group_contrast(
+            f_probs, (ytest == 1) - f_probs, m_probs,
+            np.column_stack([gtest == 0, gtest == 1]),
+        )
+        var = ((hi - lo) / (2 * 1.96)) ** 2
         naive_est = np.mean(f_probs[np.where(gtest == 1)[0]]) - np.mean(f_probs[np.where(gtest == 0)[0]])
-        naive_var = (np.var(f_probs[np.where(gtest == 1)[0]]) + np.var(f_probs[np.where(gtest == 0)[0]])) / n
+        naive_var = sum(
+            np.var(f_probs[gtest == group], ddof=1) / np.sum(gtest == group)
+            for group in (0, 1)
+        )
     else:
         raise ValueError(f"unknown parity type: {parity!r}")
 
@@ -223,26 +226,24 @@ def coverage_sim_parity(ground_truth, parity='threshold', product=True,
         model = LogisticRegression().fit(xgtrain, ytrain)
 
         if parity == 'threshold':
-            phi0 = -1 / np.mean(gtest == 0) * model.predict(xgtest[np.where(gtest == 0)[0], :])
-            phi1 = 1 / np.mean(gtest == 1) * model.predict(xgtest[np.where(gtest == 1)[0], :])
-            phi = np.hstack([phi0, phi1])
-            est = np.mean(phi)
-            eif = phi - np.mean(phi)
+            strata = np.column_stack([gtest == 0, gtest == 1])
+            est, (lo, hi) = _prob_group_contrast(
+                model.predict(xgtest), np.zeros(n),
+                np.zeros_like(strata, dtype=float), strata,
+            )
         elif parity == 'prob':
             propensity = LogisticRegression().fit(xgtrain, gtrain)
             m_probs = propensity.predict_proba(xgtest)
             f_probs = model.predict_proba(xgtest)[:, 1]
-            phi0 = -1 / (np.mean(gtest == 0)) * (m_probs[:, 0] * ((ytest == 1) - f_probs) + (gtest == 0) * f_probs)
-            phi1 = 1 / (np.mean(gtest == 1)) * (m_probs[:, 1] * ((ytest == 1) - f_probs) + (gtest == 1) * f_probs)
-            phi = phi0 + phi1
-            est = np.mean(phi)
-            eif = phi - (np.mean(phi1) + np.mean(phi0))
+            est, (lo, hi) = _prob_group_contrast(
+                f_probs, (ytest == 1) - f_probs, m_probs,
+                np.column_stack([gtest == 0, gtest == 1]),
+            )
         else:
             raise ValueError(f"unknown parity type: {parity!r}")
 
         estimates[i] = est
-        std[i] = np.sqrt(np.var(eif) / n)
-        upper[i] = est + 1.96 * np.sqrt(np.var(eif) / n)
-        lower[i] = est - 1.96 * np.sqrt(np.var(eif) / n)
+        std[i] = (hi - lo) / (2 * 1.96)
+        upper[i], lower[i] = hi, lo
 
     return ground_truth, estimates, std, upper, lower

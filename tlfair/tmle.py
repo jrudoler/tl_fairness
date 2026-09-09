@@ -150,8 +150,10 @@ def _target_parity(d_hat, pi1, y, g, *, return_diagnostics=False):
     plug1 = (g == 1) * d_star / p_g1
     plug0 = (g == 0) * d_star / p_g0
     est = np.mean(plug1) - np.mean(plug0)
-    # EIF at the targeted fit: residual term + plug-in term - estimand.
-    eif = H * ((y == 1) - d_star) + plug1 - plug0 - est
+    # Account for estimation of both group-probability denominators.
+    eif = (H * ((y == 1) - d_star)
+           + (g == 1) * (d_star - np.mean(plug1)) / p_g1
+           - (g == 0) * (d_star - np.mean(plug0)) / p_g0)
     ci = _wald_ci(est, eif)
     if return_diagnostics:
         return est, ci, {"eps": eps, "eif_mean": float(np.mean(eif)),
@@ -173,7 +175,9 @@ def _target_opportunity(d_hat, rho0, rho1, y, g, *, return_diagnostics=False):
     plug1 = yg1 * d_star / p_yg1
     plug0 = yg0 * d_star / p_yg0
     est = np.mean(plug1) - np.mean(plug0)
-    eif = H * ((y == 1) - d_star) + plug1 - plug0 - est
+    eif = (H * ((y == 1) - d_star)
+           + yg1 * (d_star - np.mean(plug1)) / p_yg1
+           - yg0 * (d_star - np.mean(plug0)) / p_yg0)
     ci = _wald_ci(est, eif)
     if return_diagnostics:
         return est, ci, {"eps": eps, "eif_mean": float(np.mean(eif)),

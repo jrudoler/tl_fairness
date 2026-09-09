@@ -1,63 +1,13 @@
-"""Experiment 5: does "enough training data" rescue the naive baseline? (Setting 3)
+"""Experiment 5: training size and fixed-model inference in Setting 3.
 
-A natural objection to the headline result (Exp 2) is:
-
-    "Any sufficiently flexible model, given enough training data, will recover the
-     true P(Y|X); then the naive fixed-model + CLT interval is fine -- targeted
-     learning buys nothing."
-
-This experiment engages that objection head-on by *decoupling* the ML model's
-**training** size from the **evaluation** (test) size. We hold the evaluation set
-fixed at a realistic ``--test-size`` and sweep the nuisance-model training size
-``--train-sizes``. All three methods see the SAME train split and the SAME
-evaluation split each replicate; only the inference differs.
-
-The naive parity CLT (``naive_fixed_model_parity``) estimates
-``mean_{g=1} D_hat(X) - mean_{g=0} D_hat(X)`` on the test set and forms a
-two-sample-mean Wald interval, treating the fitted ``D_hat`` as if it were the
-truth. Its error relative to the data estimand Ψ = E[D(X)|G=1] - E[D(X)|G=0] has
-two parts: (a) finite test-set sampling -- which the CLT variance *does* capture,
-and (b) model error ``D_hat != D`` -- which it does *not*. The four curves map how
-(b) behaves as training data grows:
-
-  * Naive CLT, flexible + DEFAULT gradient booster: coverage *improves* with
-    ``n_train`` (0.24 -> ~0.5 here) then plateaus well below nominal. This plateau
-    is NOT an irreducible approximation floor -- it is the default learner being
-    *underfit* (lr=0.1 x only 100 shrunk rounds have not converged). At a fixed
-    ``n_train`` it is curable by more *rounds/capacity*, not more *data*: raising
-    n_estimators to 1000 at n_train=5000 drops the bias from ~-0.030 to ~-0.003.
-    So "more data" does not rescue a fixed under-capacity learner -- but this is a
-    statement about that learner, not about the naive CI in general.
-  * Naive CLT, flexible + TUNED gradient booster (``TUNED_GB``): with a
-    higher-capacity, better-converged learner the bias (b) shrinks with data and
-    coverage *climbs toward nominal* at large ``n_train``. This is the objection's
-    real grain of truth: given sample-splitting AND a consistent, well-tuned
-    nuisance, the two-sample CLT is asymptotically valid for the parity point
-    (the nuisance-estimation variance is O(1/n_train) -> 0). The catch is that you
-    cannot tell FROM THE INTERVAL whether you have reached this regime -- the
-    default-GB CI above looks just as confident at 0.5 coverage as this one does
-    at 0.95.
-  * Naive CLT, linear (misspecified): the one genuinely structural failure.
-    ``D_hat`` converges to the WRONG limit, so bias (b) is frozen at ~the full
-    parity gap; neither more data NOR more capacity moves it -- coverage stays 0.
-  * TL one-step, DEFAULT gradient booster (same underfit nuisance as curve 1): the
-    EIF correction debiases that finite-sample fit automatically, so coverage
-    reaches nominal by ``n_train``~250 and stays calibrated/conservative -- TL
-    turns the same nuisance that leaves the naive CLT at ~0.5 into a valid
-    interval, with no tuning and nothing to verify. (At a tiny train size the GB
-    nuisances are too noisy for the first-order correction to bite, so TL too
-    needs *some* data -- just much less, and it never collapses like the linear
-    naive.)
-
-Takeaway: the naive CI *can* be made valid (flexible + tuned + enough data +
-sample splitting), but its validity is contingent on nuisance quality you cannot
-verify from the interval, whereas TL delivers validity from the same imperfect
-nuisance for free -- and misspecification (the linear curve) is the one bias that
-data and capacity cannot touch.
-
-Usage (smoke):
-  PYTHONPATH=. .venv/bin/python experiments/exp5_trainsize_coverage.py \
-      --train-sizes 250 1000 --test-size 1000 --reps 20 --n-jobs 4
+Hold the evaluation sample at 2000 and compare TL one-step with fixed-model
+intervals from default boosting, tuned boosting, and linear logistic regression.
+All methods share the same training/evaluation observations in each replicate.
+The corrected EIF removes the historical inflated interval widths. TL improves
+coverage over default boosting but under-covers with small training samples;
+near-nominal coverage requires thousands, rather than hundreds, of training
+observations in this experiment. Tuned boosting can have comparable coverage.
+See docs/eif-regeneration.md for the results and interpretation changes.
 """
 
 import argparse
@@ -102,9 +52,8 @@ def _one_rep(n_train, n_test, rng, bernoulli=False):
     seed = int(rng.integers(0, 2**31 - 1))  # reproducible GB fits
 
     out = {}
-    # --- TL one-step, DEFAULT gradient booster: calibrated at any training size.
-    # Deliberately the SAME default (underfit) learner as the naive-default curve
-    # below, so the figure shows TL turning that nuisance into a valid interval.
+    # TL uses the same default learner as the naive-default comparison.
+    # Its coverage still depends on nuisance accuracy and training sample size.
     est, (lo, hi) = prob_parity(
         X_train=Xtr, X_test=Xte, y_train=ytr, y_test=yte,
         group_train=gtr, group_test=gte,
@@ -175,8 +124,7 @@ def plot(df, output):
     configure_matplotlib()
     xlabel = "Nuisance-model training size"
     fig, axes = plt.subplots(1, 2, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
-    # Left: 95% CI coverage vs training size -- the headline. TL sits at nominal;
-    # the naive curves reveal whether "more data" rescues the fixed-model CLT.
+    # Compare observed coverage with the nominal 95% reference.
     ax = axes[0]
     sns.lineplot(data=df, x="train_size", y="coverage", hue="method",
                  marker="o", ax=ax)
@@ -188,7 +136,7 @@ def plot(df, output):
     ax.legend(title=None, fontsize=7)
     # Right: bias (mean estimate - truth) -- the mechanism behind the coverage
     # story: the linear bias is frozen, default GB plateaus, tuned GB shrinks to 0,
-    # and TL is debiased by the EIF correction regardless of the nuisance's bias.
+    # and TL reduces, but need not eliminate, nuisance-related bias.
     ax = axes[1]
     sns.lineplot(data=df, x="train_size", y="bias", hue="method",
                  marker="o", ax=ax, legend=False)

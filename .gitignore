@@ -4,6 +4,7 @@ __pycache__/
 .snakemake/
 *.egg-info/
 slurm/logs/
+/logs/
 outputs/*
 
 # Workflow artifacts (regenerable via Snakemake); keep the directory structure

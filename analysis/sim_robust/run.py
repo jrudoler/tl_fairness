@@ -55,6 +55,8 @@ def robust_truth(n, rng):
 
 
 def robust_exp(sample_sizes, reps, seed=123, truth_n=10000000):
+    # Seed gradient boosting tie-breaking as well as the data draws.
+    np.random.seed(seed)
     rng = np.random.default_rng(seed)
     truth = robust_truth(truth_n, rng)
     rows = []

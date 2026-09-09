@@ -44,14 +44,17 @@ def test_jax_matches_numpy_parity():
     def mk():
         return LogisticRegression(C=1e6, solver="lbfgs", max_iter=1000)
 
-    est_n = np.array([
+    results_n = [
         prob_parity_tmle(
             pd.DataFrame(X[r, :n_tr]), pd.DataFrame(X[r, n_tr:]),
             Y[r, :n_tr], Y[r, n_tr:], G[r, :n_tr], G[r, n_tr:], mk(), mk(),
-        )[0]
+        )
         for r in range(R)
-    ])
+    ]
+    est_n = np.array([result[0] for result in results_n])
+    se_n = np.array([(result[1][1] - result[1][0]) / 3.92 for result in results_n])
     assert np.max(np.abs(est_j - est_n)) < 1e-4
+    np.testing.assert_allclose(np.asarray(se_j), se_n, rtol=2e-3, atol=1e-5)
 
 
 def test_coverage_parity_jax_runs():

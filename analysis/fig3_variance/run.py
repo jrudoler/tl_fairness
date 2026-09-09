@@ -1,8 +1,8 @@
 """Figure 3: TL variance vs naive difference-in-means variance (Section 4.1.1).
 
-Probabilistic parity, linear sample-size axis. The TL variance estimate is much
-larger than the naive t-test variance because TL accounts for estimating the
-conditional distribution, not just the group means.
+Probabilistic parity, linear sample-size axis. Compare correctly group-centered
+TL EIF variance with a fixed-model CLT using the actual group sample sizes.
+Width differences alone do not establish coverage or power; see Exp 6.
 """
 
 import argparse

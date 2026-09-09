@@ -1,43 +1,12 @@
-"""Experiment 2: misspecification breaks the naive baselines (Setting 3).
+"""Experiment 2: misspecification and coverage in Setting 3.
 
-Setting 3: Y and G are both logistic in the *squared* features, so a linear
-logistic model is misspecified for both nuisances (paper Figure 2). Two targets,
-reported in two panels because the methods answer different questions:
-
-Panel A -- probabilistic parity Ψ = E[D(X)|G=1] - E[D(X)|G=0] (the data-fairness
-target, truth = ``setting3_truth``). All four methods target the SAME estimand;
-the three GLM-standardization (g-computation) variants isolate the two ways a
-model-based parity estimate can fail:
-  * TL one-step, flexible nuisances (gradient boosting): double-robust, stays
-    calibrated under misspecification.
-  * Std + CLT (correct model): standardize D̂(X)=σ(x²β) by group; correct
-    functional form but the CLT interval treats D̂ as fixed, missing the
-    coefficient-estimation variance -> under-covers. (Variance failure.)
-  * Std + bootstrap (correct model): same estimate, percentile-bootstrap CI that
-    captures both variance sources -> covers. So the CLT failure is purely about
-    variance estimation, not the model.
-  * Std + bootstrap (linear model): misspecified D̂ + proper inference -> still
-    fails, now from bias. (Bias failure.) Only TL handles both at once, because
-    bootstrapping a wrong model cannot fix bias and double robustness can.
-
-Panel B -- GLM "adjusted group effect" (the average marginal effect of G with X
-held fixed; what regression-coefficient practice reports). Here G affects Y only
-through X, so the true adjusted effect is structurally 0 -- and note this differs
-from the real parity gap (printed for contrast), so the GLM answers a *different*
-question. To make the failure attributable to BIAS rather than an optimistic
-variance, the GLM CIs use the Huber-White sandwich (HC0) SE; a model-based
-variant is included for the linear fit to show the sandwich barely moves the AME
-SE, so the under-coverage is driven by bias in the estimate:
-  * GLM correct (squared features), robust SE: ~0, covers 0. (Caveat: the
-    noiseless DGP makes the correct-feature fit perfectly separable -- a
-    degenerate MLE; see experiments/audit_glm.py.)
-  * GLM linear, model vs robust SE: misspecified -> AME biased away from 0; the
-    CI (either SE) is tight around the wrong value -> under-covers. The sandwich
-    rules out "the SE was just too small" as the explanation.
-
-Usage (smoke):
-  PYTHONPATH=. .venv/bin/python experiments/exp2_misspec_coverage.py \
-      --sizes 250 500 --reps 20 --n-jobs 4
+The parity panel compares TL one-step with correctly specified GLM
+standardization (CLT and bootstrap intervals) and misspecified linear GLM
+standardization (bootstrap). The adjusted-effect panel targets a different,
+zero conditional group effect using correctly specified and linear GLMs.
+Corrected TL coverage is not uniformly nominal or superior: it under-covers at
+small sample sizes. Bootstrap intervals cannot remove model misspecification
+bias. See docs/eif-regeneration.md for the rerun and historical comparison.
 """
 
 import argparse
@@ -63,8 +32,8 @@ from experiments.baselines import glm_ame_parity, glm_standardization_parity
 #   * Std + bootstrap (correct): correct model + proper (bootstrap) inference ->
 #                                covers. (So the CLT failure is a variance issue.)
 #   * Std + bootstrap (linear):  misspecified model + proper inference -> still
-#                                fails, now from bias. Only TL (double robust)
-#                                handles both at once.
+#                                fails, now from bias. TL reduces sensitivity to nuisance error,
+#                                but does not guarantee finite-sample coverage.
 PARITY_METHODS = ["TL one-step (flexible)", "Std + CLT (correct)",
                   "Std + bootstrap (correct)", "Std + bootstrap (linear)"]
 # GLM specs: (label, feature_set, cov_type). "correct" -> x**2, "linear" -> x.

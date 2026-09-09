@@ -57,6 +57,30 @@ def _wald_ci(estimate, eif):
     return (estimate - half_width, estimate + half_width)
 
 
+def _prob_group_contrast(
+    predictions: np.ndarray,
+    residual: np.ndarray,
+    weights: np.ndarray,
+    strata: np.ndarray,
+) -> tuple[float, tuple[float, float]]:
+    """Augmented contrast with the ratio-estimator EIF, columns ordered 0, 1.
+
+    Each empirical stratum denominator has its own influence function. Thus
+    the centering term is I(stratum=g) * estimate_g / P_n(stratum=g),
+    not one constant subtracted from the uncentered contrast.
+    """
+    proportions = strata.mean(axis=0)
+    if np.any(proportions == 0):
+        raise ValueError("Both contrast strata must occur in the evaluation sample")
+    contributions = (
+        weights * residual[:, None] + strata * predictions[:, None]
+    ) / proportions
+    means = contributions.mean(axis=0)
+    eif = contributions - strata * means / proportions
+    estimate = float(means[1] - means[0])
+    return estimate, _wald_ci(estimate, eif[:, 1] - eif[:, 0])
+
+
 def _encode_joint(group, y):
     """Encode the joint state (group, y) into one of four classes:
 
@@ -107,12 +131,11 @@ def parity(X_train, X_test, y_train, y_test, group_train, group_test,
     # unused (uniform dispatch): y_test, group_train, propensity
     outcome = outcome.fit(X_train, y_train)
     group_test = np.asarray(group_test)
-    phi = np.hstack([
-        -_positive_rate(outcome.predict, X_test, group_test == 0, np.mean(group_test == 0)),
-        _positive_rate(outcome.predict, X_test, group_test == 1, np.mean(group_test == 1)),
-    ])
-    estimate = np.mean(phi)
-    return estimate, _wald_ci(estimate, phi - estimate)
+    predictions = outcome.predict(X_test)
+    strata = np.column_stack([group_test == 0, group_test == 1])
+    return _prob_group_contrast(
+        predictions, np.zeros(len(group_test)), np.zeros_like(strata, dtype=float), strata,
+    )
 
 
 def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
@@ -128,13 +151,11 @@ def opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
     positive = y_test == 1
     in_g0 = positive & (group_test == 0)
     in_g1 = positive & (group_test == 1)
-    phi = np.hstack([
-        -_positive_rate(outcome.predict, X_test, in_g0, np.mean(in_g0)),
-        _positive_rate(outcome.predict, X_test, in_g1, np.mean(in_g1)),
-    ])
-    # Sum of stratum contributions averaged over the full evaluation sample.
-    estimate = np.sum(phi) / len(group_test)
-    return estimate, _wald_ci(estimate, phi - estimate)
+    strata = np.column_stack([in_g0, in_g1])
+    return _prob_group_contrast(
+        outcome.predict(X_test), np.zeros(len(group_test)),
+        np.zeros_like(strata, dtype=float), strata,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -157,11 +178,9 @@ def prob_parity(X_train, X_test, y_train, y_test, group_train, group_test,
     residual = (y_test == 1) - d_hat                 # outcome-model residual
     in_g0 = group_test == 0
     in_g1 = group_test == 1
-    phi0 = -(pi[:, 0] * residual + in_g0 * d_hat) / np.mean(in_g0)
-    phi1 = (pi[:, 1] * residual + in_g1 * d_hat) / np.mean(in_g1)
-    phi = phi0 + phi1
-    estimate = np.mean(phi)
-    return estimate, _wald_ci(estimate, phi - estimate)
+    return _prob_group_contrast(
+        d_hat, residual, pi, np.column_stack([in_g0, in_g1]),
+    )
 
 
 def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
@@ -183,11 +202,9 @@ def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
     residual = (y_test == 1) - d_hat
     in_g0 = (group_test == 0) & (y_test == 1)        # stratum (G0, Y1)
     in_g1 = (group_test == 1) & (y_test == 1)        # stratum (G1, Y1)
-    phi0 = -(rho[:, 2] * residual + in_g0 * d_hat) / np.mean(in_g0)
-    phi1 = (rho[:, 3] * residual + in_g1 * d_hat) / np.mean(in_g1)
-    phi = phi0 + phi1
-    estimate = np.mean(phi)
-    return estimate, _wald_ci(estimate, phi - estimate)
+    return _prob_group_contrast(
+        d_hat, residual, rho[:, [2, 3]], np.column_stack([in_g0, in_g1]),
+    )
 
 
 # ---------------------------------------------------------------------------

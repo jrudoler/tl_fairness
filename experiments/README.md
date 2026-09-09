@@ -1,15 +1,25 @@
 # Baseline-coverage experiments (exploratory)
 
+## EIF variance correction
+
+The audit corrected group centering in the probabilistic EIF variance (one-step,
+NumPy TMLE, and JAX TMLE), plus group sample-size denominators in the Figure 3
+baseline. The full regeneration is documented in
+[the correction report](../docs/eif-regeneration.md), including the additional
+thresholded-metric correction and every change in interpretation. Larger TL
+intervals alone do not establish validity or higher power. The corrected
+experiments show small-sample undercoverage, limitations under nuisance
+misspecification, and no uniform advantage over tuned model-based inference.
+
 Head-to-head **validity** comparisons of the targeted-learning (TL) data-fairness
 estimators against the three naive alternatives ("straw men"). These are
 standalone scripts, **not** wired into the Snakemake pipeline; outputs land in
 `experiments/out/` (gitignored). Promote to the pipeline once the story holds
 (see the plan / `Promotion path`).
 
-The repo already shows TL attains nominal coverage (Figs 2/4/6) and that the
-naive *variance* is too small (Fig 3). What was missing — and what these add — is
-a head-to-head **coverage / calibration** comparison against the named baselines
-on known-truth DGPs.
+These experiments compare coverage and calibration against named baselines
+on known-truth DGPs. Corrected EIF intervals expose limitations that were
+hidden by inflated historical standard errors; see the correction report.
 
 ## Run
 
@@ -48,8 +58,8 @@ comparable. Pass `--deterministic` to reproduce the old noiseless behaviour.
 This is wired into the pipeline sims too: `analysis/sim_parity/run.py` and
 `analysis/sim_robust/run.py` pass `bernoulli=True` (Figures 1–3). The
 `bernoulli` keyword on the DGP draws (`tlfair/simulations.py`) defaults to
-`False`, so any caller that does not opt in — `sim_tmle`/Figure 6 and the unit
-tests — is bit-identical to before.
+`False`; the current manuscript simulation entrypoints, including `sim_tmle`,
+explicitly opt into Bernoulli outcomes.
 
 ## What each shows
 
@@ -66,21 +76,17 @@ tests — is bit-identical to before.
   so the MLE diverges (a degenerate fit). Requires the `experiments` extra
   (`uv sync --extra experiments`).
 
-- **Exp 1 — Setting 1, probabilistic parity (well-specified, parametric).** The
-  regime most favourable to the straw man. The naive CLT is ~calibrated here and
-  TL is valid but conservative; the naive interval starts slipping under mild
-  ("linear") misspecification. Point: the naive "model fairness" CI and the TL
-  "data fairness" CI nearly coincide *only* when the model is easy to estimate.
+- **Exp 1 — Setting 1, probabilistic parity.** In the corrected rerun, TL
+  coverage is 93.0–95.8% and naive fixed-model coverage is 92.2–95.2% (500
+  replicates per configuration). TL intervals are modestly wider, but neither
+  uniform conservatism nor uniformly superior coverage is supported.
 
-- **Exp 2 — Setting 3, misspecification (the headline).** With flexible/
-  misspecified models the naive CLT under-covers parity (and *worsens* with n:
-  ~0.77 → ~0.57), a linear model collapses to 0 coverage, and the GLM "adjusted
-  effect" — which targets a *different* estimand (structurally 0 here, since the
-  group affects the outcome only through X) — looks fine when well specified but
-  collapses under misspecification (spurious effect, tiny CI — and the sandwich
-  SE confirms this is bias, not an optimistic variance). The well-specified GLM
-  is itself degenerate here because the noiseless DGP is separable. TL stays
-  calibrated throughout.
+- **Exp 2 — Setting 3, misspecification.** TL parity coverage is 91.0–95.3%,
+  with undercoverage at small sizes. Correctly specified standardization with
+  CLT or bootstrap intervals can have comparable coverage. Misspecified linear
+  standardization has zero parity coverage; misspecified adjusted-effect GLMs
+  continue to reject their true zero effect. The adjusted-effect and parity
+  panels concern different estimands, not interchangeable fairness criteria.
 
 - **Exp 3 — CMI conditional independence (permutation answers the wrong
   question).** At c=0 (conditional independence, but marginal dependence through
@@ -106,31 +112,14 @@ tests — is bit-identical to before.
   `tlfair/simulations.py` if the story graduates into the pipeline. Tune `--signal`
   / `--reps` / `--sizes` to sharpen the with-`Z`/without-`Z` flip.
 
-- **Exp 5 — Setting 3, training size vs. the naive baseline (the "just use more
-  data" objection).** Decouples the nuisance model's *training* size from a
-  *fixed* evaluation set and sweeps `--train-sizes`. The naive fixed-model CLT
-  treats `D_hat` as truth, so its error has a sampling part (the CLT captures it)
-  and a model-error part (it does not). Four curves map how that model-error bias
-  behaves as training data grows:
-  - **Naive, flexible + default GB** — coverage improves (≈0.24 → ≈0.50) then
-    plateaus below nominal. This is *not* an irreducible floor: the default booster
-    (lr=0.1 × 100 rounds) is simply **underfit**. At fixed `n_train` it is cured by
-    more *rounds*, not more *data* — raising `n_estimators` to 1000 at `n_train`=5000
-    drops the bias from ≈−0.030 to ≈−0.003.
-  - **Naive, flexible + tuned GB** (`TUNED_GB`) — with a better-converged learner
-    the bias shrinks with data and coverage **climbs toward nominal**. The
-    objection's real grain of truth: with sample-splitting and a consistent, tuned
-    nuisance the CLT *is* asymptotically valid for the parity point. The catch: you
-    can't tell from the interval whether you're there — the default-GB CI looks
-    just as confident at 0.5 coverage as this one at 0.95.
-  - **Naive, linear (misspecified)** — the one structural failure: `D_hat` → wrong
-    limit, bias frozen at ≈ the full parity gap; neither data nor capacity moves it,
-    coverage stays 0.
-  - **TL one-step, *same* default GB** — the EIF correction debiases that underfit
-    fit automatically; nominal by `n_train`≈250 and calibrated/conservative after.
-  Point: the naive CI *can* be made valid (flexible + tuned + enough data + sample
-  splitting), but its validity is contingent on nuisance quality you cannot verify
-  from the interval; TL delivers validity from the same imperfect nuisance for free.
+- **Exp 5 — Setting 3, training size.** The corrected TL interval under-covers
+  at small training sizes: coverage is 50.0%, 79.3%, 86.0%, and 91.7% at
+  training sizes 100, 250, 500, and 1000. Coverage approaches 95% with thousands
+  of training observations. TL improves substantially over default-booster
+  fixed-model intervals, but tuned-booster intervals can have comparable
+  coverage at large sizes. The linear model remains misspecified with zero
+  coverage. The former claim of validity by training size 250 was caused by
+  inflated EIF variance and has been removed.
 
 ## Reused from `tlfair/`
 

@@ -9,16 +9,10 @@ Factor: the feature set handed to the (logistic) learners.
   * "correct"  -- includes the true product terms X1*X4, X2*X3 (well specified).
   * "linear"   -- raw features only (mildly misspecified outcome model).
 
-This is the regime *most favourable to the straw man*: a low-dimensional,
-(near-)well-specified parametric model. Here the naive CLT is approximately
-calibrated -- when the logistic model converges fast, the uncertainty it ignores
-(from estimating P(Y|X)) is negligible, so its narrower interval (cf. the
-variance gap of Figure 3) still roughly covers. TL is valid throughout but
-*conservative* (it never under-covers). The naive interval starts to slip under
-the mild "linear" misspecification (~0.92), foreshadowing Experiment 2, where
-flexible/misspecified models make the naive CLT under-cover badly while TL stays
-calibrated. Takeaway: the naive "model fairness" CI and the TL "data fairness" CI
-nearly coincide only when the model is easy to estimate; they diverge otherwise.
+With the corrected group-centered EIF, both methods have coverage near 95%
+across much of this grid. TL intervals are only modestly wider, and TL coverage
+is not uniformly higher or conservative. See docs/eif-regeneration.md for the
+rerun results and comparison with the historical, inflated standard errors.
 
 Usage (smoke):
   PYTHONPATH=. .venv/bin/python experiments/exp1_parity_coverage.py \
