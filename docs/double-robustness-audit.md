@@ -96,11 +96,16 @@ CLT for that limiting, generally inefficient score can still justify the
 empirical-score variance. The exact-probability controls below check this
 case directly.
 
-The relevant manuscript overstatements are in `paper/sections/inference.tex`:
+The audit identified overstatements in `paper/sections/inference.tex`:
 sample splitting alone making the empirical-process term negligible, and the
 claim that the remainder condition is the only hypothesis not automatic from
 construction. The proposition itself includes the extra score-consistency
 assumption. The core double-robustness algebra does not need to be discarded.
+
+The manuscript integration now explicitly states the influence-function
+consistency condition in both passages, while retaining the advisor's framing.
+The ratio-expectation clarification discussed above remains a separate proof
+detail; the formal proposition and double-robustness appendix are unchanged.
 
 This distinction is established in the literature, e.g. Benkeser, Carone,
 van der Laan and Gilbert (2017),
@@ -152,11 +157,12 @@ consistent with the first-order training contribution identified above.
 
 ## Implications for the paper
 
-Retain the double-robust consistency result. Describe the boosting experiment
-as a finite-sample robustness comparison, using the actual learner names.
-Use the controls to test the theoretical distinction explicitly. Apply the
-nominal-coverage claim only under the stated rate and score-convergence
-conditions. In particular, an EIF variance is not a universal correction for
+The manuscript retains the double-robust consistency result and describes the
+boosting experiment using the actual learner names. Section 3 now includes all
+12 control coverage values in the table labeled `tab:dr_controls`, with a short
+interpretation separating bias reduction from interval validity. The nominal
+coverage claim requires the stated rate and score-convergence conditions.
+In particular, an EIF variance is not a universal correction for
 all training-sample uncertainty under arbitrary nuisance misspecification.
 
 If coverage with one misspecified nuisance is a separate objective, it needs
