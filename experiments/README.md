@@ -1,6 +1,14 @@
 # Baseline-coverage experiments (exploratory)
 
-## EIF variance correction
+## September 2026 audit: independent retraining
+
+**Start with [the manuscript/experiment review](../docs/fairness-retraining-review.md)
+and `exp6_retraining.py`.** Experiments 1, 2, and 5 already redraw training data,
+but had no paired population-null/alternative rejection analysis. Experiment 6
+adds exact null and alternative truths, 1000 independent training samples per
+configuration, 50 fresh evaluations per fitted model across five evaluation sizes, own-model vs data-target
+coverage, Type-I error/power, paired disagreement rates, and a nested variance
+decomposition. Monte Carlo errors cluster by training dataset.
 
 The audit corrected group centering in the probabilistic EIF variance (one-step,
 NumPy TMLE, and JAX TMLE), plus group sample-size denominators in the Figure 3
@@ -10,6 +18,34 @@ thresholded-metric correction and every change in interpretation. Larger TL
 intervals alone do not establish validity or higher power. The corrected
 experiments show small-sample undercoverage, limitations under nuisance
 misspecification, and no uniform advantage over tuned model-based inference.
+
+```bash
+# From the repository root; uv uses the existing project environment.
+uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --reps 50 --evaluations 3
+uv run --no-sync .venv/bin/python experiments/exp6_retraining.py
+# Independence control: a fitted group-blind rule cannot acquire population disparity.
+uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --effects 0 --association 0 \
+    --output-dir experiments/out/retraining_independent_dense
+# Integrated paper-scale run (also builds the figure).
+uv run --no-sync snakemake sim_retraining --cores 1
+# Redraw the manuscript figures from saved summaries; no simulation rerun.
+uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --plot-only \
+    --output-dir data/generated/retraining_dense --figure results/figures/fig9_retraining.pdf
+```
+
+Output paths are resolved relative to the repository even when the script is
+called from another directory. The standalone output directory contains
+`replicates.csv.gz`, `summary.csv`, `config.json`, `run.log`, and `retraining.pdf`.
+The default grid uses nine training sizes (100, 150, 225, 350, 500, 750, 1000,
+1500, 2000) and five evaluation sizes (250, 500, 1000, 2000, 4000).
+The pipeline writes data to `data/generated/retraining_dense/` and the figure to
+`results/figures/fig9_retraining.pdf`; `snakemake paper` copies it into the paper.
+The four-cell learner is saturated and deterministic given training data, so
+this experiment isolates training sampling noise without misspecification or
+random optimizer effects. Evaluation outcomes are used by TL's correction;
+model fairness only needs evaluation predictions and group labels.
+
+## Earlier experiments
 
 Head-to-head **validity** comparisons of the targeted-learning (TL) data-fairness
 estimators against the three naive alternatives ("straw men"). These are

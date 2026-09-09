@@ -44,6 +44,7 @@ FIGURES = [
     "results/figures/fig6_tmle_coverage.pdf",
     "results/figures/fig7_trainsize_coverage.pdf",
     "results/figures/fig8_conditioning_set.pdf",
+    "results/figures/fig9_retraining.pdf",
 ]
 
 TABLES = [
@@ -67,6 +68,7 @@ PAPER_FIG_MAP = {
     "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
     "results/figures/fig7_trainsize_coverage.pdf": "paper/figs/trainsize_coverage.pdf",
     "results/figures/fig8_conditioning_set.pdf":  "paper/figs/conditioning_set.pdf",
+    "results/figures/fig9_retraining.pdf":        "paper/figs/retraining.pdf",
 }
 
 
@@ -150,6 +152,21 @@ rule sim_condset:
     shell:
         "{RUN} analysis/sim_condset/run.py --n-jobs {threads} "
         "--signal 1.5 --sizes 2500 5000 --output {output}"
+
+
+rule sim_retraining:
+    input:
+        "experiments/exp6_retraining.py",
+        "tlfair/metrics.py",
+        "tlfair/plotting.py",
+    output:
+        raw=protected("data/generated/retraining_dense/replicates.csv.gz"),
+        summary=protected("data/generated/retraining_dense/summary.csv"),
+        figure="results/figures/fig9_retraining.pdf",
+    threads: NJOBS
+    shell:
+        "{RUN} experiments/exp6_retraining.py --n-jobs {threads} "
+        "--output-dir data/generated/retraining_dense --figure {output.figure}"
 
 
 rule analyze_adult:

@@ -6,7 +6,8 @@ targeted-learning (TL) estimators against:
 1. ``naive_fixed_model_parity`` -- fix one outcome model, treat its per-group
    predicted means as iid samples, and form a two-sample-mean (CLT) Wald CI.
    This is the "model fairness" view: it ignores the uncertainty in estimating
-   P(Y|X), so its CI is too narrow for the *data* estimand.
+   P(Y|X), so it can under-cover the *data* estimand while being valid for the
+   fitted model's own target.
 2. ``glm_ame_parity`` -- assume a logistic GLM and report the average marginal
    effect (AME) of the group on the probability scale, with a *model-based*
    (non-robust) delta-method Wald CI. Correct only if the GLM is well specified;
@@ -41,8 +42,10 @@ def naive_fixed_model_parity(model, X_train, y_train, X_test, group_test, z=_Z):
     Fits ``model`` once on the training split, predicts P(Y=1|X) on the test
     split, and treats those predictions as iid data: the CI is the textbook
     Welch-style interval for a difference of means. This deliberately omits the
-    EIF correction for nuisance-estimation error, so it under-covers the data
-    estimand even when ``model`` is correctly specified.
+    EIF correction for nuisance-estimation error, so it can under-cover the
+    data estimand even when ``model`` is correctly specified. Its conditional
+    fixed-model target is distinct; undercoverage of the data target is not a
+    failure of conditional model-fairness inference.
     """
     m = clone(model)
     m.fit(X_train, y_train)

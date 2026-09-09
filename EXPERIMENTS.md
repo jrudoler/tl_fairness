@@ -13,6 +13,21 @@ uv sync
 
 ## Run the workflow
 
+All figure entrypoints use the colors, faint grid, and hidden top/right borders
+from `~/clean-figs.mplstyle` through `tlfair.plotting.configure_matplotlib`.
+Its typography is overridden with compact sans-serif text (9–11 pt) to keep
+manuscript labels and legends readable. An identical repository copy,
+`clean-figs.mplstyle`, is used when the personal file is unavailable on another
+machine. To restyle the retraining figures without rerunning experiments, use
+`experiments/exp6_retraining.py --plot-only` with the saved output directory.
+
+The independent-retraining comparison is available as `sim_retraining` (also
+included in `all`). It covers exact null and nonzero probabilistic-parity
+populations, saves every replicate, and reports uncertainty clustered by
+training dataset. See [the audit](docs/fairness-retraining-review.md) for the
+design and results. The [regeneration report](docs/eif-regeneration.md) records
+the corrected historical experiments and resulting changes in interpretation.
+
 ```bash
 uv run snakemake --cores 1            # build all figures and tables
 uv run snakemake --cores 1 -n         # dry run: show the plan without executing

@@ -1,0 +1,11 @@
+pdf.fonttype: 42
+font.size: 14
+font.family: monospace
+savefig.dpi: 300
+savefig.transparent: False
+savefig.bbox: tight
+axes.spines.right: False
+axes.spines.top: False
+axes.grid: True
+grid.alpha: 0.1
+axes.labelsize: 16
