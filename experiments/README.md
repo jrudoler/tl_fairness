@@ -27,7 +27,7 @@ uv run --no-sync .venv/bin/python experiments/exp6_retraining.py
 uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --effects 0 --association 0 \
     --output-dir experiments/out/retraining_independent_dense
 # Integrated paper-scale run (also builds the figure).
-uv run --no-sync snakemake sim_retraining --cores 1
+uv run --no-sync snakemake fig9_retraining --cores 1
 # Redraw the manuscript figures from saved summaries; no simulation rerun.
 uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --plot-only \
     --output-dir data/generated/retraining_dense --figure results/figures/fig9_retraining.pdf

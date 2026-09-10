@@ -203,10 +203,10 @@ def run(effects: list[float], train_sizes: list[int], test_sizes: list[int], rep
 
 
 def plot(summary: pd.DataFrame, output: Path) -> None:
-    """One readable axis per population; color is evaluation n, style is method.
+    """Coverage and rejection share a two-row grid, legends, and rate scale.
 
-    The known-regression control remains in the results CSV but is excluded
-    from the manuscript comparison. Error bars retain their actual MC widths.
+    The second PDF page retains interval widths for supplementary inspection.
+    Error bars use the original Monte Carlo standard errors without rescaling.
     """
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
@@ -217,76 +217,79 @@ def plot(summary: pd.DataFrame, output: Path) -> None:
     from tlfair.plotting import FULL_WIDTH
 
     configure_matplotlib()
+    output = Path(output)
     effects = sorted(summary.effect.unique())
     test_sizes = sorted(summary.test_size.unique())
-    # Avoid the near-yellow endpoint, which has weak contrast on white.
     cmap = LinearSegmentedColormap.from_list(
         "evaluation_size", plt.get_cmap("viridis")(np.linspace(0.08, 0.82, 256)))
     norm = LogNorm(vmin=test_sizes[0], vmax=max(test_sizes[-1], test_sizes[0] * 1.01))
     colors = {n: cmap(norm(n)) for n in test_sizes}
     styles = {"Model fairness": ("--", "s"), "TL data fairness": ("-", "o")}
     with PdfPages(output) as pdf:
-        for metric in ["coverage_data", "rejection_rate", "mean_ci_width"]:
-            fig, axes = plt.subplots(1, len(effects), sharey=True, squeeze=False,
-                                     figsize=(0.9 * FULL_WIDTH, 2.7))
-            for row, effect in enumerate(effects):
-                ax = axes[0, row]
-                sub = summary[summary.effect == effect]
-                truth = sub.truth.iloc[0]
-                for n_test in test_sizes:
-                    for method, (linestyle, marker) in styles.items():
-                        points = sub[(sub.test_size == n_test) & (sub.method == method)]
-                        points = points.sort_values("train_size")
-                        x = points.train_size.to_numpy()
-                        y = 100 * points[metric].to_numpy()
-                        half_width = 196 * points[metric + "_mcse"].to_numpy()
-                        ax.fill_between(x, y - half_width, y + half_width,
-                                        color=colors[n_test], alpha=0.09, linewidth=0)
-                        ax.errorbar(x, y, yerr=half_width, color=colors[n_test],
-                                    linestyle=linestyle, marker=marker, markersize=2,
-                                    markerfacecolor="white", markeredgewidth=0.8,
-                                    linewidth=1.2, capsize=2.5, capthick=0.8,
-                                    elinewidth=0.8, barsabove=True, zorder=3)
-                ax.set_xscale("log")
-                ax.set_xlim(sub.train_size.min() / 1.2, sub.train_size.max() * 1.2)
-                ticks = [n for n in [100, 500, 2000]
-                         if sub.train_size.min() <= n <= sub.train_size.max()]
-                ax.xaxis.set_major_locator(FixedLocator(ticks or sorted(sub.train_size.unique())))
-                ax.xaxis.set_major_formatter(ScalarFormatter())
-                ax.tick_params(labelsize=8)
-                ax.minorticks_off()
-                ax.spines[["top", "right"]].set_visible(False)
-                if abs(truth) < 1e-12:
-                    title = "No disparity (null)"
-                else:
-                    title = f"Disparity: {100 * truth:.1f} pp"
-                ax.set_title(title, loc="left", pad=5, fontsize=9)
-                if metric != "mean_ci_width":
-                    ax.set_ylim(-2, 103)
-                    ax.set_yticks([0, 50, 100])
-                    if metric == "coverage_data" or abs(truth) < 1e-12:
-                        target = 95 if metric == "coverage_data" else 5
-                        ax.axhline(target, color="0.45", linestyle=":", linewidth=1, zorder=1)
-            ylabel = {"coverage_data": "Coverage (%)", "rejection_rate": "Rejection (%)",
-                      "mean_ci_width": "CI width (pp)"}[metric]
-            axes[0, 0].set_ylabel(ylabel, fontsize=9)
+        for metrics, suffix in [(["coverage_data", "rejection_rate"], "coverage_rejection"),
+                                (["mean_ci_width"], "mean_ci_width")]:
+            combined = len(metrics) == 2
+            fig, axes = plt.subplots(len(metrics), len(effects), sharey="row",
+                                     sharex="col", squeeze=False,
+                                     figsize=(FULL_WIDTH, 4.1 if combined else 2.7))
+            for row, metric in enumerate(metrics):
+                for col, effect in enumerate(effects):
+                    ax = axes[row, col]
+                    sub = summary[summary.effect == effect]
+                    truth = sub.truth.iloc[0]
+                    for n_test in test_sizes:
+                        for method, (linestyle, marker) in styles.items():
+                            points = sub[(sub.test_size == n_test) & (sub.method == method)]
+                            points = points.sort_values("train_size")
+                            x = points.train_size.to_numpy()
+                            y = points[metric].to_numpy()
+                            half_width = 1.96 * points[metric + "_mcse"].to_numpy()
+                            ax.fill_between(x, y - half_width, y + half_width,
+                                            color=colors[n_test], alpha=0.09, linewidth=0)
+                            ax.errorbar(x, y, yerr=half_width, color=colors[n_test],
+                                        linestyle=linestyle, marker=marker, markersize=2,
+                                        markerfacecolor="white", markeredgewidth=0.8,
+                                        linewidth=1.2, capsize=2.5, capthick=0.8,
+                                        elinewidth=0.8, barsabove=True, zorder=3)
+                    ax.set_xscale("log")
+                    ax.set_xlim(sub.train_size.min() / 1.2, sub.train_size.max() * 1.2)
+                    ticks = [n for n in [100, 500, 2000]
+                             if sub.train_size.min() <= n <= sub.train_size.max()]
+                    ax.xaxis.set_major_locator(FixedLocator(ticks or sorted(sub.train_size.unique())))
+                    ax.xaxis.set_major_formatter(ScalarFormatter())
+                    ax.tick_params(labelsize=8)
+                    ax.minorticks_off()
+                    if row == 0:
+                        title = "No disparity (null)" if abs(truth) < 1e-12 else f"Disparity: {truth:.3f}"
+                        ax.set_title(title, loc="left", pad=5, fontsize=9)
+                    if metric != "mean_ci_width":
+                        ax.set_ylim(-0.02, 1.03)
+                        ax.set_yticks([0, 0.5, 1])
+                        if metric == "coverage_data" or abs(truth) < 1e-12:
+                            target = 0.95 if metric == "coverage_data" else 0.05
+                            ax.axhline(target, color="0.45", linestyle=":", linewidth=1, zorder=1)
+                ylabel = {"coverage_data": "Coverage", "rejection_rate": "Rejection rate",
+                          "mean_ci_width": "Interval width"}[metric]
+                axes[row, 0].set_ylabel(ylabel, fontsize=9)
             fig.supxlabel("Training sample size", fontsize=10, y=0.025)
             method_handles = [Line2D([], [], color="0.2", linestyle=style, marker=marker,
                                      markerfacecolor="white", markersize=4, linewidth=1.6, label=method)
                               for method, (style, marker) in styles.items()]
             fig.legend(handles=method_handles, ncol=2, loc="upper center",
                        bbox_to_anchor=(0.55, 1.01), frameon=False, fontsize=9)
-            fig.subplots_adjust(left=0.105, right=0.985, bottom=0.20, top=0.66, wspace=0.17)
-            color_ax = fig.add_axes([0.31, 0.825, 0.59, 0.027])
+            fig.subplots_adjust(left=0.10, right=0.985, bottom=0.13 if combined else 0.20,
+                                top=0.78 if combined else 0.66, wspace=0.17, hspace=0.18)
+            color_y = 0.89 if combined else 0.825
+            color_ax = fig.add_axes([0.31, color_y, 0.59, 0.018 if combined else 0.027])
             colorbar = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=color_ax,
                                    orientation="horizontal", ticks=test_sizes)
             colorbar.ax.set_xticklabels([f"{n:,}" for n in test_sizes])
             colorbar.ax.tick_params(labelsize=8, length=2)
             colorbar.ax.minorticks_off()
             colorbar.outline.set_visible(False)
-            fig.text(0.29, 0.838, "Evaluation size", ha="right", va="center", fontsize=9)
+            fig.text(0.29, color_y + 0.009, "Evaluation size", ha="right", va="center", fontsize=9)
             pdf.savefig(fig)
-            fig.savefig(output.with_name(output.stem + "_" + metric + ".png"))
+            fig.savefig(output.with_name(output.stem + "_" + suffix + ".png"), dpi=180)
             plt.close(fig)
 
 

@@ -131,7 +131,7 @@ def plot(df, output):
     ax.axhline(0.95, ls="--", color="grey", lw=1)
     ax.set_xscale("log")
     ax.set_xlabel(xlabel)
-    ax.set_ylabel("95% CI coverage")
+    ax.set_ylabel("Coverage")
     ax.set_ylim(0, 1.02)
     ax.legend(title=None, fontsize=7)
     # Right: bias (mean estimate - truth) -- the mechanism behind the coverage

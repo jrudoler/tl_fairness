@@ -36,9 +36,7 @@ COMPARE_MEM_GB = float(config.get("compare_mem_gb", 16))
 # tlfair.metrics.perm_importance for reference, but is no longer wired in here.
 
 FIGURES = [
-    "results/figures/fig1_parity.pdf",
     "results/figures/fig2_robust_coverage.pdf",
-    "results/figures/fig3_variance.pdf",
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
@@ -60,9 +58,7 @@ TABLES = [
 # manuscript. main.tex references these extensionless, so the PDFs take
 # precedence over any same-named legacy PNG.
 PAPER_FIG_MAP = {
-    "results/figures/fig1_parity.pdf":            "paper/figs/asymptotic.pdf",
     "results/figures/fig2_robust_coverage.pdf":   "paper/figs/robust_coverage.pdf",
-    "results/figures/fig3_variance.pdf":          "paper/figs/naive_var.pdf",
     "results/figures/fig4_cmi_error.pdf":         "paper/figs/cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf":      "paper/figs/cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
@@ -155,18 +151,13 @@ rule sim_condset:
 
 
 rule sim_retraining:
-    input:
-        "experiments/exp6_retraining.py",
-        "tlfair/metrics.py",
-        "tlfair/plotting.py",
     output:
         raw=protected("data/generated/retraining_dense/replicates.csv.gz"),
         summary=protected("data/generated/retraining_dense/summary.csv"),
-        figure="results/figures/fig9_retraining.pdf",
     threads: NJOBS
     shell:
         "{RUN} experiments/exp6_retraining.py --n-jobs {threads} "
-        "--output-dir data/generated/retraining_dense --figure {output.figure}"
+        "--output-dir data/generated/retraining_dense"
 
 
 rule analyze_adult:
@@ -205,11 +196,13 @@ rule fig1_parity:
 
 rule fig2_robust:
     input:
-        "data/generated/robust_res.csv"
+        boosting="data/generated/robust_res.csv",
+        controls="experiments/out/eif_regeneration/dr_controls/summary.csv",
     output:
         "results/figures/fig2_robust_coverage.pdf"
     shell:
-        "{RUN} analysis/fig2_robust/run.py --input {input} --output {output}"
+        "{RUN} analysis/fig2_robust/run.py --input {input.boosting} "
+        "--controls-input {input.controls} --output {output}"
 
 
 rule fig3_variance:
@@ -263,6 +256,18 @@ rule fig8_condset:
         "results/figures/fig8_conditioning_set.pdf"
     shell:
         "{RUN} analysis/fig_condset/run.py --input {input} --output {output}"
+
+
+rule fig9_retraining:
+    input:
+        summary="data/generated/retraining_dense/summary.csv",
+        script="experiments/exp6_retraining.py",
+        style="tlfair/plotting.py",
+    output:
+        "results/figures/fig9_retraining.pdf"
+    shell:
+        "{RUN} {input.script} --plot-only "
+        "--output-dir data/generated/retraining_dense --figure {output}"
 
 
 rule table1_inference:
