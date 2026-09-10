@@ -176,13 +176,24 @@ directory. Serial/parallel and streamed/in-memory equivalence are tested.
   exactly at a threshold does not justify exchanging differentiation and
   integration. For example, `X~Uniform(-1,1)` and `D_t(X)=expit(X+t)` give
   `P(D_t(X)>=1/2)=(1+t)/2` near zero, with derivative `1/2`, despite
-  `P(D_0(X)=1/2)=0`. This review does not validate the thresholded estimators or
-  repair that separate derivation.
-- The paper correctly notes a vanishing CMI EIF at conditional independence,
-  but some conditioning-set passages still call the Wald test calibrated at
-  that null. A negative Wald interval there is not positive evidence of
-  independence. The parity experiment intentionally uses a regular null;
-  solving CMI boundary inference is a separate task.
+  `P(D_0(X)=1/2)=0`. The subsequent threshold-stability proposition in
+  `paper/sections/appendix_assumptions.tex` replaces that argument: a conditional
+  margin bound of order `epsilon^kappa` and uniform training error `O_P(r_m)`,
+  with `r_m^kappa = o(n_eval^(-1/2))`, make the fitted and oracle estimates
+  asymptotically equivalent. Its proof covers parity and opportunity and the
+  variance estimator. This is a sufficient condition for pointwise inference,
+  not an unrestricted nonparametric EIF claim. The current empirical learners'
+  uniform rates have not been established.
+- The CMI null interpretation has been corrected across the manuscript and
+  experiment documentation. The saved conditioning-set runs have zero Wald
+  flags under full conditioning but only 31% and 2.5% coverage of the true zero,
+  at total sizes 2500 and 5000 (200 replicates each); mean estimates are about
+  -0.015. These are diagnostic flag rates, not a calibrated pass or evidence
+  of independence. The data table retains the negative estimates and nominal
+  intervals with an explicit boundary qualification. The CMI EIF derivation
+  remains valid; its zero variance at the null does not supply a standardized
+  normal pivot. A separate conditional-independence test is outside the current
+  estimation scope. The parity experiment intentionally uses a regular null.
 
 ## Initial 3-by-3 results (archived)
 

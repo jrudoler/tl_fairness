@@ -127,26 +127,26 @@ explicitly opt into Bernoulli outcomes.
 - **Exp 3 — CMI conditional independence (permutation answers the wrong
   question).** At c=0 (conditional independence, but marginal dependence through
   the shared confounder Z) the global permutation test has ~100% Type-I error;
-  TL conditions on Z fully and is calibrated/conservative; the stratified
-  permutation only conditions approximately (coarse bins) and partly recovers
-  calibration. Power rises with the dependence strength c.
+  TL conditions on Z fully, but its Wald rule has no established calibration
+  at the CMI null. Stratified permutation conditions only approximately through
+  coarse bins. These rejection rates compare behavior, not interchangeable
+  validated tests of conditional independence.
 
-- **Exp 4 — feature-set selection decides the data-fairness verdict.** A
+- **Exp 4 — CMI depends on the conditioning set.** A
   high-dimensional, random-coefficient DGP with genuine confounders `Z` (a common
   cause of both `G` and `Y`, so `Y ⊥ G | Z` holds *exactly*) plus outcome-only
   predictors and noise. `G` and `Y` are marginally dependent through the shared
   `Z` (a nonzero marginal `MI(Y;G)` is printed). Sweeping how many confounders are
   in the conditioning set — outcome predictors + noise always included — the TL CMI
-  estimate falls monotonically to ~0 and its one-sided Wald test stops flagging:
-  with **all** of `Z` the setup **passes** (flag rate ≈ α, calibrated), but drop
-  the confounders and it is **flagged** as unfair even though you adjusted for many
-  *predictive* features. Point: predictive power is not fairness sufficiency — the
-  minimal sufficient adjustment set is the confounders, and the fairness verdict is
-  only as good as the conditioning set. Complement to Exp 3 (which fixed the
-  feature set and varied the method; Exp 4 fixes the TL CMI method and varies the
-  feature set). The confounded DGP is defined inline in the script; promote it to
-  `tlfair/simulations.py` if the story graduates into the pipeline. Tune `--signal`
-  / `--reps` / `--sizes` to sharpen the with-`Z`/without-`Z` flip.
+  estimate decreases. With all confounders included, the saved 200-replicate
+  runs at sizes 2500 and 5000 have mean estimates about -0.015 and zero Wald
+  flags, but nominal 95% interval coverage is only 31% and 2.5%, respectively.
+  Low flag rates therefore do not demonstrate calibrated inference or establish
+  independence. Without any confounders, the flag rate is 100% at both sizes.
+  The figure presents estimates and diagnostic flag rates; its 5% line is only
+  a nominal reference. The supported conclusion is that the conditioning set
+  changes the target and its estimates. The estimator and saved numerical
+  results are unchanged. The confounded DGP is defined in the script.
 
 - **Exp 5 — Setting 3, training size.** The corrected TL interval under-covers
   at small training sizes: coverage is 50.0%, 79.3%, 86.0%, and 91.7% at

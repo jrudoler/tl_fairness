@@ -24,13 +24,13 @@ kappa>0 is power. Methods:
     continuous Z leaves residual within-bin dependence, so its Type-I error
     still inflates as n grows -- it only conditions approximately.
   * TL Wald -- one-sided 0.05 test from the CMI EIF CI (reject if
-    est - 1.645*se > 0). Calibrated/conservative away from the boundary; we
-    report it honestly at kappa=0 given the documented boundary non-regularity.
+    est - 1.645*se > 0). Used as a diagnostic at kappa=0; the vanishing EIF
+    variance means ordinary Wald theory does not establish null calibration.
 
 Message: you must condition on Z. The naive global permutation does not, so it
-falsely flags conditional dependence (Type-I error ~1.0); TL conditions on Z
-fully and stays calibrated/conservative; the stratified permutation only
-conditions approximately (coarse bins) and partly recovers calibration.
+can flag conditional dependence because it targets marginal independence.
+TL conditions on Z but its Wald rule has no established null calibration;
+stratified permutation only conditions approximately through coarse bins.
 
 Usage (smoke):
   PYTHONPATH=. .venv/bin/python experiments/exp3_cmi_permutation.py \

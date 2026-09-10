@@ -1,8 +1,9 @@
-"""Entrypoint: conditioning-set vs. data-fairness verdict simulation (CMI).
+"""Entrypoint: conditioning-set CMI estimates and diagnostic Wald flag rates.
 
 Thin pipeline wrapper around ``experiments.exp4_feature_selection``: a confounded
 DGP in which ``Y ⊥ G | Z`` holds exactly, sweeping how many confounders are in the
-conditioning set and applying the one-sided TL CMI Wald test. This rule owns the
+conditioning set and applying a diagnostic one-sided CMI Wald rule whose null
+calibration is not established. This rule owns the
 compute and writes the aggregated CSV; plotting lives in ``analysis/fig_condset``.
 See the experiment module docstring for the full rationale.
 """

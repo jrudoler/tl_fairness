@@ -120,7 +120,8 @@ def _positive_rate(predict, X_test, mask, weight_total):
 
 # ---------------------------------------------------------------------------
 # Threshold metrics (Bayes-optimal decision rule D_c(x) = 1{P(Y=1|X) >= c}).
-# The EIF carries no outcome-residual term, so these are plug-in estimators.
+# Plug-in estimators: inference on the true rule requires the margin and
+# training-rate conditions in the appendix's threshold-stability proposition.
 # ---------------------------------------------------------------------------
 def parity(X_train, X_test, y_train, y_test, group_train, group_test,
            outcome, propensity=None):
@@ -213,7 +214,12 @@ def prob_opportunity(X_train, X_test, y_train, y_test, group_train, group_test,
 # ---------------------------------------------------------------------------
 def cmi(X_train, X_test, y_train, y_test, group_train, group_test,
         outcome, propensity=None):
-    """CMI via a single calibrated 4-class model of the joint p(G,Y|X)."""
+    """CMI via a single calibrated 4-class model of the joint p(G,Y|X).
+
+    The nominal Wald interval is not justified at conditional independence,
+    where the EIF variance vanishes. Negative intervals and non-rejection do
+    not establish independence; classifier calibration does not fix this.
+    """
     # unused (uniform dispatch): propensity
     joint_model = CalibratedClassifierCV(outcome, cv=3).fit(
         X_train, _encode_joint(group_train, y_train))

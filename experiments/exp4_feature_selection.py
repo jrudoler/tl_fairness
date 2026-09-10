@@ -1,10 +1,9 @@
-"""Experiment 4: the data-fairness verdict depends on the conditioning set.
+"""Experiment 4: CMI estimates depend on the conditioning set.
 
-Data fairness is the conditional-independence property ``Y ⊥ G | X``, certified
-via the CMI estimand ``I(Y;G|X)`` (=0 iff conditionally independent;
-``tlfair.metrics.cmi``). Every other simulation fixes the feature set; this one
-fixes a *confounded* data-generating process and sweeps **which features are
-conditioned on**, showing the verdict flips with the conditioning set.
+The population CMI ``I(Y;G|X)`` is zero iff Y and G are conditionally independent.
+This experiment fixes a confounded data-generating process and sweeps which
+features are conditioned on. Estimates and Wald flag rates are descriptive
+outputs; the Wald rule is not a validated conditional-independence test.
 
 DGP (high-dimensional, random-but-seeded coefficients). ``p`` independent
 standard-normal features split into three disjoint column groups:
@@ -18,20 +17,21 @@ standard-normal features split into three disjoint column groups:
 
 Because G and Y share only Z and are drawn independently given X, ``Y ⊥ G | Z``
 holds *exactly*, so conditioning on any feature set that CONTAINS Z gives true
-CMI = 0 (the data-fairness test passes). Dropping the confounders -- even while
+CMI = 0. Dropping the confounders -- even while
 adjusting for every other (predictive) feature -- leaves the confounding through
-Z unexplained, so CMI > 0 and the test flags the setup as unfair: predictive
-power is not fairness sufficiency, and the minimal sufficient adjustment set is Z.
+Z unexplained, giving positive CMI in this design. Predictive features need not
+suffice to remove conditional dependence.
 Marginally, Y and G remain dependent through the shared Z (reported as the
 empirical MI(Y;G)), so there IS marginal bias that the right conditioning explains
 away.
 
 The swept axis is ``k`` = how many of the ``s_conf`` confounders are included in
 the conditioning set (the outcome predictors + noise are ALWAYS included, so the
-contrast is purely "did you adjust for the confounders?"). The data-fairness
-verdict mirrors exp3's one-sided TL Wald test: flag unfair if est - 1.645*se > 0.
-At k = s_conf the rejection rate is the Type-I error (should be low / calibrated
--> PASS); at k < s_conf it is power (-> FLAG).
+contrast is purely "did you adjust for the confounders?"). The diagnostic rule
+mirrors exp3: flag if est - 1.645*se > 0. Its nominal 5% cutoff is not justified
+at the CMI null, where the EIF vanishes. Low flag rates can coexist with poor
+interval coverage and do not establish independence. Legacy CSV fields
+``reject_rate`` and ``kind`` retain their names for compatibility.
 
 The DGP is defined inline here (like exp3._draw); promote it to
 ``tlfair/simulations.py`` (e.g. ``confounded_feature_draw``) once it settles.
@@ -110,7 +110,7 @@ def _conditioning_cols(k, p, n_conf, n_out):
     Outcome predictors + noise (everything from column ``n_conf`` on) are always
     included; ``k`` selects a prefix of the confounder block. So k=0 conditions on
     all non-confounders only (strongest flag) and k=n_conf conditions on the full
-    feature set (pass).
+    feature set (true CMI = 0).
     """
     return list(range(k)) + list(range(n_conf, p))
 
@@ -181,14 +181,14 @@ def run(p, n_conf, n_out, sizes, reps, signal, coef_seed, seed, n_jobs):
                                                   & (ests + _Z2 * ses >= 0))) if full else np.nan,
             })
             r = rows[-1]
-            tag = "PASS (k=all Z)" if full else "flag"
+            tag = "null (all Z)" if full else "partial conditioning"
             print(f"  n={n} k={k}/{n_conf} [{tag}]: reject={r['reject_rate']:.3f} "
                   f"CMI_hat={r['mean_estimate']:.4f} width={r['mean_ci_width']:.4f}",
                   flush=True)
     return pd.DataFrame(rows)
 
 
-def plot(df, output):
+def plot(df: pd.DataFrame, output: str | Path) -> None:
     import matplotlib.pyplot as plt
     import seaborn as sns
     configure_matplotlib()
@@ -205,7 +205,7 @@ def plot(df, output):
     ax.axhline(0.0, ls="--", color="grey", lw=1)
     ax.set_xlabel("# confounders in conditioning set")
     ax.set_ylabel(r"$\hat{I}(Y;G\mid X)$")
-    ax.set_title("CMI estimate (truth = 0 with all Z)")
+    ax.set_title("Mean CMI estimate")
     ax.legend(title=None, fontsize=7)
     # Right: flag (reject) rate vs #confounders included.
     ax = axes[1]
@@ -213,12 +213,12 @@ def plot(df, output):
                  hue="sample_size", marker="o", ax=ax, palette="tab10")
     ax.axhline(ALPHA, ls="--", color="grey", lw=1)
     ax.set_xlabel("# confounders in conditioning set")
-    ax.set_ylabel("Flag rate (reject fairness)")
-    ax.set_title("Data-fairness verdict")
+    ax.set_ylabel("Wald flag rate")
+    ax.set_title("Diagnostic Wald rule")
     ax.set_ylim(-0.02, 1.02)
     ax.legend(title="n", fontsize=7)
     fig.tight_layout()
-    fig.savefig(output)
+    fig.savefig(output, bbox_inches="tight")
     print(f"Wrote {output}", flush=True)
 
 
@@ -252,17 +252,13 @@ def main():
     print(df.to_string(index=False), flush=True)
     plot(df, args.figure)
 
-    # Sanity check the headline flip at the largest sample size: full-Z should
-    # pass (low flag rate) and no-Z should flag (high flag rate). A warning, not a
-    # hard failure -- tune --signal if the marginal dependence is too weak/strong.
+    # Report the observed rates without treating low null rejection as a pass.
     big = df[df["sample_size"] == max(args.sizes)]
-    pass_rate = big[big["n_confounders_included"] == args.n_confounders]["reject_rate"].iloc[0]
+    null_rate = big[big["n_confounders_included"] == args.n_confounders]["reject_rate"].iloc[0]
     flag_rate = big[big["n_confounders_included"] == 0]["reject_rate"].iloc[0]
-    print(f"\nHeadline @ n={max(args.sizes)}: with-Z flag rate={pass_rate:.3f} "
-          f"(want low), without-Z flag rate={flag_rate:.3f} (want high)", flush=True)
-    if not (pass_rate <= 0.15 and flag_rate >= 0.85):
-        print("WARNING: the with-Z/without-Z flip is weak at this scale; "
-              "consider adjusting --signal, --reps, or --sizes.", flush=True)
+    print(f"\nObserved @ n={max(args.sizes)}: with-Z flag rate={null_rate:.3f}, "
+          f"without-Z flag rate={flag_rate:.3f}; null calibration is not established.",
+          flush=True)
 
 
 if __name__ == "__main__":
