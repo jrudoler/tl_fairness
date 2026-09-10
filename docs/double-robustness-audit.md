@@ -63,12 +63,15 @@ the group-1 propensity. If either nuisance is supplied exactly, this drift
 vanishes identically.
 
 The empirical denominator adds a finite-sample ratio bias; an exact zero
-product does not imply exact finite-sample unbiasedness. The appendix's passage
-from the numerator identity to the expectation of the ratio should explicitly
-condition on training and justify the ratio expansion. With bounded scores,
-fixed positive p, and appropriate treatment of the exponentially rare empty
-stratum event, that expectation correction is O(1/n). This is a rigor and
-notation issue, not the explanation for the large boosting biases.
+product does not imply exact finite-sample unbiasedness. The appendix now
+conditions on training and proves an O(1/n) expectation correction for bounded
+scores and fixed positive p. It extends the estimate by zero on an empty
+stratum for this calculation; the implementation instead raises an error, and
+the two agree wherever the estimate is defined. The empty-stratum probability
+is exponentially small. A separate denominator expansion establishes the
+asymptotic-linear representation under the product-rate and score-convergence
+conditions. This is a rigor and notation correction, not the explanation for
+the large boosting biases.
 
 ## Why consistency does not suffice for the reported intervals
 
@@ -104,8 +107,11 @@ assumption. The core double-robustness algebra does not need to be discarded.
 
 The manuscript integration now explicitly states the influence-function
 consistency condition in both passages, while retaining the advisor's framing.
-The ratio-expectation clarification discussed above remains a separate proof
-detail; the formal proposition and double-robustness appendix are unchanged.
+The ratio-expectation clarification is now proved in the double-robustness
+appendix. The main product-bias equation conditions explicitly on training and
+includes the O(1/n) ratio correction. The asymptotic-linearity proposition is
+unchanged; its rate and score-convergence conditions remain necessary for the
+stated Wald justification.
 
 This distinction is established in the literature, e.g. Benkeser, Carone,
 van der Laan and Gilbert (2017),
