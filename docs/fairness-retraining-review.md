@@ -3,6 +3,56 @@
 Review date: 2026-09-09. The manuscript edits are deliberately focused; this
 document holds the implementation audit and the qualifications behind them.
 
+## Final evidence and manuscript presentation (2026-09-10)
+
+The saved dense summaries support improved coverage of the population parity
+gap: TL coverage exceeds model-interval coverage in all 135 main configurations.
+With 2000 training observations, TL coverage ranges from 0.94628 to 0.95050.
+This is an empirical result for the studied design, not uniform superiority.
+
+At 500 training and 4000 evaluation observations, the dense results are:
+
+| Quantity | TL | Model interval |
+| --- | ---: | ---: |
+| Null data-target coverage | 0.94228 | 0.44138 |
+| Null rejection | 0.05772 | 0.55862 |
+| Small-alternative data-target coverage | 0.94140 | 0.42778 |
+| Small-alternative false-negative rate | 0.01432 | 0.09264 |
+| Null mean interval width | 0.043706 | 0.028735 |
+| Null between-training variance (rounded) | 0.000009 | 0.000542 |
+| Null within-training variance (rounded) | 0.000124 | 0.000054 |
+
+The model intervals still cover their own fitted-model target at about 0.95.
+Under the small alternative, TL alone rejects in 0.08974 of paired evaluations,
+and the model alone in 0.01142. The benefit is not explained by width alone:
+the correction also reduces sensitivity of the center to the training fit.
+Power is not uniformly higher; with 500 training and 250 evaluation observations,
+TL power is 0.191 versus 0.389. With only 100 training observations and 4000
+evaluation observations, TL null rejection is 0.21602. In the matched
+independence control it is 0.36464 versus 0.04910 for the model interval.
+
+Sources: `data/generated/retraining_dense/summary.csv` and
+`experiments/out/retraining_independent_dense/summary.csv`. Their metadata
+records 135 and 45 configurations, respectively, with 1000 training fits and
+50 evaluations per fit. The 5000-replicate controls in
+`experiments/out/eif_regeneration/dr_controls/summary.csv` retain the distinction
+between double-robust consistency and coverage: one correctly specified fitted
+nuisance gives coverage 0.9052 or 0.9368 at equal split sizes.
+
+CMI is a separate limitation. In `data/generated/cmi_coverage.csv`, coverage at
+kappa >= 1 has median 0.89, and 37 of 63 configurations are below 0.90; coverage
+is not uniformly near nominal away from independence. At independence and
+sample size 10000 it is 0.26. The conditioning-set results remain as documented
+below. These findings require narrower prose, not replacement of numerical data.
+
+The manuscript now leads with a combined two-row coverage/rejection figure.
+The sample-size estimate illustration and variance comparison were removed;
+boosting and exact/quadratic controls share an annotated two-panel figure.
+The training-size experiment and conditioning-set figure remain in the main
+text, while the CMI comparison and its setup are in the appendix. Main-text
+rates and figure axes use proportions. Historical figure numbers and percentage
+units in the audit below refer to the earlier presentation.
+
 ## What the existing experiments establish
 
 The parity simulations **already draw independent training datasets from a
@@ -149,8 +199,9 @@ uv run --no-sync .venv/bin/python experiments/exp6_retraining.py \
 
 The pipeline writes raw data, summaries, configuration and logs under
 `data/generated/retraining_dense/`; its figure is `results/figures/fig9_retraining.pdf`.
-The three PDF pages show coverage, rejection, and width, respectively, with
-three horizontally arranged panels, one per population. Training size is on the horizontal axis,
+The first PDF page combines coverage and rejection in two rows and three
+population columns; the second retains interval widths for supplementary
+inspection. Training size is on the horizontal axis,
 evaluation size uses a continuous logarithmic color scale, and fairness method
 is line style and marker shape. Each curve has nine simulated training sizes;
 the intermediate points are new simulations, not interpolated estimates.
