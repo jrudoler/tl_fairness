@@ -36,7 +36,6 @@ COMPARE_MEM_GB = float(config.get("compare_mem_gb", 16))
 # tlfair.metrics.perm_importance for reference, but is no longer wired in here.
 
 FIGURES = [
-    "results/figures/fig2_robust_coverage.pdf",
     "results/figures/fig4_cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf",
@@ -45,7 +44,10 @@ FIGURES = [
     "results/figures/fig9_retraining.pdf",
 ]
 
-TABLES = [
+NUISANCE_TABLES = [f"results/data/nuisance_{name}.tex"
+                   for name in ["fitted", "controls", "sensitivity", "population", "findings"]]
+
+TABLES = NUISANCE_TABLES + [
     "results/data/table1_inference.csv",
     "results/data/table1_inference.tex",
     "results/data/table2_cmi_truth.csv",
@@ -58,7 +60,6 @@ TABLES = [
 # manuscript. main.tex references these extensionless, so the PDFs take
 # precedence over any same-named legacy PNG.
 PAPER_FIG_MAP = {
-    "results/figures/fig2_robust_coverage.pdf":   "paper/figs/robust_coverage.pdf",
     "results/figures/fig4_cmi_error.pdf":         "paper/figs/cmi_error.pdf",
     "results/figures/fig4_cmi_coverage.pdf":      "paper/figs/cmi_coverage.pdf",
     "results/figures/fig6_tmle_coverage.pdf":     "paper/figs/tmle_coverage.pdf",
@@ -135,10 +136,91 @@ rule sim_cmi:
 
 rule sim_trainsize:
     output:
-        protected("data/generated/trainsize_coverage.csv")
+        summary=protected("data/generated/nuisance_training/summary.csv"),
+        raw=protected("data/generated/nuisance_training/replicates.csv.gz"),
+        paired=protected("data/generated/nuisance_training/paired_comparisons.csv"),
+        population=protected("data/generated/nuisance_training/population.csv"),
+        manifest=protected("data/generated/nuisance_training/manifest.json"),
     threads: NJOBS
     shell:
-        "{RUN} analysis/sim_trainsize/run.py --n-jobs {threads} --output {output}"
+        "{RUN} analysis/sim_trainsize/run.py --n-jobs {threads}"
+
+
+rule sim_nuisance_tuning:
+    input:
+        raw="data/generated/nuisance_training/replicates.csv.gz",
+        population="data/generated/nuisance_training/population.csv",
+        manifest="data/generated/nuisance_training/manifest.json",
+    output:
+        summary=protected("data/generated/nuisance_training_cv/summary.csv"),
+        raw=protected("data/generated/nuisance_training_cv/replicates.csv.gz"),
+        paired=protected("data/generated/nuisance_training_cv/paired_comparisons.csv"),
+        population=protected("data/generated/nuisance_training_cv/population.csv"),
+        manifest=protected("data/generated/nuisance_training_cv/manifest.json"),
+        selections=protected("data/generated/nuisance_training_cv/tuning_selections.csv"),
+        comparisons=protected("data/generated/nuisance_training_cv/learner_comparisons.csv"),
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_nuisance_tuning/run.py --n-jobs {threads}"
+
+
+rule sim_nuisance_matched_rate:
+    input:
+        raw="data/generated/nuisance_training/replicates.csv.gz",
+        population="data/generated/nuisance_training/population.csv",
+        manifest="data/generated/nuisance_training/manifest.json",
+    output:
+        summary=protected("data/generated/nuisance_matched_rate/summary.csv"),
+        raw=protected("data/generated/nuisance_matched_rate/replicates.csv.gz"),
+        paired=protected("data/generated/nuisance_matched_rate/paired_comparisons.csv"),
+        population=protected("data/generated/nuisance_matched_rate/population.csv"),
+        manifest=protected("data/generated/nuisance_matched_rate/manifest.json"),
+        comparisons=protected("data/generated/nuisance_matched_rate/rate_comparisons.csv"),
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_nuisance_matched_rate/run.py --n-jobs {threads}"
+
+
+rule sim_nuisance_early_stopping:
+    input:
+        raw="data/generated/nuisance_training/replicates.csv.gz",
+        population="data/generated/nuisance_training/population.csv",
+        manifest="data/generated/nuisance_training/manifest.json",
+    output:
+        summary=protected("data/generated/nuisance_early_stopping/summary.csv"),
+        raw=protected("data/generated/nuisance_early_stopping/replicates.csv.gz"),
+        paired=protected("data/generated/nuisance_early_stopping/paired_comparisons.csv"),
+        population=protected("data/generated/nuisance_early_stopping/population.csv"),
+        manifest=protected("data/generated/nuisance_early_stopping/manifest.json"),
+        diagnostics=protected("data/generated/nuisance_early_stopping/fit_diagnostics.csv.gz"),
+    threads: NJOBS
+    shell:
+        "{RUN} analysis/sim_nuisance_early_stopping/run.py --n-jobs {threads}"
+
+
+rule nuisance_tables:
+    input:
+        paired="data/generated/nuisance_early_stopping/paired_comparisons.csv",
+        summary="data/generated/nuisance_early_stopping/summary.csv",
+        population="data/generated/nuisance_early_stopping/population.csv",
+    output:
+        NUISANCE_TABLES + ["results/data/nuisance_tables.csv"]
+    shell:
+        "{RUN} analysis/nuisance_tables/run.py --input {input.summary} "
+        "--population {input.population} --paired {input.paired} --output-dir results/data"
+
+
+rule sync_nuisance_tables:
+    input:
+        NUISANCE_TABLES
+    output:
+        [f"paper/tables/nuisance_{name}.tex" for name in ["fitted", "controls", "sensitivity", "population", "findings"]]
+    run:
+        import shutil
+        from pathlib import Path
+        Path("paper/tables").mkdir(exist_ok=True)
+        for src, dst in zip(input, output):
+            shutil.copyfile(src, dst)
 
 
 rule sim_condset:
@@ -242,7 +324,7 @@ rule fig6_tmle:
 
 rule fig7_trainsize:
     input:
-        "data/generated/trainsize_coverage.csv"
+        "data/generated/nuisance_early_stopping/summary.csv"
     output:
         "results/figures/fig7_trainsize_coverage.pdf"
     shell:
@@ -320,6 +402,7 @@ rule paper:
     input:
         figs=list(PAPER_FIG_MAP.values()),
         tex="paper/main.tex",
+        nuisance_tables=rules.sync_nuisance_tables.output,
         # main.tex \input{}s one file per section/appendix from paper/sections/,
         # so a change to any of them must trigger a recompile.
         sections=sorted(glob.glob("paper/sections/*.tex")),

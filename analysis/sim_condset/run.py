@@ -1,4 +1,4 @@
-"""Entrypoint: conditioning-set CMI estimates and diagnostic Wald flag rates.
+"""Entrypoint: conditioning-set CMI estimates and empirical Wald rejection rates.
 
 Thin pipeline wrapper around ``experiments.exp4_feature_selection``: a confounded
 DGP in which ``Y ⊥ G | Z`` holds exactly, sweeping how many confounders are in the

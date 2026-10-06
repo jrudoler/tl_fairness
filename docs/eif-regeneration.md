@@ -100,6 +100,8 @@ The bias-reduction comparison remains, but the correction does not remove all
 bias or guarantee small-sample validity. Tuned model intervals can have
 comparable coverage to TL at larger training sizes.
 
+An earlier display-only revision showed absolute bias, $|\overline{\hat\Psi}-\Psi|$, and the manuscript places this experiment immediately after the independent-retraining coverage results. The original signed biases are all negative. For this display-only update, the simulation CSV was unavailable locally and the results server was unreachable, so the 28 plotted values were recovered from the existing PDF's vector marker coordinates (to plotting precision); coverage was checked against the 300-replicate grid. The recovered display values and recovery script are retained in `results/data/trainsize_plot_recovered.csv` and `results/data/recover_trainsize_plot.py`, with the original PDF in `results/figures/trainsize_signed_original.pdf`. These are display artifacts, not replacement simulation results. That historical plot is superseded in the manuscript by the signed-bias matched comparison documented in `docs/nuisance-training-revision.md`; the new figure is generated from saved simulation replicates rather than recovered PDF coordinates.
+
 ### One-step / TMLE / CV-TMLE comparison
 
 This artifact is generated as `fig6_tmle_coverage.pdf` but is not currently

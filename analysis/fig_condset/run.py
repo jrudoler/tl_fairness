@@ -1,8 +1,8 @@
-"""Figure: conditioning set vs. CMI estimates and diagnostic Wald flags.
+"""Figure: conditioning set vs. CMI estimates and empirical Wald rejection rates.
 
-Two panels: (left) mean TL estimate of I(Y;G|X) with its mean 95% CI band, falling
-as confounders are added to the conditioning set; (right) the one-sided
-Wald flag rate. The nominal alpha line does not imply null calibration.
+Two panels: (left) mean TL estimate of I(Y;G|X), with shading down to the mean
+one-sided 95% lower confidence bound; (right) the one-sided
+Wald rejection rate. The nominal alpha line does not imply null calibration.
 Reuses the experiment module's ``plot`` so the pipeline figure is identical to the
 exploratory one.
 """

@@ -134,16 +134,18 @@ def plot(df, output):
     ax.set_ylabel("Coverage")
     ax.set_ylim(0, 1.02)
     ax.legend(title=None, fontsize=7)
-    # Right: bias (mean estimate - truth) -- the mechanism behind the coverage
+    # Right: absolute bias |mean estimate - truth| -- the mechanism behind the coverage
     # story: the linear bias is frozen, default GB plateaus, tuned GB shrinks to 0,
     # and TL reduces, but need not eliminate, nuisance-related bias.
     ax = axes[1]
-    sns.lineplot(data=df, x="train_size", y="bias", hue="method",
+    sns.lineplot(data=df.assign(absolute_bias=df["bias"].abs()),
+                 x="train_size", y="absolute_bias", hue="method",
                  marker="o", ax=ax, legend=False)
     ax.axhline(0.0, ls="--", color="grey", lw=1)
     ax.set_xscale("log")
     ax.set_xlabel(xlabel)
-    ax.set_ylabel(r"Bias  $\overline{\hat{\Psi}} - \Psi$")
+    ax.set_ylabel(r"Absolute bias  $|\overline{\hat{\Psi}} - \Psi|$")
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     fig.savefig(output)
     print(f"Wrote {output}", flush=True)

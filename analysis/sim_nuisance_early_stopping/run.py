@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from experiments.nuisance_training import SCENARIOS, SIZES, CONTROL_SIZES, run_shard, collect
+from experiments.nuisance_early_stopping import SCENARIOS, SIZES, CONTROL_SIZES, run_shard, collect
 
 
 def grid():
@@ -17,8 +17,8 @@ def main():
     p.add_argument('--array-index', type=int)
     p.add_argument('--n-jobs', type=int, default=1)
     p.add_argument('--reps', type=int, default=1000)
-    p.add_argument('--output-dir', type=Path, default=Path('data/generated/nuisance_training_shards'))
-    p.add_argument('--summary-dir', type=Path, default=Path('data/generated/nuisance_training'))
+    p.add_argument('--output-dir', type=Path, default=Path('data/generated/nuisance_early_stopping_shards'))
+    p.add_argument('--summary-dir', type=Path, default=Path('data/generated/nuisance_early_stopping'))
     args = p.parse_args()
     if args.array_index is not None:
         if args.reps != 1000 or not 0 <= args.array_index < 320:

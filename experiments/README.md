@@ -1,5 +1,14 @@
 # Baseline-coverage experiments (exploratory)
 
+## October 2026: matched nuisance estimation
+
+The revised main-text training-size comparison is implemented in
+`nuisance_training.py` and integrated through `analysis/sim_trainsize/run.py`.
+It compares TL and model fairness with shared fitted predictions for default and
+higher-capacity boosting, saves every replicate, and reports signed bias and
+Monte Carlo uncertainty. See [the revision and reproduction notes](../docs/nuisance-training-revision.md).
+`exp5_trainsize_coverage.py` remains the historical squared-feature experiment.
+
 ## September 2026 audit: independent retraining
 
 **Start with [the manuscript/experiment review](../docs/fairness-retraining-review.md)
@@ -140,11 +149,12 @@ explicitly opt into Bernoulli outcomes.
   in the conditioning set — outcome predictors + noise always included — the TL CMI
   estimate decreases. With all confounders included, the saved 200-replicate
   runs at sizes 2500 and 5000 have mean estimates about -0.015 and zero Wald
-  flags, but nominal 95% interval coverage is only 31% and 2.5%, respectively.
-  Low flag rates therefore do not demonstrate calibrated inference or establish
-  independence. Without any confounders, the flag rate is 100% at both sizes.
-  The figure presents estimates and diagnostic flag rates; its 5% line is only
-  a nominal reference. The supported conclusion is that the conditioning set
+  rejections, but nominal 95% interval coverage is only 31% and 2.5%, respectively.
+  Low rejection rates therefore do not demonstrate calibrated inference or establish
+  independence. Without any confounders, the rejection rate is 100% at both sizes.
+  The figure shades from the mean estimate down to the mean one-sided 95%
+  lower confidence bound, using the same 1.645 SE cutoff as the Wald rejection
+  rule. Its 5% line is only a nominal reference. The supported conclusion is that the conditioning set
   changes the target and its estimates. The estimator and saved numerical
   results are unchanged. The confounded DGP is defined in the script.
 

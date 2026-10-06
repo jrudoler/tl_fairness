@@ -2,7 +2,7 @@
 
 The population CMI ``I(Y;G|X)`` is zero iff Y and G are conditionally independent.
 This experiment fixes a confounded data-generating process and sweeps which
-features are conditioned on. Estimates and Wald flag rates are descriptive
+features are conditioned on. Estimates and empirical Wald rejection rates are descriptive
 outputs; the Wald rule is not a validated conditional-independence test.
 
 DGP (high-dimensional, random-but-seeded coefficients). ``p`` independent
@@ -28,8 +28,8 @@ away.
 The swept axis is ``k`` = how many of the ``s_conf`` confounders are included in
 the conditioning set (the outcome predictors + noise are ALWAYS included, so the
 contrast is purely "did you adjust for the confounders?"). The diagnostic rule
-mirrors exp3: flag if est - 1.645*se > 0. Its nominal 5% cutoff is not justified
-at the CMI null, where the EIF vanishes. Low flag rates can coexist with poor
+mirrors exp3: reject if est - 1.645*se > 0. Its nominal 5% cutoff is not justified
+at the CMI null, where the EIF vanishes. Low rejection rates can coexist with poor
 interval coverage and do not establish independence. Legacy CSV fields
 ``reject_rate`` and ``kind`` retain their names for compatibility.
 
@@ -109,7 +109,7 @@ def _conditioning_cols(k, p, n_conf, n_out):
 
     Outcome predictors + noise (everything from column ``n_conf`` on) are always
     included; ``k`` selects a prefix of the confounder block. So k=0 conditions on
-    all non-confounders only (strongest flag) and k=n_conf conditions on the full
+    all non-confounders only (highest rejection rate) and k=n_conf conditions on the full
     feature set (true CMI = 0).
     """
     return list(range(k)) + list(range(n_conf, p))
@@ -193,27 +193,28 @@ def plot(df: pd.DataFrame, output: str | Path) -> None:
     import seaborn as sns
     configure_matplotlib()
     fig, axes = plt.subplots(1, 2, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
-    # Left: mean CMI estimate vs #confounders included, with mean-CI-width band.
+    # Left: mean CMI estimate and mean one-sided 95% lower confidence bound.
     ax = axes[0]
     for n, sub in df.groupby("sample_size"):
         sub = sub.sort_values("n_confounders_included")
         x = sub["n_confounders_included"].to_numpy()
         m = sub["mean_estimate"].to_numpy()
-        hw = sub["mean_ci_width"].to_numpy() / 2
+        mean_se = sub["mean_ci_width"].to_numpy() / (2 * _Z2)
+        lower = m - _Z1 * mean_se
         line, = ax.plot(x, m, marker="o", label=f"n={n}")
-        ax.fill_between(x, m - hw, m + hw, color=line.get_color(), alpha=0.15)
+        ax.fill_between(x, lower, m, color=line.get_color(), alpha=0.15)
     ax.axhline(0.0, ls="--", color="grey", lw=1)
     ax.set_xlabel("# confounders in conditioning set")
     ax.set_ylabel(r"$\hat{I}(Y;G\mid X)$")
     ax.set_title("Mean CMI estimate")
     ax.legend(title=None, fontsize=7)
-    # Right: flag (reject) rate vs #confounders included.
+    # Right: empirical rejection rate vs #confounders included.
     ax = axes[1]
     sns.lineplot(data=df, x="n_confounders_included", y="reject_rate",
                  hue="sample_size", marker="o", ax=ax, palette="tab10")
     ax.axhline(ALPHA, ls="--", color="grey", lw=1)
     ax.set_xlabel("# confounders in conditioning set")
-    ax.set_ylabel("Wald flag rate")
+    ax.set_ylabel("Wald rejection rate")
     ax.set_title("Diagnostic Wald rule")
     ax.set_ylim(-0.02, 1.02)
     ax.legend(title="n", fontsize=7)
@@ -255,9 +256,9 @@ def main():
     # Report the observed rates without treating low null rejection as a pass.
     big = df[df["sample_size"] == max(args.sizes)]
     null_rate = big[big["n_confounders_included"] == args.n_confounders]["reject_rate"].iloc[0]
-    flag_rate = big[big["n_confounders_included"] == 0]["reject_rate"].iloc[0]
-    print(f"\nObserved @ n={max(args.sizes)}: with-Z flag rate={null_rate:.3f}, "
-          f"without-Z flag rate={flag_rate:.3f}; null calibration is not established.",
+    rejection_rate = big[big["n_confounders_included"] == 0]["reject_rate"].iloc[0]
+    print(f"\nObserved @ n={max(args.sizes)}: with-Z rejection rate={null_rate:.3f}, "
+          f"without-Z rejection rate={rejection_rate:.3f}; null calibration is not established.",
           flush=True)
 
 
