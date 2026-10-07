@@ -50,8 +50,8 @@ The current workflow targets `data/generated/nuisance_early_stopping/`. Run
 `slurm/nuisance_early_stopping.sbatch` from an isolated cluster snapshot. Collect
 with `experiments/nuisance_early_stopping.py collect --input-dir
  data/generated/nuisance_early_stopping_shards`, then run the default validation,
-figure, and table scripts. The PDF retains its old, labelled results until the
-new run is complete and inspected.
+figure, and table scripts. The completed run was collected and validated on 2026-10-07; Figure 2, appendix
+tables, and the compiled manuscript now use these results.
 
 ## Matched learning-rate revision (2026-10-06)
 
@@ -255,3 +255,42 @@ overfull boxes, and the affected pages were visually inspected. Final hashes and
 collection metadata are in `data/generated/nuisance_training_cv/delivery_manifest.json`.
 The original fixed-configuration outputs and pre-CV manuscript archive remain
 available separately.
+
+
+## Early-stopping completion and numerical control audit (2026-10-07)
+
+All 320 jobs completed: 16,000 datasets, 118,000 method rows, and 118 summaries.
+All summaries and paired Monte Carlo comparisons were regenerated from saved
+replicates; population integration uncertainty remains negligible. The data hashes
+match the original experiment in every configuration. All 52 tests pass, and the
+manuscript compiled without undefined references or overfull boxes. The figure
+and affected manuscript/appendix pages were visually inspected.
+
+Refitted linear and quadratic models on some cluster shards did not reproduce
+bitwise-identical prediction hashes, despite matching seeds, data, source, and
+library versions. The largest unchanged-control point-estimate difference was
+2.85e-9; across estimates, endpoints, widths, and standard errors the maximum was
+3.44e-9. Coverage was identical for all 45,000 comparable method rows. Oracle
+hashes matched exactly. The collector now validates these numerical quantities
+with absolute tolerance 1e-8 instead of requiring identical fitted-logistic hashes;
+it still rejects changed observations, oracle predictions, coverage decisions,
+or material numerical differences. `control_audit.json` records the check.
+The computation source is preserved in shard metadata and
+`results/data/nuisance_revision_before_early_stopping/simulation_source.py`;
+only collection validation was repaired after the runs. This is consistent with
+small floating-point differences between refits; the specific hardware cause
+was not established. Resume any original shards using their frozen cluster source.
+
+`analysis/nuisance_tables/stopping_diagnostics.py` regenerates
+`stopping_summary.csv` from the saved replicates, including tree counts, fraction
+at the tree limit, probability MSE, and evaluation Brier scores. At training size
+1000, median outcome/group tree counts are 38/34 (lower capacity) and 29/27
+(higher capacity). Higher-capacity mean probability MSE remains larger for both
+nuisances. Model-fairness bias is negative for both configurations in the primary
+setting, whereas TL bias is much smaller. These revised fits change learning rate
+for higher capacity and introduce a validation split and early stopping for both;
+comparisons with the old figure cannot isolate the effect of early stopping alone.
+
+The pre-revision manuscript is preserved in
+`results/data/nuisance_revision_before_early_stopping/`. Final artifact hashes are
+recorded in `data/generated/nuisance_early_stopping/delivery_manifest.json`.

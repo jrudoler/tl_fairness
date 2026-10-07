@@ -47,7 +47,7 @@ def plot(df, output):
         ax.set_xscale('log')
         ax.set_xlabel('Training sample size')
         ax.tick_params(labelsize=8)
-    labels = {'default': 'Default boosting', 'cross_validated': 'CV-tuned boosting',
+    labels = {'default': 'Lower-capacity boosting', 'cross_validated': 'CV-tuned boosting',
               'higher_capacity': 'Higher-capacity boosting'}
     handles = [Line2D([], [], color=c, lw=2, label=labels[case])
                for case, c in colors.items()]

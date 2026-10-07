@@ -193,9 +193,19 @@ rule sim_nuisance_early_stopping:
         population=protected("data/generated/nuisance_early_stopping/population.csv"),
         manifest=protected("data/generated/nuisance_early_stopping/manifest.json"),
         diagnostics=protected("data/generated/nuisance_early_stopping/fit_diagnostics.csv.gz"),
+        control_audit=protected("data/generated/nuisance_early_stopping/control_audit.json"),
     threads: NJOBS
     shell:
         "{RUN} analysis/sim_nuisance_early_stopping/run.py --n-jobs {threads}"
+
+
+rule nuisance_stopping_diagnostics:
+    input:
+        "data/generated/nuisance_early_stopping/replicates.csv.gz"
+    output:
+        "data/generated/nuisance_early_stopping/stopping_summary.csv"
+    shell:
+        "{RUN} analysis/nuisance_tables/stopping_diagnostics.py"
 
 
 rule nuisance_tables:
@@ -203,6 +213,7 @@ rule nuisance_tables:
         paired="data/generated/nuisance_early_stopping/paired_comparisons.csv",
         summary="data/generated/nuisance_early_stopping/summary.csv",
         population="data/generated/nuisance_early_stopping/population.csv",
+        diagnostics="data/generated/nuisance_early_stopping/stopping_summary.csv",
     output:
         NUISANCE_TABLES + ["results/data/nuisance_tables.csv"]
     shell:

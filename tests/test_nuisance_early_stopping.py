@@ -36,3 +36,17 @@ def test_builtin_stopping_does_not_use_evaluation_observations():
     np.testing.assert_array_equal(a.predict_proba(x[100:]),b.predict_proba(x[100:]))
     assert BOOST['learning_rate']==HIGH['learning_rate']==.1
     for k,v in EARLY_STOPPING.items(): assert BOOST[k]==HIGH[k]==v
+
+
+def test_control_audit_accepts_roundoff_but_rejects_material_change():
+    import pytest
+    from analysis.nuisance_tables.control_audit import audit_unchanged
+    old=pd.DataFrame(baseline('primary',100,100,0,cases=['linear_linear']))
+    old['truth']=0.0
+    new=old.copy()
+    new['outcome_hash']='numerically-different-refit'
+    new['estimate']+=1e-10
+    audit=audit_unchanged(new,old)
+    assert audit['coverage_events_changed']==0
+    new['estimate']+=1e-3
+    with pytest.raises(AssertionError): audit_unchanged(new,old)

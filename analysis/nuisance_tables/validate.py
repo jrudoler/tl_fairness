@@ -73,13 +73,9 @@ def validate(directory):
         expected=raw.drop_duplicates(['scenario','train_size','replicate','outcome_model','group_model'])
         pd.testing.assert_frame_equal(diagnostics,expected.reset_index(drop=True),check_dtype=False,atol=1e-12)
         original=pd.read_csv(directory.parent/'nuisance_training'/'replicates.csv.gz')
-        identity=KEYS+['replicate']
-        matched=raw.merge(original[identity+['data_hash','outcome_hash','group_hash']],on=identity,
-                          suffixes=('','_original'),validate='one_to_one')
-        assert matched.data_hash.eq(matched.data_hash_original).all()
-        for role in ['outcome','group']:
-            unchanged=matched[~matched[role+'_model'].isin(['default','higher_capacity'])]
-            assert unchanged[role+'_hash'].eq(unchanged[role+'_hash_original']).all()
+        from analysis.nuisance_tables.control_audit import audit_unchanged
+        audit=audit_unchanged(raw,original)
+        assert audit==json.loads((directory/'control_audit.json').read_text())
     if has_matched_rate:
         from experiments.nuisance_matched_rate import HIGH
         assert manifest['replacement_case'] == 'higher_capacity'

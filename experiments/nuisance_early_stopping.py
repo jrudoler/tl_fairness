@@ -236,14 +236,8 @@ def collect(input_dir, output_dir, expected_reps=1000):
         if set(sub[['case', 'method', 'replicate']].itertuples(index=False, name=None)) != expected:
             raise ValueError(f'Incomplete simulation configuration {key}')
     baseline = pd.read_csv(Path('data/generated/nuisance_training')/'replicates.csv.gz')
-    identity = KEYS+['replicate']
-    matching = raw.merge(baseline[identity+['data_hash']],on=identity,suffixes=('','_original'),validate='one_to_one')
-    assert matching.data_hash.eq(matching.data_hash_original).all(), 'Original draws changed'
-    for role in ['outcome','group']:
-        col=role+'_hash'
-        checks=raw.merge(baseline[identity+[col]],on=identity,suffixes=('','_original'),validate='one_to_one')
-        unchanged=checks[~checks[role+'_model'].isin(['default','higher_capacity'])]
-        assert unchanged[col].eq(unchanged[col+'_original']).all(), 'Unchanged nuisance differs'
+    from analysis.nuisance_tables.control_audit import audit_unchanged
+    control_audit = audit_unchanged(raw, baseline)
     truths=pd.read_csv(Path('data/generated/nuisance_training')/'population.csv')
     for scenario,sub in raw.groupby('scenario'):
         min_se=sub.groupby(KEYS).estimate.std().min()/np.sqrt(expected_reps)
@@ -255,6 +249,7 @@ def collect(input_dir, output_dir, expected_reps=1000):
             for key,value in info.items(): truths.loc[idx,key]=value
     raw, summary, pairs = summarize(raw, truths)
     output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir/'control_audit.json').write_text(json.dumps(control_audit,indent=2)+'\n')
     raw.to_csv(output_dir/'replicates.csv.gz', index=False)
     summary.to_csv(output_dir/'summary.csv', index=False)
     pairs.to_csv(output_dir/'paired_comparisons.csv', index=False)
