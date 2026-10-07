@@ -96,7 +96,7 @@ def render(summary, population, output, paired):
             'reported standard error (SE) are in percentage points (pp). An empirical coverage of zero or '
             'one has zero plug-in Monte Carlo standard error; this does not establish an exact coverage probability. ')
     write_table(primary, output/'nuisance_fitted.tex', note + 'Estimated nuisance comparisons; Boost and High '
-                'denote lower- and higher-capacity boosting. Model uses the same outcome predictions as TL '
+                'denote lower- and higher-capacity gradient-boosted decision-tree classifiers. Model uses the same outcome predictions as TL '
                 'and does not use the group fit.', 'tab:nuisance-fitted',
                 [('Primary family', primary, FITTED[:1]+(['cross_validated'] if 'cross_validated' in set(primary.case) else [])+FITTED[1:])])
     write_table(primary, output/'nuisance_controls.tex', note + 'Oracle probabilities and correctly specified '
