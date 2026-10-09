@@ -128,6 +128,11 @@ inputs, Python environment, figure rendering, and both workflow dry runs have
 been checked. A fresh worktree needs its own environment and access to the
 untracked data. Manuscript compilation on Locust currently fails because its
 TeX installation lacks `LibertinusMath-Regular`; local XeLaTeX compilation passes.
+The recovery bundle's repository path is a symlink on Locust to
+`/shared_data0/jrudoler/tlfair_publication_recovery_20261009`; all 96 files were
+checksum-verified during relocation after the shared `/home` filesystem filled.
+Check storage availability before launching new runs, which otherwise write
+under the checkout's `data/runs/` directory.
 
 Use Locust for expensive new computation:
 
