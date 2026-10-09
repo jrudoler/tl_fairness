@@ -7,8 +7,10 @@ Current commands and authoritative paths are in [EXPERIMENTS.md](../EXPERIMENTS.
 
 - Recovered and checksum-verified 96 Locust files (1.36 GB), including corrected
   Adult/Law caches, CMI summaries/truth, conditioning-set summaries, and the full
-  retraining run. Quarantined the stale Law cache. Remote shared-data source/shard
-  snapshots remain intact.
+  retraining run. Deleted the stale Law cache at the user’s request after
+  verifying the corrected replacement; its checksums and deletion record are
+  versioned in `archive/workflow_2026-10-09/stale-law-cache.json`. Remote
+  shared-data source/shard snapshots remain intact.
 - Applied semantic figure/analysis names and removed inactive rules from the
   publication DAG; original sources/workflow are archived.
 - Added publication input hashes, artifact lineage, explicit new-run configurations,

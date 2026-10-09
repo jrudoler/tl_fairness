@@ -44,9 +44,9 @@ used by early-stopping collection and validation; it is an active dependency.
 
 Recovered retraining replicates reproduce all 405 summary rows. The nuisance
 validator checks 118,000 paired-method rows and their manifests/control audits.
-The stale local Law cache was quarantined under
-`data/generated/quarantine/2026-10-09/`, and the corrected cluster cache was
-verified against the manuscript table. The generated real-data and CMI-truth
+The stale local Law cache was deleted on 2026-10-09 after verifying its
+corrected replacement against the manuscript table. Its old and replacement
+checksums are retained in the [cleanup record](archive/workflow_2026-10-09/stale-law-cache.json). The generated real-data and CMI-truth
 tables retain the published values.
 
 Historical CMI estimation and conditioning-set runs saved aggregates without
@@ -123,7 +123,13 @@ canonical input copies together. Retain the prior run and manifest.
 
 ## Locust
 
-Keep editing/rendering locally; use Locust for expensive new computation:
+The synchronized Locust checkout is `/home/jrudoler/tl_fairness`. Its publication
+inputs, Python environment, figure rendering, and both workflow dry runs have
+been checked. A fresh worktree needs its own environment and access to the
+untracked data. Manuscript compilation on Locust currently fails because its
+TeX installation lacks `LibertinusMath-Regular`; local XeLaTeX compilation passes.
+
+Use Locust for expensive new computation:
 
 ```sh
 mkdir -p logs

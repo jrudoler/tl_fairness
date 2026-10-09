@@ -1,0 +1,8 @@
+{
+  "original": "data/generated/law_results.pkl",
+  "reason": "Stale local cache replaced by recovered publication result",
+  "replacement_sha256": "4ee490e81e27ad2fd96ea74b2c6a1c4df175d5e3aae89c90e36ef36cc0678ef2",
+  "sha256": "2849ed86ca6e43f527c92f85dce7c7094a6ca85b6746d13bad1c41e43808330d",
+  "status": "stale cache deleted at user request",
+  "deleted_on": "2026-10-09"
+}
