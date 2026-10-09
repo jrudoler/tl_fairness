@@ -19,6 +19,7 @@ def main():
     p.add_argument('--reps', type=int, default=1000)
     p.add_argument('--output-dir', type=Path, default=Path('data/generated/nuisance_early_stopping_shards'))
     p.add_argument('--summary-dir', type=Path, default=Path('data/generated/nuisance_early_stopping'))
+    p.add_argument('--reference-dir', type=Path, default=Path('data/generated/nuisance_training'))
     args = p.parse_args()
     if args.array_index is not None:
         if args.reps != 1000 or not 0 <= args.array_index < 320:
@@ -31,7 +32,7 @@ def main():
         for scenario, size in grid():
             run_shard(args.output_dir/f'{scenario}_{size}_full', scenario, size,
                       reps=args.reps, n_jobs=args.n_jobs)
-        collect(args.output_dir, args.summary_dir, args.reps)
+        collect(args.output_dir, args.summary_dir, args.reps, args.reference_dir)
 
 
 if __name__ == '__main__':

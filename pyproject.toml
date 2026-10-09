@@ -36,3 +36,8 @@ experiments = [
 where = ["."]
 include = ["tlfair*"]
 namespaces = true
+
+[tool.pytest.ini_options]
+# Archived source snapshots preserve old imports and are not the active suite.
+testpaths = ["tests"]
+pythonpath = ["."]

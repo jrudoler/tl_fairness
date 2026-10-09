@@ -21,9 +21,7 @@ def configure_matplotlib(style_path: str | Path | None = None) -> None:
     plt.rcParams["pdf.fonttype"] = 42
     plt.rcParams["ps.fonttype"] = 42
     if style_path is None:
-        personal_style = Path.home() / "clean-figs.mplstyle"
-        style_path = (personal_style if personal_style.is_file()
-                      else Path(__file__).resolve().parents[1] / "clean-figs.mplstyle")
+        style_path = Path(__file__).resolve().parents[1] / "clean-figs.mplstyle"
     plt.style.use(Path(style_path).expanduser())
     # The clean-figs appearance is useful, but its 14/16 pt monospace text
     # crowds these manuscript layouts. Keep typography independent of it.

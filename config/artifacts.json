@@ -1,0 +1,141 @@
+{
+  "artifacts": [
+    {
+      "id": "parity_retraining",
+      "result": "results/figures/parity_retraining.pdf",
+      "paper": "paper/figs/parity_retraining.pdf",
+      "dependencies": [
+        "data/generated/parity_retraining/summary.csv",
+        "experiments/parity_retraining.py",
+        "tlfair/metrics.py",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "parity_nuisance_training",
+      "result": "results/figures/parity_nuisance_training.pdf",
+      "paper": "paper/figs/parity_nuisance_training.pdf",
+      "dependencies": [
+        "data/generated/nuisance_early_stopping/summary.csv",
+        "analysis/fig_parity_nuisance_training/run.py",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "cmi_conditioning_set",
+      "result": "results/figures/cmi_conditioning_set.pdf",
+      "paper": "paper/figs/cmi_conditioning_set.pdf",
+      "dependencies": [
+        "data/generated/cmi_conditioning_set.csv",
+        "analysis/fig_cmi_conditioning_set/run.py",
+        "experiments/cmi_conditioning_set.py",
+        "experiments/baselines.py",
+        "tlfair/metrics.py",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "cmi_estimation_error",
+      "result": "results/figures/cmi_estimation_error.pdf",
+      "paper": "paper/figs/cmi_estimation_error.pdf",
+      "dependencies": [
+        "data/generated/cmi_estimation_coverage.csv",
+        "data/generated/cmi_estimation_comparison.csv",
+        "data/generated/cmi_population_truth.pkl",
+        "analysis/fig_cmi_estimation/run.py",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "cmi_estimation_coverage",
+      "result": "results/figures/cmi_estimation_coverage.pdf",
+      "paper": "paper/figs/cmi_estimation_coverage.pdf",
+      "dependencies": [
+        "data/generated/cmi_estimation_coverage.csv",
+        "data/generated/cmi_estimation_comparison.csv",
+        "data/generated/cmi_population_truth.pkl",
+        "analysis/fig_cmi_estimation/run.py",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "real_data_inference",
+      "result": "results/data/real_data_inference.tex",
+      "paper": "paper/tables/real_data_inference.tex",
+      "dependencies": [
+        "data/generated/adult_results.pkl",
+        "data/generated/law_results.pkl",
+        "analysis/table_real_data_inference/run.py",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "cmi_population_truth",
+      "result": "results/data/cmi_population_truth.tex",
+      "paper": "paper/tables/cmi_population_truth.tex",
+      "dependencies": [
+        "data/generated/cmi_population_truth.pkl",
+        "analysis/table_cmi_population_truth/run.py",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "nuisance_population",
+      "result": "results/data/nuisance_population.tex",
+      "paper": "paper/tables/nuisance_population.tex",
+      "dependencies": [
+        "data/generated/nuisance_early_stopping/summary.csv",
+        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
+        "data/generated/nuisance_early_stopping/population.csv",
+        "analysis/nuisance_tables/run.py",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "nuisance_fitted",
+      "result": "results/data/nuisance_fitted.tex",
+      "paper": "paper/tables/nuisance_fitted.tex",
+      "dependencies": [
+        "data/generated/nuisance_early_stopping/summary.csv",
+        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
+        "data/generated/nuisance_early_stopping/population.csv",
+        "analysis/nuisance_tables/run.py",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "nuisance_controls",
+      "result": "results/data/nuisance_controls.tex",
+      "paper": "paper/tables/nuisance_controls.tex",
+      "dependencies": [
+        "data/generated/nuisance_early_stopping/summary.csv",
+        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
+        "data/generated/nuisance_early_stopping/population.csv",
+        "analysis/nuisance_tables/run.py",
+        "uv.lock"
+      ]
+    },
+    {
+      "id": "nuisance_sensitivity",
+      "result": "results/data/nuisance_sensitivity.tex",
+      "paper": "paper/tables/nuisance_sensitivity.tex",
+      "dependencies": [
+        "data/generated/nuisance_early_stopping/summary.csv",
+        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
+        "data/generated/nuisance_early_stopping/population.csv",
+        "analysis/nuisance_tables/run.py",
+        "uv.lock"
+      ]
+    }
+  ]
+}

@@ -27,3 +27,8 @@ outputs/*
 /cmi_timing.pkl
 /adult_results.pkl
 /law_results.pkl
+
+# Immutable recovered run bundles and newly versioned analysis runs
+/data/imported/
+/data/runs/
+/results/provenance/

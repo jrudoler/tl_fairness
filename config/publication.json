@@ -1,0 +1,190 @@
+{
+  "inputs": [
+    {
+      "path": "data/generated/adult_results.pkl",
+      "sha256": "a3c716170971a6d91354b45e7dc70ccd87cc2dc9c4c6233029bb14ff9d9c49e2",
+      "source": "data/imported/locust-2026-10-09/data/generated/adult_results.pkl",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/law_results.pkl",
+      "sha256": "4ee490e81e27ad2fd96ea74b2c6a1c4df175d5e3aae89c90e36ef36cc0678ef2",
+      "source": "data/imported/locust-2026-10-09/data/generated/law_results.pkl",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/cmi_estimation_coverage.csv",
+      "sha256": "14b530082f21ff0e6bcbb618f9be3e94f65a02e8eb9e18505635cfb4fea9834a",
+      "source": "data/imported/locust-2026-10-09/data/generated/cmi_coverage.csv",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/cmi_estimation_comparison.csv",
+      "sha256": "0bf680aa28f6b3b2605dc7dd157cc4b11a43022070602d3c18d719573e43e268",
+      "source": "data/imported/locust-2026-10-09/data/generated/cmi_compare.csv",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/cmi_estimation_timing.pkl",
+      "sha256": "1d295ba60acdd110ab356ff7bb494680ceed131fe4b3903a04aa72b39a56ca7d",
+      "source": "data/imported/locust-2026-10-09/data/generated/cmi_timing.pkl",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/cmi_population_truth.pkl",
+      "sha256": "b267b8877368bf709dd656472398b623aa157715d99ccd88152907e904b29839",
+      "source": "data/imported/locust-2026-10-09/data/generated/truth_dict.pkl",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/cmi_conditioning_set.csv",
+      "sha256": "7438cee7a4c9a05496fdb4383622b74c4bcbd408dd3888de9a323d83902fe323",
+      "source": "data/imported/locust-2026-10-09/experiments/out/exp4_feature_selection.csv",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/parity_retraining/replicates.csv.gz",
+      "sha256": "af8a9cb2e7749fd1e593479475528998f3d94b74ec342e1f821ccdb029f60026",
+      "source": "data/imported/locust-2026-10-09/data/generated/retraining_dense/replicates.csv.gz",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/parity_retraining/summary.csv",
+      "sha256": "f3c829e5efd1de90cc7d1a6c3d8389a0686b88c6b6b040e762a65b68296efc12",
+      "source": "data/imported/locust-2026-10-09/data/generated/retraining_dense/summary.csv",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/parity_retraining/config.json",
+      "sha256": "5d20860808c728bf359c0e4b91de786d29516236760ec42eb8594453c09e517c",
+      "source": "data/imported/locust-2026-10-09/data/generated/retraining_dense/config.json",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/parity_retraining/run.log",
+      "sha256": "12aed7668264791f807875c42a291aad1f01a0e73683d88767b1eff09c081a7c",
+      "source": "data/imported/locust-2026-10-09/data/generated/retraining_dense/run.log",
+      "source_commit": "10cba4ed60cbb0599c1877a721e4f4568baf4c63",
+      "source_kind": "locust-recovery"
+    },
+    {
+      "path": "data/generated/nuisance_training/replicates.csv.gz",
+      "sha256": "3954d252a2ceab32c58d1e1cf96abe458158fb40191859bfff4eb6d5b6d91158",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_training/summary.csv",
+      "sha256": "c83c6e716e1e8598c0c8800b018e6f8513266f0e5000244f7a9d493f0ce100a4",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_training/paired_comparisons.csv",
+      "sha256": "58929236199893b5406205cb16134a75053fb19090cc03ce956a5c64ae97de56",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_training/population.csv",
+      "sha256": "b65e46281849766c14ca3cd664fff1c6be4f1fc724c976abf762a7a8d6fe0aa9",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_training/manifest.json",
+      "sha256": "47a062fcb8635d382c17584b1ecbc34f0e64085f5b3b236c3fe94df67daefd5a",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_training/delivery_manifest.json",
+      "sha256": "59ebdb7b84e2ce82351225080ae9527090c98a8857288c14d56b059a03d604fb",
+      "source": "data/generated/nuisance_training/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/replicates.csv.gz",
+      "sha256": "db8848952727b8583371ca99b1d3f806790c62ba8064ee4b42286d4728399798",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/summary.csv",
+      "sha256": "746af4a4451b41d007a5aa26506072b2a27701face9573404b26dd01b7992c1e",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/paired_comparisons.csv",
+      "sha256": "4889260a6000a48a1ce8f4e197e2b621f7bb381920484701956d824b6917a13d",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/population.csv",
+      "sha256": "c02357427fdb23bac4e3e54394c2a410f4671b4b61715128bfa1ee06d400f37d",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/manifest.json",
+      "sha256": "ee1f14cf05f0900cb292616a2aa699a20426b243b634878e169fbde79183a61a",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "sha256": "26b8ab6d6b33765c7fc6f121e6504a348d024b690c2d47af7155b7f32f69cfa2",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/stopping_summary.csv",
+      "sha256": "48a1f4ac8471ccc59ead811e1f6f0e351081b64455cc7abf4503dac10756a5fe",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/control_audit.json",
+      "sha256": "6dbd028f959ef6e76cda83c23972b76589dcc768f53a19f4cf9c2fe5e9f855de",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/generated/nuisance_early_stopping/fit_diagnostics.csv.gz",
+      "sha256": "19c0060a6479010cd62202391ae9d54d9bba1e6d6c949fcb663f999b30d3c375",
+      "source": "data/generated/nuisance_early_stopping/delivery_manifest.json",
+      "source_kind": "previously-delivered"
+    },
+    {
+      "path": "data/raw/adult.csv",
+      "sha256": "4895fd481e7ae6e2ca423e6213454b39f0f7ec0efcd741ad2f6c667554f0eb51",
+      "source": "data/imported/locust-2026-10-09/data/raw/adult.csv",
+      "source_kind": "recovered-raw-input"
+    },
+    {
+      "path": "data/raw/law.csv",
+      "sha256": "23c1b173f3480beb7afc4957b107a9917dfc4a8dc9d87ea6034ec35222152452",
+      "source": "data/imported/locust-2026-10-09/data/raw/law.csv",
+      "source_kind": "recovered-raw-input"
+    }
+  ],
+  "limitations": [
+    "Historical CMI and conditioning-set bundles contain aggregates, not per-replicate results.",
+    "Real-data publication pickles combine the documented correction steps; some CMI values retain rounded historical precision.",
+    "A recovery checksum documents the recovered file identity, not a retrospective proof of how each historical computation was performed."
+  ],
+  "publication_id": "manuscript-2026-10-09",
+  "schema_version": 1
+}

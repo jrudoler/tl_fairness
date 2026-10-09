@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-09",
+  "purpose": "Naming-only migration; original run manifests are not rewritten.",
+  "source_snapshots": [
+    {
+      "path": "Snakefile",
+      "sha256": "5c0adf96cfc58f3fe07a57cde1e7b018c058498c8761dd8f86b44704dd050df2"
+    },
+    {
+      "path": "experiments/README.md",
+      "sha256": "c85fa1b60920eeb1627d61d208b9ba1446caf5ebdc7d58154e5b8c4644e79863"
+    },
+    {
+      "path": "analysis/fig4_cmi/run.py",
+      "sha256": "f2c18e879026606a2f458f900ecad0f43a3e017b3170a219ae24c95de2c52e6b"
+    },
+    {
+      "path": "analysis/tools/validate.py",
+      "sha256": "1c692046280db7a7b03117e3293e061fcd6b55ae322723754737f39102ca51ed"
+    },
+    {
+      "path": "analysis/fig_condset/run.py",
+      "sha256": "f2a53585fc1477164e07865d643bd312ac4f98b3ccd33e2746c74bfa63bf6f38"
+    },
+    {
+      "path": "analysis/table1_inference/run.py",
+      "sha256": "e0ad83f3144591e35c57a7665eb5c00298bc9cb8273c7f3d615e2319fa544293"
+    },
+    {
+      "path": "analysis/fig_trainsize/run.py",
+      "sha256": "fbdf8c16fb7e780ce1585efa2651ca0c28fcc599c3b77fb883525fd8d0a807a3"
+    },
+    {
+      "path": "analysis/sim_condset/run.py",
+      "sha256": "6fc35b68e288629ec9d45c34e49c65336dd40301dbfe2c3526a67fc9456bde43"
+    },
+    {
+      "path": "analysis/sim_cmi/run.py",
+      "sha256": "51878b9b4ba8d56f31ec1c446169c89fc20c5ea4b586aa5d44a5a27765bf57a3"
+    },
+    {
+      "path": "analysis/table2_cmi_truth/run.py",
+      "sha256": "3fc77933d67e30b81a64d3c7483d870dbd292e8adc9f00162763e836a96f6f3f"
+    },
+    {
+      "path": "experiments/nuisance_training.py",
+      "sha256": "6dbb888a108ae23c7c852f7577c105338b00afdcc83663790797da4b049102af"
+    },
+    {
+      "path": "experiments/exp6_retraining.py",
+      "sha256": "070c205e8ec12e13c0fe13dc4041b99d75280926344a5b94bbc897529ab6d2f6"
+    },
+    {
+      "path": "experiments/nuisance_early_stopping.py",
+      "sha256": "d8dc1b350cdac81767d179579692e8f4186a8ca8c7e330cf8835e7453a7dd68b"
+    },
+    {
+      "path": "experiments/exp4_feature_selection.py",
+      "sha256": "2d9e1e81eee5ad88dd35a8d0dad2bf15bad264cc946fe363d0b70c5c62a8457f"
+    },
+    {
+      "path": "tests/test_nuisance_training.py",
+      "sha256": "c910b9c89c06869d15b12b4cb3cabf510d17c17ac45cab6c5add271a6475a65f"
+    },
+    {
+      "path": "tests/test_retraining.py",
+      "sha256": "910e4e7fa5ac4933994aedf14cf9b5899ad4ff38687b40e25bace2f2e97133f8"
+    },
+    {
+      "path": "slurm/retraining.sbatch",
+      "sha256": "2bfdeba83795fd72bcdebe8651685900a1eb8ff66abe429fc3340a2b11cb2d75"
+    },
+    {
+      "path": "slurm/figures.sbatch",
+      "sha256": "251e8e6c414717d560c95e8780edece6b0d75417a3223d6c0fdf861a0c3ada63"
+    },
+    {
+      "path": "slurm/nuisance_training.sbatch",
+      "sha256": "5f3cbe487c5ab3f6b343d45b2f293f1a10490728760a3e06b517d9a9b82e328c"
+    },
+    {
+      "path": "slurm/analyze_fulldata.sbatch",
+      "sha256": "76c73a0ff2bfc93f1869703e7ee83adc0d0d64db900128e58537ec83f5623942"
+    }
+  ],
+  "source_moves": {
+    "analysis/fig4_cmi": "analysis/fig_cmi_estimation",
+    "analysis/fig_trainsize": "analysis/fig_parity_nuisance_training",
+    "analysis/fig_condset": "analysis/fig_cmi_conditioning_set",
+    "analysis/table1_inference": "analysis/table_real_data_inference",
+    "analysis/table2_cmi_truth": "analysis/table_cmi_population_truth",
+    "analysis/sim_trainsize": "analysis/sim_nuisance_reference",
+    "analysis/sim_cmi": "analysis/sim_cmi_estimation",
+    "analysis/sim_condset": "analysis/sim_cmi_conditioning_set",
+    "experiments/exp6_retraining.py": "experiments/parity_retraining.py",
+    "experiments/exp4_feature_selection.py": "experiments/cmi_conditioning_set.py",
+    "slurm/retraining.sbatch": "slurm/parity_retraining.sbatch",
+    "tests/test_retraining.py": "tests/test_parity_retraining.py"
+  },
+  "artifact_moves": [
+    {
+      "old": "results/figures/fig7_trainsize_coverage.pdf",
+      "new": "results/figures/parity_nuisance_training.pdf",
+      "sha256": "5764df2e1d440db1adcc92dbebff7d3d49d8f3d2fe2d7ed63c0a03b01ae36527"
+    },
+    {
+      "old": "results/figures/fig7_trainsize_coverage.png",
+      "new": "results/figures/parity_nuisance_training.png",
+      "sha256": "0b1b6c7cccba9aa6edfb550aa35d4e14e3a52708c36d713f819249ad34ed0bdb"
+    },
+    {
+      "old": "paper/figs/cmi_error.pdf",
+      "new": "paper/figs/cmi_estimation_error.pdf",
+      "sha256": "ec570fa3be71642e4632ca3379f54d37deb4992f9369eddbd19c55730cb7c63d"
+    },
+    {
+      "old": "paper/figs/cmi_error.png",
+      "new": "paper/figs/cmi_estimation_error.png",
+      "sha256": "b89ac63e6497270ae348653bcc83c089ea28bf8fa43fc582a6c1a2006748b969"
+    },
+    {
+      "old": "paper/figs/cmi_coverage.pdf",
+      "new": "paper/figs/cmi_estimation_coverage.pdf",
+      "sha256": "87ef24e7c7602d0c2e124408089f19d1c17f7b6bd1b88524c9a12ace34a0f87d"
+    },
+    {
+      "old": "paper/figs/trainsize_coverage.pdf",
+      "new": "paper/figs/parity_nuisance_training.pdf",
+      "sha256": "5764df2e1d440db1adcc92dbebff7d3d49d8f3d2fe2d7ed63c0a03b01ae36527"
+    },
+    {
+      "old": "paper/figs/conditioning_set.pdf",
+      "new": "paper/figs/cmi_conditioning_set.pdf",
+      "sha256": "c04e7e23e889ffeef9fa33b750ae79d045ad454fcc14cc624a5dd8bb796916aa"
+    },
+    {
+      "old": "paper/figs/retraining.pdf",
+      "new": "paper/figs/parity_retraining.pdf",
+      "sha256": "91a3100d2390107dcdf26e46af200b700a9c9319d1038631bf90e1e0747799ef"
+    }
+  ]
+}

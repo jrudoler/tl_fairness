@@ -1,0 +1,20 @@
+{
+  "adult": {
+    "url": "https://raw.githubusercontent.com/socialfoundations/folktables/ebace19d8065efc43589f0067bf183398eb156b9/adult_reconstruction.csv",
+    "revision": "ebace19d8065efc43589f0067bf183398eb156b9",
+    "download_sha256": "4895fd481e7ae6e2ca423e6213454b39f0f7ec0efcd741ad2f6c667554f0eb51",
+    "canonical_sha256": "4895fd481e7ae6e2ca423e6213454b39f0f7ec0efcd741ad2f6c667554f0eb51",
+    "normalization": "pandas.read_csv followed by to_csv(index=False)",
+    "normalization_pandas": "3.0.3",
+    "normalization_verified": true
+  },
+  "law": {
+    "url": "https://raw.githubusercontent.com/tailequy/fairness_dataset/4d225df30598951985c31d81e1544dba504286a8/experiments/data/law_school_clean.csv",
+    "revision": "4d225df30598951985c31d81e1544dba504286a8",
+    "download_sha256": "23c1b173f3480beb7afc4957b107a9917dfc4a8dc9d87ea6034ec35222152452",
+    "canonical_sha256": "23c1b173f3480beb7afc4957b107a9917dfc4a8dc9d87ea6034ec35222152452",
+    "normalization": "pandas.read_csv followed by to_csv(index=False)",
+    "normalization_pandas": "3.0.3",
+    "normalization_verified": true
+  }
+}

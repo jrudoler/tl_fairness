@@ -80,7 +80,7 @@ def test_mcse_signed_bias_boundaries_and_paired_covariance():
 
 @pytest.mark.parametrize('include_cv', [False, True])
 def test_figure_uses_signed_percentage_points_and_mc_intervals(tmp_path, monkeypatch, include_cv):
-    from analysis.fig_trainsize.run import plot
+    from analysis.fig_parity_nuisance_training.run import plot
     import matplotlib.pyplot as plt
     rows = []
     cases = ['default', 'higher_capacity'] + (['cross_validated'] if include_cv else [])

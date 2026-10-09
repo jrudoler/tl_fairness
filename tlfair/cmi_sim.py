@@ -99,31 +99,23 @@ def cmi_coverage_sim(
     sims=100,
     fn = cmi_sim,
     rng=None,
-    n_jobs=1):
+    n_jobs=1,
+    records=None):
 
     if rng is None:
         rng = np.random.default_rng(123)
 
-    if n_jobs == 1:
-        # Serial path: identical to the original implementation.
-        coverage = np.zeros(sims)
-        error = 0
-        for i in range(sims):
-            res = _draw_until_valid(fn, n, kappa, rng)
-            error += (res[0] - ground_truth)
-            if (res[1][0] <= ground_truth) and (res[1][1] >= ground_truth):
-                coverage[i] = 1
-        return np.mean(coverage), error/sims
-
-    # Parallel path: each simulation gets its own independent, deterministic RNG
-    # stream via spawn(), so the result is reproducible from the parent seed no
-    # matter how the simulations are scheduled across workers.
+    # Use identical per-replicate streams in serial and parallel execution.
     child_rngs = rng.spawn(sims)
     def _one(child):
         res = _draw_until_valid(fn, n, kappa, child)
         covered = 1.0 if (res[1][0] <= ground_truth <= res[1][1]) else 0.0
-        return res[0] - ground_truth, covered
+        return res[0] - ground_truth, covered, res[0], res[1][0], res[1][1]
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(child) for child in child_rngs)
+    if records is not None:
+        records.extend(dict(sample_size=n, kappa=kappa, replicate=i,
+                            estimate=o[2], ci_low=o[3], ci_high=o[4], covered=o[1])
+                       for i, o in enumerate(out))
     errors = np.array([o[0] for o in out])
     coverage = np.array([o[1] for o in out])
     return float(np.mean(coverage)), float(np.sum(errors) / sims)
@@ -147,9 +139,8 @@ def cmi_ground_truth(
             inner_samples=inner_samples,
         )
 
-    # Paper-compatible MC target. This intentionally estimates the unconditional
-    # mutual information induced by the shared simulated covariates; it matches
-    # the values reported in the paper's "CMI Simulation" appendix.
+    # Legacy unconditional target, retained for historical reproduction.
+    # The active manuscript simulation explicitly uses conditional=True.
     remaining = n
     totals = np.zeros(4, dtype=np.float64)
     while remaining:
@@ -224,7 +215,8 @@ def cmi_compare(
     repeats = 1,
     params = [0.5, 1, 1.25, 1.5, 1.75, 2, 2.5, 3],
     rng = None,
-    n_jobs = 1):
+    n_jobs = 1,
+    records = None):
 
     if rng is None:
         rng = np.random.default_rng()
@@ -241,23 +233,7 @@ def cmi_compare(
             }
         )
 
-    if n_jobs == 1:
-        df = pd.DataFrame()
-        for i in range(len(params)):
-            cmi_res = []
-            knn_res = []
-            for _ in range(repeats):
-                res = _draw_until_valid(cmi_sim, n, params[i], rng)
-                cmi_res.append(res[0])
-                res = knncmi_sim(kappa = params[i], n = n, rng = rng)
-                knn_res.append(res)
-            df = pd.concat([df, _summary(cmi_res, knn_res, params[i])])
-        return df
-
-    # Parallel path: one task per (param, repeat), each with its own independent
-    # deterministic RNG via spawn(). NOTE: knncmi_sim allocates an O(p * n^2)
-    # distance array (~4 GB at n=10000), so the caller should keep n_jobs small
-    # for large n to avoid exhausting memory.
+    # Identical task streams regardless of worker count or memory cap.
     tasks = [(i, rep) for i in range(len(params)) for rep in range(repeats)]
     child_rngs = rng.spawn(len(tasks))
     def _one(task, child):
@@ -267,6 +243,10 @@ def cmi_compare(
         return i, tl, knn
     out = Parallel(n_jobs=n_jobs)(delayed(_one)(t, c) for t, c in zip(tasks, child_rngs))
 
+    if records is not None:
+        records.extend(dict(sample_size=n, kappa=params[i], replicate=task[1],
+                            tl=tl, knn=knn)
+                       for task, (i, tl, knn) in zip(tasks, out))
     by_param = {i: {"tl": [], "knn": []} for i in range(len(params))}
     for i, tl, knn in out:
         by_param[i]["tl"].append(tl)

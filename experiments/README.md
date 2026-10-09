@@ -1,9 +1,22 @@
-# Baseline-coverage experiments (exploratory)
+# Experiment implementations and historical notes
+
+Current commands, configuration, and manuscript mapping are in
+[EXPERIMENTS.md](../EXPERIMENTS.md). Publication rendering uses frozen inputs;
+new simulations require a fresh run ID through `analysis/tools/run_analysis.py`.
+The dated notes below describe historical experiments and are not the current
+workflow specification. The original [workflow audit](../docs/workflow-audit.md)
+is retained with a follow-up status. `cmi_conditioning_set.py`,
+`parity_retraining.py`, and `nuisance_early_stopping.py` produce current manuscript
+results; the original `nuisance_training.py` remains a reference dependency.
+The CV and fixed-tree matched-rate extensions are retired from the active
+workflow. The dated development history below is retained, but does not define
+which runs currently appear in the paper.
 
 ## October 2026: matched nuisance estimation
 
-The revised main-text training-size comparison is implemented in
-`nuisance_training.py` and integrated through `analysis/sim_trainsize/run.py`.
+The original fixed-tree training-size comparison is implemented in
+`nuisance_training.py` and integrated through `analysis/sim_nuisance_reference/run.py`.
+It now supplies a control reference for the early-stopping main-text analysis.
 It compares TL and model fairness with shared fitted predictions for default and
 higher-capacity boosting, saves every replicate, and reports signed bias and
 Monte Carlo uncertainty. See [the revision and reproduction notes](../docs/nuisance-training-revision.md).
@@ -12,7 +25,7 @@ Monte Carlo uncertainty. See [the revision and reproduction notes](../docs/nuisa
 ## September 2026 audit: independent retraining
 
 **Start with [the manuscript/experiment review](../docs/fairness-retraining-review.md)
-and `exp6_retraining.py`.** Experiments 1, 2, and 5 already redraw training data,
+and `parity_retraining.py`.** Experiments 1, 2, and 5 already redraw training data,
 but had no paired population-null/alternative rejection analysis. Experiment 6
 adds exact null and alternative truths, 1000 independent training samples per
 configuration, 50 fresh evaluations per fitted model across five evaluation sizes, own-model vs data-target
@@ -30,25 +43,26 @@ misspecification, and no uniform advantage over tuned model-based inference.
 
 ```bash
 # From the repository root; uv uses the existing project environment.
-uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --reps 50 --evaluations 3
-uv run --no-sync .venv/bin/python experiments/exp6_retraining.py
+uv run --no-sync .venv/bin/python experiments/parity_retraining.py --reps 50 --evaluations 3
+uv run --no-sync .venv/bin/python experiments/parity_retraining.py
 # Independence control: a fitted group-blind rule cannot acquire population disparity.
-uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --effects 0 --association 0 \
-    --output-dir experiments/out/retraining_independent_dense
-# Integrated paper-scale run (also builds the figure).
-uv run --no-sync snakemake fig9_retraining --cores 1
+uv run --no-sync .venv/bin/python experiments/parity_retraining.py --effects 0 --association 0 \
+    --output-dir experiments/out/parity_retraining_independence
+# Render the saved publication run (does not simulate).
+uv run --no-sync snakemake fig_parity_retraining --cores 1
 # Redraw the manuscript figures from saved summaries; no simulation rerun.
-uv run --no-sync .venv/bin/python experiments/exp6_retraining.py --plot-only \
-    --output-dir data/generated/retraining_dense --figure results/figures/fig9_retraining.pdf
+uv run --no-sync .venv/bin/python experiments/parity_retraining.py --plot-only \
+    --output-dir data/generated/parity_retraining --figure results/figures/parity_retraining.pdf
 ```
 
 Output paths are resolved relative to the repository even when the script is
 called from another directory. The standalone output directory contains
-`replicates.csv.gz`, `summary.csv`, `config.json`, `run.log`, and `retraining.pdf`.
+`replicates.csv.gz`, `summary.csv`, `config.json`, `run.log`, and `parity_retraining.pdf`.
 The default grid uses nine training sizes (100, 150, 225, 350, 500, 750, 1000,
 1500, 2000) and five evaluation sizes (250, 500, 1000, 2000, 4000).
-The pipeline writes data to `data/generated/retraining_dense/` and the figure to
-`results/figures/fig9_retraining.pdf`; `snakemake paper` copies it into the paper.
+The publication workflow reads `data/generated/parity_retraining/` and renders
+`results/figures/parity_retraining.pdf`; `snakemake paper` delivers and compiles it.
+New configured runs write to `data/runs/<run_id>/parity_retraining/`.
 The four-cell learner is saturated and deterministic given training data, so
 this experiment isolates training sampling noise without misspecification or
 random optimizer effects. Evaluation outcomes are used by TL's correction;
@@ -73,14 +87,14 @@ hidden by inflated historical standard errors; see the correction report.
 PYTHONPATH=. .venv/bin/python experiments/exp1_parity_coverage.py --sizes 250 500 --reps 20 --n-jobs 4
 PYTHONPATH=. .venv/bin/python experiments/exp2_misspec_coverage.py --sizes 250 500 --reps 20 --n-jobs 4
 PYTHONPATH=. .venv/bin/python experiments/exp3_cmi_permutation.py --weights 0 1 --sizes 1000 --reps 20 --n-perm 100 --n-jobs 4
-PYTHONPATH=. .venv/bin/python experiments/exp4_feature_selection.py --p 20 --n-confounders 3 --n-outcome 5 --sizes 1000 --reps 20 --n-jobs 4
+PYTHONPATH=. .venv/bin/python experiments/cmi_conditioning_set.py --p 20 --n-confounders 3 --n-outcome 5 --sizes 1000 --reps 20 --n-jobs 4
 PYTHONPATH=. .venv/bin/python experiments/exp5_trainsize_coverage.py --train-sizes 250 1000 --test-size 1000 --reps 20 --n-jobs 4
 
 # paper-scale (minutes on a multi-core node)
 PYTHONPATH=. .venv/bin/python experiments/exp1_parity_coverage.py --reps 500 --n-jobs 24
 PYTHONPATH=. .venv/bin/python experiments/exp2_misspec_coverage.py --reps 300 --n-jobs 24
 PYTHONPATH=. .venv/bin/python experiments/exp3_cmi_permutation.py --reps 200 --n-perm 200 --n-jobs 24
-PYTHONPATH=. .venv/bin/python experiments/exp4_feature_selection.py --reps 200 --signal 1.5 --sizes 2500 5000 --n-jobs 24
+PYTHONPATH=. .venv/bin/python experiments/cmi_conditioning_set.py --reps 200 --signal 1.5 --sizes 2500 5000 --n-jobs 24
 PYTHONPATH=. .venv/bin/python experiments/exp5_trainsize_coverage.py --reps 300 --n-jobs 24
 ```
 
@@ -100,10 +114,10 @@ well-specified GLM becomes a fair, nominal-coverage baseline (Exp 2 panel B:
 (they are functions of `y_probs`, not the realised `y`), so coverage numbers stay
 comparable. Pass `--deterministic` to reproduce the old noiseless behaviour.
 
-This is wired into the pipeline sims too: `analysis/sim_parity/run.py` and
+This was wired into the now-retired pipeline simulations too: `analysis/sim_parity/run.py` and
 `analysis/sim_robust/run.py` pass `bernoulli=True` (Figures 1–3). The
 `bernoulli` keyword on the DGP draws (`tlfair/simulations.py`) defaults to
-`False`; the current manuscript simulation entrypoints, including `sim_tmle`,
+`False`; those historical simulation entrypoints, including `sim_tmle`,
 explicitly opt into Bernoulli outcomes.
 
 ## What each shows

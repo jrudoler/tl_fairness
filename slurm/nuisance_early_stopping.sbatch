@@ -7,6 +7,8 @@
 #SBATCH --array=0-319%24
 #SBATCH --output=logs/%A_%a.log
 #SBATCH --error=logs/%A_%a.log
+# Historical shard-run launcher: use only with its matching frozen source snapshot.
+# For new configured runs, use slurm/analysis.sbatch; see EXPERIMENTS.md.
 set -euo pipefail
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 export MPLCONFIGDIR="${TMPDIR:-/tmp}/tlfair-mpl-${SLURM_JOB_ID}"

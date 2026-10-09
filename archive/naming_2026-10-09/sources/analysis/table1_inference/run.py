@@ -41,6 +41,8 @@ def main():
     parser.add_argument('--law-input', default='data/generated/law_results.pkl')
     parser.add_argument('--csv-output', default='results/data/table1_inference.csv')
     parser.add_argument('--tex-output', default='results/data/table1_inference.tex')
+    parser.add_argument('--manuscript-only', action='store_true',
+                        help='Omit TMLE comparisons not used in the manuscript')
     args = parser.parse_args()
 
     adult = _load(args.adult_input)['inference']
@@ -49,6 +51,7 @@ def main():
     rows = [
         {'Metric': label, 'Adult': _fmt(adult, key), 'Law': _fmt(law, key)}
         for key, label in METRIC_LABELS
+        if not args.manuscript_only or not key.endswith('_tmle')
     ]
     df = pd.DataFrame(rows)
     df.to_csv(args.csv_output, index=False)

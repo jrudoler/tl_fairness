@@ -26,7 +26,7 @@ import scipy
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tlfair.metrics import _prob_group_contrast
-from experiments.exp6_retraining import model_interval
+from experiments.parity_retraining import model_interval
 
 SCENARIOS = {'primary': 0.5, 'linear': 0.0, 'nonlinear': 0.75, 'stress': None}
 SIZES = [100, 250, 500, 1000, 2500, 5000, 10000]
@@ -183,7 +183,7 @@ def summarize(raw, truths):
 
 def source_hashes():
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in [Path(__file__), ROOT/'tlfair/metrics.py', ROOT/'experiments/exp6_retraining.py']}
+            for p in [Path(__file__), ROOT/'tlfair/metrics.py', ROOT/'experiments/parity_retraining.py']}
 
 
 def run_shard(output, scenario, n_train, n_eval=2000, reps=1000, rep_start=0, seed=20261005, n_jobs=1):

@@ -26,7 +26,7 @@ import scipy
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tlfair.metrics import _prob_group_contrast
-from experiments.exp6_retraining import model_interval
+from experiments.parity_retraining import model_interval
 
 SCENARIOS = {'primary': 0.5, 'linear': 0.0, 'nonlinear': 0.75, 'stress': None}
 SIZES = [100, 250, 500, 1000, 2500, 5000, 10000]
@@ -190,7 +190,7 @@ def summarize(raw, truths):
 
 def source_hashes():
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in [Path(__file__), ROOT/'tlfair/metrics.py', ROOT/'experiments/exp6_retraining.py', ROOT/'experiments/nuisance_training.py']}
+            for p in [Path(__file__), ROOT/'tlfair/metrics.py', ROOT/'experiments/parity_retraining.py', ROOT/'experiments/nuisance_training.py']}
 
 
 def run_shard(output, scenario, n_train, n_eval=2000, reps=1000, rep_start=0, seed=20261005, n_jobs=1):
@@ -218,7 +218,7 @@ def run_shard(output, scenario, n_train, n_eval=2000, reps=1000, rep_start=0, se
         LOG.info('%s n=%s rep=%s complete', scenario, n_train, r)
 
 
-def collect(input_dir, output_dir, expected_reps=1000):
+def collect(input_dir, output_dir, expected_reps=1000, reference_dir='data/generated/nuisance_training'):
     input_dir, output_dir = Path(input_dir), Path(output_dir)
     files = sorted(input_dir.rglob('rep_*.csv'))
     if not files:
@@ -235,10 +235,10 @@ def collect(input_dir, output_dir, expected_reps=1000):
         expected = {(c, m, r) for c in expected_cases for m in METHODS for r in range(expected_reps)}
         if set(sub[['case', 'method', 'replicate']].itertuples(index=False, name=None)) != expected:
             raise ValueError(f'Incomplete simulation configuration {key}')
-    baseline = pd.read_csv(Path('data/generated/nuisance_training')/'replicates.csv.gz')
+    baseline = pd.read_csv(Path(reference_dir)/'replicates.csv.gz')
     from analysis.nuisance_tables.control_audit import audit_unchanged
     control_audit = audit_unchanged(raw, baseline)
-    truths=pd.read_csv(Path('data/generated/nuisance_training')/'population.csv')
+    truths=pd.read_csv(Path(reference_dir)/'population.csv')
     for scenario,sub in raw.groupby('scenario'):
         min_se=sub.groupby(KEYS).estimate.std().min()/np.sqrt(expected_reps)
         idx=truths.index[truths.scenario==scenario][0]

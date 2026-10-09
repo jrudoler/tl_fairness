@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "rng_version": "task-streams-v2",
+  "analyses": {
+    "parity_retraining": {
+      "script": "experiments/parity_retraining.py",
+      "parameters": {
+        "effects": [
+          0,
+          0.2,
+          0.6
+        ],
+        "association": 0.6,
+        "train-sizes": [
+          100,
+          150,
+          225,
+          350,
+          500,
+          750,
+          1000,
+          1500,
+          2000
+        ],
+        "test-sizes": [
+          250,
+          500,
+          1000,
+          2000,
+          4000
+        ],
+        "reps": 1000,
+        "evaluations": 50,
+        "seed": 20260909
+      },
+      "outputs": {
+        "output-dir": "."
+      },
+      "required": [
+        "replicates.csv.gz",
+        "summary.csv",
+        "config.json"
+      ]
+    },
+    "cmi_estimation": {
+      "script": "analysis/sim_cmi_estimation/run.py",
+      "parameters": {
+        "weights": [
+          0,
+          0.5,
+          1,
+          1.5,
+          2,
+          2.5,
+          3,
+          3.5,
+          4
+        ],
+        "sizes": [
+          500,
+          750,
+          1000,
+          1750,
+          2500,
+          3750,
+          5000,
+          7500,
+          10000
+        ],
+        "n-truth": 1000000,
+        "sims": 100,
+        "compare-repeats": 10,
+        "seed": 123
+      },
+      "outputs": {
+        "coverage-output": "coverage.csv",
+        "compare-output": "comparison.csv",
+        "truth-output": "population_truth.pkl",
+        "timing-output": "timing.pkl",
+        "records-dir": "."
+      },
+      "required": [
+        "coverage.csv",
+        "comparison.csv",
+        "population_truth.pkl",
+        "coverage_replicates.csv.gz",
+        "comparison_replicates.csv.gz"
+      ]
+    },
+    "cmi_conditioning_set": {
+      "script": "analysis/sim_cmi_conditioning_set/run.py",
+      "parameters": {
+        "p": 30,
+        "n-confounders": 5,
+        "n-outcome": 8,
+        "sizes": [
+          2500,
+          5000
+        ],
+        "reps": 200,
+        "signal": 1.5,
+        "coef-seed": 0,
+        "seed": 123
+      },
+      "outputs": {
+        "output": "summary.csv",
+        "records-output": "replicates.csv.gz"
+      },
+      "required": [
+        "summary.csv",
+        "replicates.csv.gz"
+      ]
+    },
+    "nuisance_reference": {
+      "script": "analysis/sim_nuisance_reference/run.py",
+      "parameters": {
+        "reps": 1000
+      },
+      "outputs": {
+        "summary-dir": ".",
+        "output-dir": "shards"
+      },
+      "required": [
+        "replicates.csv.gz",
+        "summary.csv",
+        "population.csv",
+        "manifest.json"
+      ]
+    },
+    "nuisance_early_stopping": {
+      "script": "analysis/sim_nuisance_early_stopping/run.py",
+      "parameters": {
+        "reps": 1000
+      },
+      "outputs": {
+        "summary-dir": ".",
+        "output-dir": "shards"
+      },
+      "requires_reference": true,
+      "required": [
+        "replicates.csv.gz",
+        "summary.csv",
+        "population.csv",
+        "manifest.json",
+        "control_audit.json"
+      ]
+    },
+    "real_data_adult": {
+      "script": "analysis/analyze_adult/run.py",
+      "parameters": {
+        "seed": 123,
+        "metrics": [
+          "parity",
+          "prob_parity",
+          "opportunity",
+          "prob_opp",
+          "cmi"
+        ],
+        "importance-samples": 0
+      },
+      "inputs": {
+        "input": "data/raw/adult.csv"
+      },
+      "outputs": {
+        "output": "inference.pkl"
+      },
+      "required": [
+        "inference.pkl"
+      ]
+    },
+    "real_data_law": {
+      "script": "analysis/analyze_law/run.py",
+      "parameters": {
+        "seed": 123,
+        "metrics": [
+          "parity",
+          "prob_parity",
+          "opportunity",
+          "prob_opp",
+          "cmi"
+        ],
+        "importance-samples": 0
+      },
+      "inputs": {
+        "input": "data/raw/law.csv"
+      },
+      "outputs": {
+        "output": "inference.pkl"
+      },
+      "required": [
+        "inference.pkl"
+      ]
+    }
+  }
+}
