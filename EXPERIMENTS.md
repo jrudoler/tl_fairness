@@ -126,8 +126,12 @@ canonical input copies together. Retain the prior run and manifest.
 The synchronized Locust checkout is `/home/jrudoler/tl_fairness`. Its publication
 inputs, Python environment, figure rendering, and both workflow dry runs have
 been checked. A fresh worktree needs its own environment and access to the
-untracked data. Manuscript compilation on Locust currently fails because its
-TeX installation lacks `LibertinusMath-Regular`; local XeLaTeX compilation passes.
+untracked data. Manuscript compilation on Locust was verified on 2026-10-12
+after updating TinyTeX's package manager (`tlmgr update --self`) and installing
+the missing math fonts (`tlmgr install libertinus-fonts`). The existing XeLaTeX
+build produces `paper/main.pdf`. After fixing a previously failed build,
+`latexmk -g -xelatex -interaction=nonstopmode -halt-on-error main.tex` from
+`paper/` forces a fresh attempt if latexmk has cached the earlier failure.
 The recovery bundle's repository path is a symlink on Locust to
 `/shared_data0/jrudoler/tlfair_publication_recovery_20261009`; all 96 files were
 checksum-verified during relocation after the shared `/home` filesystem filled.
