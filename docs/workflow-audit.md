@@ -1,5 +1,22 @@
 # Manuscript workflow and provenance audit
 
+## Current publication selected 2026-10-13
+
+All seven analyses in `data/runs/reproduction-20261012/` completed using saved
+source snapshots and the current computation dependencies. Their outputs now
+provide the manuscript's selected inputs (`manuscript-2026-10-13`). Exact run
+and completion records are tracked under `config/publication-provenance/`, with
+canonical copies and run links in the publication registries. The former inputs
+and registries are retained outside Git under
+`data/imported/publication-before-manuscript-2026-10-13/`.
+
+Publication validation and delivery require verified computation lineage.
+CMI summaries reconstruct from saved replicates; nuisance summaries and controls
+are validated against their fresh matched reference. The current selection no
+longer relies on rounded historical CMI values or aggregate-only historical runs.
+CMI's statistical inference qualifications still apply. Historical findings and
+recovery records below describe the previous selection.
+
 ## Follow-up completed 2026-10-09
 
 The inventory and findings below are the original audit, retained as history.

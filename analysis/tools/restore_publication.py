@@ -11,6 +11,25 @@ from tlfair.provenance import sha256
 
 def restore(bundle):
     registry=json.loads((ROOT/'config/publication.json').read_text())
+    if registry.get('schema_version', 1) >= 2:
+        copies = []
+        for item in registry['inputs']:
+            target = ROOT/item['path']
+            if target.exists():
+                if sha256(target) != item['sha256']:
+                    raise ValueError(f'Quarantine conflicting file before restoring: {target}')
+                continue
+            source = ROOT/item.get('source', item['path'])
+            if not item.get('source_kind','').startswith('completed-run') or source == target:
+                raise FileNotFoundError(f'Restore the pinned raw data or recorded native run file: {target}')
+            if not source.is_file() or sha256(source) != item['sha256']:
+                raise ValueError(f'Missing or changed selected run source: {source}')
+            copies.append((source,target))
+        for source,target in copies:
+            target.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copy2(source,target)
+        print('Selected publication inputs restored from certified run outputs.')
+        return
     recovery=json.loads((ROOT/'config/locust-recovery.json').read_text())
     for item in recovery['files']:
         source=Path(bundle)/item['path']

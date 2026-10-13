@@ -1,0 +1,83 @@
+{
+  "analyses": {
+    "cmi_conditioning_set": {
+      "complete": "config/publication-provenance/cmi_conditioning_set/complete.json",
+      "inputs": {
+        "data/generated/cmi_conditioning_set.csv": "summary.csv"
+      },
+      "manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/cmi_conditioning_set"
+    },
+    "cmi_estimation": {
+      "complete": "config/publication-provenance/cmi_estimation/complete.json",
+      "inputs": {
+        "data/generated/cmi_estimation_comparison.csv": "comparison.csv",
+        "data/generated/cmi_estimation_coverage.csv": "coverage.csv",
+        "data/generated/cmi_estimation_timing.pkl": "timing.pkl",
+        "data/generated/cmi_population_truth.pkl": "population_truth.pkl"
+      },
+      "manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/cmi_estimation"
+    },
+    "nuisance_early_stopping": {
+      "complete": "config/publication-provenance/nuisance_early_stopping/complete.json",
+      "inputs": {
+        "data/generated/nuisance_early_stopping/control_audit.json": "control_audit.json",
+        "data/generated/nuisance_early_stopping/fit_diagnostics.csv.gz": "fit_diagnostics.csv.gz",
+        "data/generated/nuisance_early_stopping/manifest.json": "manifest.json",
+        "data/generated/nuisance_early_stopping/paired_comparisons.csv": "paired_comparisons.csv",
+        "data/generated/nuisance_early_stopping/population.csv": "population.csv",
+        "data/generated/nuisance_early_stopping/replicates.csv.gz": "replicates.csv.gz",
+        "data/generated/nuisance_early_stopping/summary.csv": "summary.csv"
+      },
+      "manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/nuisance_early_stopping"
+    },
+    "nuisance_reference": {
+      "complete": "config/publication-provenance/nuisance_reference/complete.json",
+      "inputs": {
+        "data/generated/nuisance_training/manifest.json": "manifest.json",
+        "data/generated/nuisance_training/paired_comparisons.csv": "paired_comparisons.csv",
+        "data/generated/nuisance_training/population.csv": "population.csv",
+        "data/generated/nuisance_training/replicates.csv.gz": "replicates.csv.gz",
+        "data/generated/nuisance_training/summary.csv": "summary.csv"
+      },
+      "manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/nuisance_reference"
+    },
+    "parity_retraining": {
+      "complete": "config/publication-provenance/parity_retraining/complete.json",
+      "inputs": {
+        "data/generated/parity_retraining/config.json": "config.json",
+        "data/generated/parity_retraining/replicates.csv.gz": "replicates.csv.gz",
+        "data/generated/parity_retraining/summary.csv": "summary.csv"
+      },
+      "manifest": "config/publication-provenance/parity_retraining/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/parity_retraining"
+    },
+    "real_data_adult": {
+      "complete": "config/publication-provenance/real_data_adult/complete.json",
+      "inputs": {
+        "data/generated/adult_results.pkl": "inference.pkl"
+      },
+      "manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/real_data_adult"
+    },
+    "real_data_law": {
+      "complete": "config/publication-provenance/real_data_law/complete.json",
+      "inputs": {
+        "data/generated/law_results.pkl": "inference.pkl"
+      },
+      "manifest": "config/publication-provenance/real_data_law/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/reproduction-20261012/real_data_law"
+    }
+  },
+  "schema_version": 1
+}

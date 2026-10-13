@@ -40,6 +40,14 @@
         "replicates.csv.gz",
         "summary.csv",
         "config.json"
+      ],
+      "code": [
+        "clean-figs.mplstyle",
+        "experiments/parity_retraining.py",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/plotting.py",
+        "uv.lock"
       ]
     },
     "cmi_estimation": {
@@ -85,6 +93,15 @@
         "population_truth.pkl",
         "coverage_replicates.csv.gz",
         "comparison_replicates.csv.gz"
+      ],
+      "code": [
+        "analysis/sim_cmi_estimation/run.py",
+        "pyproject.toml",
+        "tlfair/cmi_sim.py",
+        "tlfair/knncmi.py",
+        "tlfair/metrics.py",
+        "tlfair/superlearner.py",
+        "uv.lock"
       ]
     },
     "cmi_conditioning_set": {
@@ -109,6 +126,15 @@
       "required": [
         "summary.csv",
         "replicates.csv.gz"
+      ],
+      "code": [
+        "analysis/sim_cmi_conditioning_set/run.py",
+        "experiments/baselines.py",
+        "experiments/cmi_conditioning_set.py",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/superlearner.py",
+        "uv.lock"
       ]
     },
     "nuisance_reference": {
@@ -125,6 +151,14 @@
         "summary.csv",
         "population.csv",
         "manifest.json"
+      ],
+      "code": [
+        "analysis/sim_nuisance_reference/run.py",
+        "experiments/nuisance_training.py",
+        "experiments/parity_retraining.py",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "uv.lock"
       ]
     },
     "nuisance_early_stopping": {
@@ -143,6 +177,17 @@
         "population.csv",
         "manifest.json",
         "control_audit.json"
+      ],
+      "code": [
+        "analysis/nuisance_tables/control_audit.py",
+        "analysis/nuisance_tables/validate.py",
+        "analysis/sim_nuisance_early_stopping/run.py",
+        "experiments/nuisance_early_stopping.py",
+        "experiments/nuisance_training.py",
+        "experiments/parity_retraining.py",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "uv.lock"
       ]
     },
     "real_data_adult": {
@@ -166,6 +211,15 @@
       },
       "required": [
         "inference.pkl"
+      ],
+      "code": [
+        "analysis/analyze_adult/run.py",
+        "config/datasets.json",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/superlearner.py",
+        "tlfair/tmle.py",
+        "uv.lock"
       ]
     },
     "real_data_law": {
@@ -189,6 +243,15 @@
       },
       "required": [
         "inference.pkl"
+      ],
+      "code": [
+        "analysis/analyze_law/run.py",
+        "config/datasets.json",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/superlearner.py",
+        "tlfair/tmle.py",
+        "uv.lock"
       ]
     }
   }

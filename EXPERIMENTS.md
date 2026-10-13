@@ -28,8 +28,10 @@ used by early-stopping collection and validation; it is an active dependency.
 ## Publication inputs and provenance
 
 - [config/publication.json](config/publication.json) identifies each approved
-  input by path, SHA-256, and recovery/source record. These inputs live under
-  `data/generated/` and `data/raw/`; they are not overwritten by new runs.
+  input by path, SHA-256, and completed-run record. It includes canonical inputs
+  under `data/generated/` and `data/raw/`, native CMI replicate records, and
+  small tracked completion/manifests under `config/publication-provenance/`.
+  These inputs are not overwritten by new computation.
 - [config/artifacts.json](config/artifacts.json) maps every included figure/table
   to its data, rendering code, shared modules, style, lockfile, and manuscript path.
 - [config/locust-recovery.json](config/locust-recovery.json) inventories the 96
@@ -42,30 +44,34 @@ used by early-stopping collection and validation; it is an active dependency.
 - [config/datasets.json](config/datasets.json) pins external raw data URLs to Git
   revisions and records byte checksums. Download helpers reject conflicting files.
 
-Recovered retraining replicates reproduce all 405 summary rows. The nuisance
-validator checks 118,000 paired-method rows and their manifests/control audits.
-The stale local Law cache was deleted on 2026-10-09 after verifying its
-corrected replacement against the manuscript table. Its old and replacement
-checksums are retained in the [cleanup record](archive/workflow_2026-10-09/stale-law-cache.json). The generated real-data and CMI-truth
-tables retain the published values.
+The current publication is `manuscript-2026-10-13`, selected from all seven
+completed analyses in `data/runs/reproduction-20261012/`. Each ran its saved
+source snapshot with the current computation dependencies and recorded package
+versions. Exact source hashes certify computations made before the workflow
+changes were committed; the recorded Git commit alone is not used as proof.
 
-Historical CMI estimation and conditioning-set runs saved aggregates without
-complete per-replicate records or run manifests. Recovery preserves that
-limitation; current source defaults are not evidence of every historical setting.
-Some recovered CMI real-data results retain only rounded precision. No new
-simulation was substituted for these publication results. New CMI runs save
-replicate records and use the explicitly versioned `task-streams-v2` RNG scheme.
+Validation checks 118,000 nuisance rows and their matched reference/control
+audits, reconstructs the CMI estimation and conditioning-set summaries from
+saved replicates, and can reconstruct all 405 retraining summary rows. The
+Adult and Law inputs are fresh, full-precision runs of every manuscript metric.
+The CMI inference limitations remain statistical qualifications, not gaps in
+the selected computations' provenance.
 
-To restore an already downloaded recovery bundle (existing conflicting files
-cause an error):
+The former publication registry and generated inputs are retained outside Git
+under `data/imported/publication-before-manuscript-2026-10-13/`. The original
+Locust recovery bundle is also retained as historical evidence. Legacy CMI
+aggregate/rounding limitations describe that previous selection.
+
+To restore missing canonical copies when the selected native run directories
+and pinned raw data are already available (conflicting files cause an error):
 
 ```sh
-.venv/bin/python analysis/tools/restore_publication.py \
-  --bundle data/imported/locust-2026-10-09
+.venv/bin/python analysis/tools/restore_publication.py
 ```
 
-The separately delivered nuisance bundles must also be present, with the hashes
-in `config/publication.json`. A fresh Git clone alone does not contain the data.
+Retain the native run directories, their source snapshots, and pinned raw data
+outside Git. A fresh Git clone contains the code and tracked provenance metadata,
+but does not contain the computation outputs or raw data.
 
 ## Render, validate, deliver, compile
 
@@ -120,6 +126,55 @@ scientific compatibility of the reference before collecting the audit.
 A new run does not automatically become a publication input. Review its results,
 validate its summaries, then deliberately update the publication registry and
 canonical input copies together. Retain the prior run and manifest.
+
+## Which computation produced the manuscript results?
+
+`config/publication-runs.json` maps each analysis's manuscript input copies to
+outputs in a selected completed run directory, with exact completion/manifests
+copied into `config/publication-provenance/`. All current selections are certified;
+a `null` run or changed computation dependency causes publication validation and
+delivery to fail. Recovery checksums alone do not certify computational origin.
+
+New runs execute the source snapshot saved under their own `source/` directory,
+not the live checkout. The run manifest records the exact command, scientific
+settings, declared computation dependencies (`code` in `config/analyses.json`),
+raw input hashes, runtime, Git state, and output hashes. The runner refuses to
+complete if the saved source, raw inputs, or nuisance reference change during
+computation. A completion record certifies the final manifest's checksum.
+
+From the repository root:
+
+```sh
+uv run snakemake audit_computation --cores 1
+# Fail unless every manuscript computation is linked to the current code:
+uv run snakemake verify_computation --cores 1
+# Compare completed new runs with manuscript inputs without selecting them:
+uv run python analysis/tools/compare_reproduction.py --run-id reproduction-20261012
+```
+
+The audit checks source snapshots, current code and scientific settings, raw
+inputs, runtime versions, completed outputs, selected nuisance references, and
+the equality of manuscript input copies to those outputs. Every delivered
+artifact manifest also includes the computation audit, separately from its
+rendering dependencies. An unverified result stays labeled unverified.
+
+After reviewing a new run, select all analyses from that run ID together:
+
+```sh
+uv run python analysis/tools/select_publication_runs.py \
+  --run-id NEW_RUN_ID --publication-id NEW_PUBLICATION_ID
+uv run snakemake verify_computation paper --cores 1
+```
+
+Selection verifies completed runs before replacing anything, preserves prior
+generated inputs outside Git, and updates the copies, checksums, run links, and
+tracked completion/manifests together. Large raw and generated files stay
+outside Git; the code, configurations, and lineage metadata are tracked.
+
+Comparison tables report differences rather than interpreting a checksum change
+as a scientific change. CMI null diagnostics separately report two-sided coverage,
+positive and negative exclusion, and the diagnostic one-sided positive rejection
+rule. Normal critical values are not asserted to be calibrated at independence.
 
 ## Locust
 

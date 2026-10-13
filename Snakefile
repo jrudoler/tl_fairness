@@ -12,6 +12,7 @@ PYTHON = os.environ.get("TLFAIR_PYTHON", ".venv/bin/python")
 RUN = f"PYTHONPATH=. OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 {PYTHON}"
 REGISTRY = json.loads(Path("config/publication.json").read_text())
 ARTIFACTS = json.loads(Path("config/artifacts.json").read_text())["artifacts"]
+from analysis.tools.audit_publication_runs import dependencies as computation_dependencies
 VALIDATION = "results/provenance/validation.json"
 FIGURES = [a["result"] for a in ARTIFACTS if a["result"].endswith(".pdf")]
 TABLES = [a["result"] for a in ARTIFACTS if a["result"].endswith(".tex")]
@@ -45,6 +46,7 @@ rule all:
 rule validate_publication:
     input:
         data=[r["path"] for r in REGISTRY["inputs"]],
+        computation=computation_dependencies(),
         code=["config/publication.json", "analysis/tools/validate_publication.py",
               "analysis/tools/validate.py", "analysis/nuisance_tables/validate.py",
               "analysis/nuisance_tables/control_audit.py", "experiments/nuisance_training.py",
@@ -57,6 +59,20 @@ rule validate_publication:
 
 rule validate:
     input: VALIDATION
+
+
+rule audit_computation:
+    input: computation_dependencies()
+    output: "results/provenance/computation-audit.json"
+    log: "logs/audit_computation.log"
+    shell: "{RUN} analysis/tools/audit_publication_runs.py --output {output:q} > {log:q} 2>&1"
+
+
+rule verify_computation:
+    input: computation_dependencies()
+    output: "results/provenance/verified-computation.json"
+    log: "logs/verify_computation.log"
+    shell: "{RUN} analysis/tools/audit_publication_runs.py --strict --output {output:q} > {log:q} 2>&1"
 
 
 rule fig_parity_retraining:
@@ -139,6 +155,7 @@ rule nuisance_tables:
 rule sync_paper_artifacts:
     input:
         artifacts=FIGURES + TABLES,
+        computation=computation_dependencies(),
         config="config/artifacts.json",
         script="analysis/tools/deliver.py",
         provenance="tlfair/provenance.py",

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=standby
+#SBATCH --partition=whartonstat
 #SBATCH --job-name=tlfair-analysis
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
@@ -11,8 +11,9 @@
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
-export MPLCONFIGDIR="${TMPDIR:-/tmp}/tlfair-mpl-${SLURM_JOB_ID}"
-export XDG_CACHE_HOME="${TMPDIR:-/tmp}/tlfair-cache-${SLURM_JOB_ID}"
+export MPLCONFIGDIR="$PWD/logs/cache/matplotlib-${SLURM_JOB_ID}"
+export XDG_CACHE_HOME="$PWD/logs/cache/slurm-${SLURM_JOB_ID}"
+mkdir -p "$MPLCONFIGDIR" "$XDG_CACHE_HOME"
 python_bin="${TLFAIR_PYTHON:-.venv/bin/python}"
 args=(--analysis "${1:?Supply an analysis ID}" --run-id "${2:?Supply a fresh run ID}"
       --n-jobs "$SLURM_CPUS_PER_TASK" --compare-mem-gb 24)

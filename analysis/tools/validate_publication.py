@@ -1,6 +1,7 @@
 """Validate frozen publication inputs without scheduling or modifying simulations."""
 import argparse
 import json
+import pickle
 from pathlib import Path
 import sys
 
@@ -11,6 +12,60 @@ import pandas as pd
 from tlfair.provenance import sha256, runtime, write_json
 from analysis.tools.validate import validate_csv, validate_results_pickle, validate_truth_pickle, EXPECTED_CSVS
 from analysis.nuisance_tables.validate import validate as validate_nuisance
+from analysis.tools.audit_publication_runs import audit
+
+
+def validate_cmi_records() -> dict[str, int]:
+    """Reconstruct manuscript CMI summaries from independent saved replicates."""
+    selections = json.loads((ROOT/'config/publication-runs.json').read_text())['analyses']
+    specifications = json.loads((ROOT/'config/analyses.json').read_text())['analyses']
+    estimation = ROOT/selections['cmi_estimation']['run']
+    parameters = specifications['cmi_estimation']['parameters']
+    with (ROOT/'data/generated/cmi_population_truth.pkl').open('rb') as stream:
+        truth = pickle.load(stream)
+    records = pd.read_csv(estimation/'coverage_replicates.csv.gz')
+    keys = ['sample_size','kappa']
+    assert not records.duplicated(keys+['replicate']).any()
+    assert records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(parameters['sims']))).all()
+    covered = (records.ci_low <= records.kappa.map(truth)) & (records.ci_high >= records.kappa.map(truth))
+    np.testing.assert_array_equal(records.covered,covered.astype(float))
+    rebuilt = records.groupby(keys).agg(coverage=('covered','mean'), estimate=('estimate','mean')).reset_index()
+    rebuilt['error'] = rebuilt.estimate - rebuilt.kappa.map(truth)
+    expected = pd.read_csv(ROOT/'data/generated/cmi_estimation_coverage.csv').sort_values(keys).reset_index(drop=True)
+    pd.testing.assert_frame_equal(expected,rebuilt[expected.columns],check_dtype=False,atol=1e-12,rtol=1e-10)
+    comparisons = pd.read_csv(estimation/'comparison_replicates.csv.gz')
+    assert not comparisons.duplicated(keys+['replicate']).any()
+    assert comparisons.groupby(keys).replicate.apply(lambda r:set(r)==set(range(parameters['compare-repeats']))).all()
+    rows = []
+    for (size,kappa),part in comparisons.groupby(keys):
+        for column,label in [('tl','TL'),('knn','KNN')]:
+            rows.append({'sample size':size,'kappa':kappa,'type':label,
+                         'mean':part[column].mean(),'bottom_five':part[column].quantile(.05),
+                         'top_five':part[column].quantile(.95)})
+    compare_keys = ['sample size','type','kappa']
+    expected = pd.read_csv(ROOT/'data/generated/cmi_estimation_comparison.csv').sort_values(compare_keys).reset_index(drop=True)
+    rebuilt = pd.DataFrame(rows).sort_values(compare_keys).reset_index(drop=True)
+    pd.testing.assert_frame_equal(expected,rebuilt[expected.columns],check_dtype=False,atol=1e-12,rtol=1e-10)
+    conditioning = ROOT/selections['cmi_conditioning_set']['run']
+    params = specifications['cmi_conditioning_set']['parameters']
+    conditional_records = pd.read_csv(conditioning/'replicates.csv.gz')
+    keys = ['sample_size','n_confounders_included']
+    assert not conditional_records.duplicated(keys+['replicate']).any()
+    assert conditional_records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['reps']))).all()
+    np.testing.assert_allclose(conditional_records.ci_low,conditional_records.estimate-1.96*conditional_records.se)
+    np.testing.assert_allclose(conditional_records.ci_high,conditional_records.estimate+1.96*conditional_records.se)
+    np.testing.assert_allclose(conditional_records.lower_one_sided,conditional_records.estimate-1.645*conditional_records.se)
+    np.testing.assert_array_equal(conditional_records.rejects_zero,(conditional_records.lower_one_sided>0).astype(float))
+    conditional_records['width'] = conditional_records.ci_high - conditional_records.ci_low
+    conditional_records['covered'] = ((conditional_records.ci_low<=0)&(conditional_records.ci_high>=0)).astype(float)
+    rebuilt = conditional_records.groupby(keys).agg(reject_rate=('rejects_zero','mean'),
+                  mean_estimate=('estimate','mean'),mean_ci_width=('width','mean'),coverage_at_null=('covered','mean')).reset_index()
+    rebuilt.loc[rebuilt.n_confounders_included != params['n-confounders'],'coverage_at_null'] = np.nan
+    expected = pd.read_csv(ROOT/'data/generated/cmi_conditioning_set.csv').sort_values(keys).reset_index(drop=True)
+    rebuilt = rebuilt.sort_values(keys).reset_index(drop=True)
+    pd.testing.assert_frame_equal(expected[rebuilt.columns],rebuilt,check_dtype=False,atol=1e-12,rtol=1e-10)
+    return {'coverage_replicates':len(records),'comparison_replicates':len(comparisons),
+            'conditioning_replicates':len(conditional_records)}
 
 
 def verify_inputs(registry, root=ROOT):
@@ -25,6 +80,9 @@ def verify_inputs(registry, root=ROOT):
 def validate(deep=False):
     registry=json.loads((ROOT/'config/publication.json').read_text())
     verify_inputs(registry)
+    lineage = audit()
+    if lineage['status'] != 'verified':
+        raise ValueError('Publication computation lineage is not verified: '+json.dumps(lineage))
     directory=ROOT/'data/generated'
     for name,columns in EXPECTED_CSVS.items():
         if name.startswith('cmi_'):validate_csv(directory/name,columns)
@@ -47,6 +105,7 @@ def validate(deep=False):
     assert summary.training_reps.eq(1000).all() and summary.evaluation_reps.eq(50).all()
     assert summary.coverage_data.between(0,1).all() and summary.rejection_rate.between(0,1).all()
     validate_nuisance(directory/'nuisance_early_stopping')
+    cmi_records = validate_cmi_records()
     if deep:
         from experiments.parity_retraining import summarize
         rebuilt=[]
@@ -63,6 +122,7 @@ def validate(deep=False):
                 registry_sha256=sha256(ROOT/'config/publication.json'),runtime=runtime(),
                 retraining_summary_rows=len(summary),retraining_raw_verified=deep,
                 nuisance_rows=118000,conditioning_rows=len(cond),status='passed',
+                cmi_records=cmi_records,computation_lineage='verified',
                 limitations=registry['limitations'])
 
 

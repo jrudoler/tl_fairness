@@ -7,9 +7,13 @@ import sys
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
 from tlfair.provenance import sha256,runtime,git_state,write_json
+from analysis.tools.audit_publication_runs import audit
 
 
 def deliver(config):
+    computation = audit()
+    if computation['status'] != 'verified':
+        raise ValueError('Manuscript delivery requires verified current-code computation lineage: '+json.dumps(computation))
     artifacts=json.loads(Path(config).read_text())['artifacts']
     records=[]
     for item in artifacts:
@@ -24,6 +28,7 @@ def deliver(config):
         if sha256(destination) != item['sha256']:
             raise ValueError(f'Delivery checksum mismatch: {destination}')
     record=dict(artifacts=records,runtime=runtime(),git=git_state(),
+                computation_lineage=computation,
                 publication_registry_sha256=sha256(ROOT/'config/publication.json'))
     write_json(ROOT/'results/provenance/delivery.json',record)
     write_json(ROOT/'paper/artifact-manifest.json',record)

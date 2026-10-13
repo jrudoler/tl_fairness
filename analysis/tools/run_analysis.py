@@ -4,6 +4,7 @@ import json
 import os
 import importlib
 import inspect
+import logging
 from pathlib import Path
 import re
 import shutil
@@ -15,8 +16,11 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tlfair.provenance import git_state, runtime, sha256, write_json
 
+LOG = logging.getLogger(__name__)
 
-def run(analysis, run_id, config_path, n_jobs=1, reference_dir=None, compare_mem_gb=16):
+
+def run(analysis: str, run_id: str, config_path: str | Path, n_jobs: int = 1,
+        reference_dir: str | Path | None = None, compare_mem_gb: float = 16) -> Path:
     if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]*', run_id):
         raise ValueError('run-id must be a simple directory name')
     if n_jobs < 1 or compare_mem_gb <= 0:
@@ -65,7 +69,8 @@ def run(analysis, run_id, config_path, n_jobs=1, reference_dir=None, compare_mem
         if sha256(inputs['input'])!=pinned['canonical_sha256']:
             raise ValueError('Real-data input differs from the pinned dataset')
     source_paths = sorted({ROOT/settings['script'], ROOT/'config/analyses.json', ROOT/'uv.lock',
-                           ROOT/'pyproject.toml', *ROOT.joinpath('config').glob('*.json'), *ROOT.joinpath('tlfair').glob('*.py'),
+                           ROOT/'pyproject.toml', ROOT/'clean-figs.mplstyle',
+                           *ROOT.joinpath('config').glob('*.json'), *ROOT.joinpath('tlfair').glob('*.py'),
                            *ROOT.joinpath('experiments').glob('*.py'),
                            *ROOT.joinpath('analysis').rglob('*.py')})
     output.mkdir(parents=True)
@@ -77,12 +82,19 @@ def run(analysis, run_id, config_path, n_jobs=1, reference_dir=None, compare_mem
         shutil.copy2(path, destination)
         sources[str(relative)] = sha256(path)
     shutil.copy2(config_path, output/'resolved_config.json')
-    record = dict(analysis=analysis, run_id=run_id, status='running',
+    # Execute the saved code, rather than files in a checkout that may be edited
+    # while a cluster job is running. Inputs and outputs stay at explicit paths.
+    snapshot = output/'source'
+    command[1] = str(snapshot/settings['script'])
+    record = dict(schema_version=2, execution='source_snapshot',
+                  analysis=analysis, run_id=run_id, status='running',
                   started=datetime.now(timezone.utc).isoformat(), command=command,
                   settings=settings, design=design, rng_version=specification['rng_version'],
                   resources=dict(workers=n_jobs,compare_mem_gb=compare_mem_gb),
                   runtime=runtime(), git=git_state(), sources=sources,
                   configuration_sha256=sha256(config_path),
+                  code={p:sources[p] for p in settings['code']},
+                  input_files={str(p.relative_to(ROOT)):sha256(p) for p in inputs.values()},
                   inputs={str(p):sha256(p) for p in inputs.values()})
     if settings.get('requires_reference'):
         record['reference']={str(reference/p):sha256(reference/p)
@@ -91,9 +103,19 @@ def run(analysis, run_id, config_path, n_jobs=1, reference_dir=None, compare_mem
     write_json(manifest, record)
     try:
         with (output/'execution.log').open('w') as log:
-            subprocess.run(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True,
+            subprocess.run(command, cwd=snapshot, stdout=log, stderr=subprocess.STDOUT, check=True,
                            env=dict(os.environ,OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',
-                                    MKL_NUM_THREADS='1',LOKY_MAX_CPU_COUNT=str(n_jobs)))
+                                    MKL_NUM_THREADS='1',LOKY_MAX_CPU_COUNT=str(n_jobs),
+                                    PYTHONPATH=str(snapshot)))
+        for path, expected in sources.items():
+            if sha256(snapshot/path) != expected:
+                raise ValueError(f'Executed source snapshot changed: {path}')
+        for path, expected in record['input_files'].items():
+            if sha256(ROOT/path) != expected:
+                raise ValueError(f'Analysis input changed during computation: {path}')
+        for path, expected in record.get('reference', {}).items():
+            if sha256(path) != expected:
+                raise ValueError(f'Nuisance reference changed during computation: {path}')
         for name in settings['required']:
             if not (output/name).is_file():
                 raise FileNotFoundError(output/name)
@@ -121,4 +143,5 @@ if __name__ == '__main__':
     parser.add_argument('--compare-mem-gb', type=float, default=16)
     parser.add_argument('--reference-dir', type=Path)
     args=parser.parse_args()
-    print(run(args.analysis,args.run_id,args.config,args.n_jobs,args.reference_dir,args.compare_mem_gb))
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+    LOG.info('Completed run: %s', run(args.analysis,args.run_id,args.config,args.n_jobs,args.reference_dir,args.compare_mem_gb))

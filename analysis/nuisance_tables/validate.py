@@ -9,7 +9,7 @@ import pandas as pd
 from experiments.nuisance_training import SCENARIOS, SIZES, CONTROL_SIZES, CASES, METHODS, KEYS, summarize
 
 
-def validate(directory):
+def validate(directory: str | Path, reference_dir: str | Path | None = None) -> None:
     directory = Path(directory)
     raw = pd.read_csv(directory/'replicates.csv.gz')
     summary = pd.read_csv(directory/'summary.csv')
@@ -53,8 +53,23 @@ def validate(directory):
     if 'early_stopping' in manifest:
         from experiments.nuisance_early_stopping import BOOST, HIGH, EARLY_STOPPING
         assert manifest['early_stopping'] == EARLY_STOPPING
-        assert len(manifest['shards']) == 320
-        original_manifest=json.loads((directory.parent/'nuisance_training'/'manifest.json').read_text())
+        # Both 320 array shards and 16 complete configuration bundles encode
+        # the same scientific grid. Validate coverage of replicate ranges,
+        # rather than requiring one particular scheduling arrangement.
+        counts = {}
+        for metadata in manifest['shards'].values():
+            key = (metadata['scenario'], metadata['train_size'])
+            ranges = counts.setdefault(key, set())
+            replicates = set(range(metadata['rep_start'], metadata['rep_start'] + metadata['reps']))
+            assert not ranges.intersection(replicates), 'Overlapping shard replicate ranges'
+            ranges.update(replicates)
+        assert set(counts) == set(raw[['scenario','train_size']].itertuples(index=False,name=None))
+        assert all(ranges == set(range(1000)) for ranges in counts.values())
+        if reference_dir is None:
+            candidate = directory.parent/'nuisance_reference'
+            reference_dir = candidate if candidate.is_dir() else directory.parent/'nuisance_training'
+        reference_dir = Path(reference_dir)
+        original_manifest=json.loads((reference_dir/'manifest.json').read_text())
         reference=next(iter(original_manifest['shards'].values()))
         for metadata in manifest['shards'].values():
             assert metadata['default_learner'] == BOOST
@@ -72,7 +87,7 @@ def validate(directory):
         diagnostics=pd.read_csv(directory/'fit_diagnostics.csv.gz')
         expected=raw.drop_duplicates(['scenario','train_size','replicate','outcome_model','group_model'])
         pd.testing.assert_frame_equal(diagnostics,expected.reset_index(drop=True),check_dtype=False,atol=1e-12)
-        original=pd.read_csv(directory.parent/'nuisance_training'/'replicates.csv.gz')
+        original=pd.read_csv(reference_dir/'replicates.csv.gz')
         from analysis.nuisance_tables.control_audit import audit_unchanged
         audit=audit_unchanged(raw,original)
         assert audit==json.loads((directory/'control_audit.json').read_text())
