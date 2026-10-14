@@ -57,6 +57,26 @@ Adult and Law inputs are fresh, full-precision runs of every manuscript metric.
 The CMI inference limitations remain statistical qualifications, not gaps in
 the selected computations' provenance.
 
+The approved data/model comparison uses `analysis/matched_real_data/run.py` to
+fit one outcome model per dataset and reuse its held-out predictions for both
+targets. Probabilistic parity and equal opportunity precede the thresholded
+metrics in the table. Native `predictions.npz` and `fit_metadata.json` records
+allow both sets of intervals to be reconstructed without refitting. CMI keeps
+the previously verified data-fairness result and has no model-fairness column entry.
+
+The October 14 comparison fits are queued as Slurm jobs 94570 (Adult) and 94571
+(Law), under `data/runs/matched-real-data-20261014/`. Dependent job 94588 runs
+`analysis/tools/complete_matched_real_data.py` after both succeed. It checks the
+approved manuscript draft has not changed, selects only these additional runs,
+validates the prediction caches, adds the table dependencies, and rebuilds the
+paper. Until selection succeeds, the previous publication remains selected and
+buildable. Consult `config/publication.json` for the actual current selection;
+the planned publication ID is `manuscript-2026-10-14`. Completion is recorded in
+`results/provenance/selection-manuscript-2026-10-14.json` and
+`logs/slurm/paper-matched-fairness-94588.log`. Failed prerequisites prevent the
+dependent job from running. Manuscript edits made while jobs queue cause a
+guarded failure requiring reconciliation, rather than an overwrite.
+
 The former publication registry and generated inputs are retained outside Git
 under `data/imported/publication-before-manuscript-2026-10-13/`. The original
 Locust recovery bundle is also retained as historical evidence. Legacy CMI
@@ -215,8 +235,8 @@ configured runs, use the generic launcher and the new-run manifest workflow.
 [The archive index](archive/workflow_2026-10-09/README.md) records inactive analyses,
 including older parity/misspecification/TMLE figures, permutation importance,
 nuisance CV and matched-rate extensions. They are absent from the publication
-workflow. The naive real-data comparison is exploratory and not included in the
-manuscript. Historical code and reports remain available without becoming build
+workflow. The historical separate-fit naive comparison is superseded by the
+approved shared-prediction comparison above. Historical code and reports remain available without becoming build
 dependencies.
 
 [The naming archive](archive/naming_2026-10-09/README.md) preserves changed source

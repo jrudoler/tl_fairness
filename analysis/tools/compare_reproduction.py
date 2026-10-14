@@ -108,17 +108,19 @@ def compare(run_id: str) -> dict[str, Any]:
                     path = destination/f'{analysis}-{old.stem}.csv'
                     result.to_csv(path, index=False)
                     files[original]['comparison'] = str(path.relative_to(ROOT))
-                elif original == 'inference.pkl':
+                elif original in ['inference.pkl', 'comparison.pkl']:
                     with old.open('rb') as stream:
-                        previous = pickle.load(stream)['inference']
+                        previous = pickle.load(stream)
                     with new.open('rb') as stream:
-                        current = pickle.load(stream)['inference']
+                        current = pickle.load(stream)
                     rows = []
-                    for metric in current:
-                        for quantity, a, b in zip(['estimate','ci_low','ci_high'],
-                            [previous[metric][0], *previous[metric][1]],
-                            [current[metric][0], *current[metric][1]]):
-                            rows.append({'metric':metric,'quantity':quantity,'old':a,'new':b,'difference':b-a})
+                    targets = ['inference'] if original == 'inference.pkl' else ['data_fairness','model_fairness']
+                    for target in targets:
+                        for metric in current[target]:
+                            for quantity, a, b in zip(['estimate','ci_low','ci_high'],
+                                [previous[target][metric][0], *previous[target][metric][1]],
+                                [current[target][metric][0], *current[target][metric][1]]):
+                                rows.append({'target':target,'metric':metric,'quantity':quantity,'old':a,'new':b,'difference':b-a})
                     path = destination/f'{analysis}-inference.csv'
                     pd.DataFrame(rows).to_csv(path,index=False)
                     files[original]['comparison'] = str(path.relative_to(ROOT))

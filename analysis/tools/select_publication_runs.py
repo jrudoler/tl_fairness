@@ -20,7 +20,9 @@ from tlfair.provenance import sha256, write_json
 LOG = logging.getLogger(__name__)
 
 
-def select(run_id: str, publication_id: str, root: Path = ROOT) -> dict[str, Any]:
+def select(run_id: str, publication_id: str, root: Path = ROOT,
+           analyses: list[str] | None = None,
+           additional: dict[str, Any] | None = None) -> dict[str, Any]:
     for value in [run_id, publication_id]:
         if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]*', value):
             raise ValueError('Run and publication IDs must be simple directory names')
@@ -30,11 +32,19 @@ def select(run_id: str, publication_id: str, root: Path = ROOT) -> dict[str, Any
     verify_inputs(previous, root)
     selections = json.loads(selection_path.read_text())
     proposed = copy.deepcopy(selections)
+    if additional:
+        if set(additional) & set(proposed['analyses']):
+            raise ValueError('Additional analyses must be new selection IDs')
+        proposed['analyses'].update(copy.deepcopy(additional))
+    requested = set(analyses) if analyses is not None else set(proposed['analyses'])
+    if not requested or not requested.issubset(proposed['analyses']):
+        raise ValueError('Select known analysis IDs')
     for analysis, item in proposed['analyses'].items():
-        item['run'] = f'data/runs/{run_id}/{analysis}'
-        item.pop('manifest', None)
-        item.pop('complete', None)
-        item['note'] = 'Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.'
+        if analysis in requested:
+            item['run'] = f'data/runs/{run_id}/{analysis}'
+            item.pop('manifest', None)
+            item.pop('complete', None)
+            item['note'] = 'Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.'
     preflight = audit(root, proposed['analyses'], verify_publication_inputs=False)
     if preflight['status'] != 'verified':
         raise ValueError('Run selection failed preflight: '+json.dumps(preflight))
@@ -90,14 +100,16 @@ def select(run_id: str, publication_id: str, root: Path = ROOT) -> dict[str, Any
                                 'source':str(source.relative_to(root)),
                                 'source_kind':'completed-run-output','run_manifest':item['manifest'],
                                 'run_manifest_sha256':sha256(directory/'run_manifest.json')})
-            # These native run records establish the CMI summary provenance;
+            # These native run records establish summary/prediction provenance;
             # retain them in place rather than duplicating them canonically.
             evidence = {'cmi_estimation':['coverage_replicates.csv.gz','comparison_replicates.csv.gz'],
-                        'cmi_conditioning_set':['replicates.csv.gz']}.get(analysis,[])
+                        'cmi_conditioning_set':['replicates.csv.gz'],
+                        'model_fairness_adult':['predictions.npz','fit_metadata.json'],
+                        'model_fairness_law':['predictions.npz','fit_metadata.json']}.get(analysis,[])
             for name in evidence:
                 path = str((directory/name).relative_to(root))
                 entries.append({'path':path,'sha256':record['outputs'][name],
-                                'source_kind':'completed-run-replicates','run_manifest':item['manifest']})
+                                'source_kind':'completed-run-output','run_manifest':item['manifest']})
         publication = {'schema_version':2,'publication_id':publication_id,
                        'inputs':entries,'limitations':[
                            'CMI Wald inference is not calibrated at conditional independence; provenance verification does not establish statistical validity.',
@@ -125,9 +137,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-id',required=True)
     parser.add_argument('--publication-id',required=True)
+    parser.add_argument('--analyses',nargs='+',help='Replace these analyses and retain the other selected runs.')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-    result = select(args.run_id,args.publication_id)
+    result = select(args.run_id,args.publication_id,analyses=args.analyses)
     write_json(ROOT/'results/provenance'/f'selection-{args.publication_id}.json',result)
     LOG.info('Selected publication: %s',result)
 

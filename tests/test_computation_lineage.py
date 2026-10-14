@@ -76,6 +76,45 @@ def test_selection_rejects_changed_code_before_replacing_any_inputs(recorded_run
     assert not (recorded_run/'data/imported/publication-before-new-selection').exists()
 
 
+def test_select_additional_analysis_retains_existing_run(recorded_run: Path) -> None:
+    import shutil
+    from analysis.tools.select_publication_runs import select
+    published = recorded_run/'data/generated/result.csv'
+    write_json(recorded_run/'config/publication.json', {
+        'inputs':[{'path':'data/generated/result.csv','sha256':sha256(published)}]})
+    specifications = json.loads((recorded_run/'config/analyses.json').read_text())
+    specifications['analyses']['added'] = specifications['analyses']['test']
+    write_json(recorded_run/'config/analyses.json', specifications)
+    directory = recorded_run/'data/runs/new/added'
+    shutil.copytree(recorded_run/'data/runs/test/test', directory)
+    record = json.loads((directory/'run_manifest.json').read_text())
+    record['analysis'] = 'added'
+    write_json(directory/'run_manifest.json',record)
+    write_json(directory/'complete.json', {'status':'complete','manifest_sha256':sha256(directory/'run_manifest.json')})
+    select('new', 'mixed-selection', recorded_run, analyses=['added'], additional={
+        'added':{'inputs':{'data/generated/added.csv':'result.csv'}}})
+    selected = json.loads((recorded_run/'config/publication-runs.json').read_text())['analyses']
+    assert selected['test']['run'] == 'data/runs/test/test'
+    assert selected['added']['run'] == 'data/runs/new/added'
+    assert audit(recorded_run)['status'] == 'verified'
+
+
+def test_queued_completion_refuses_to_overwrite_later_manuscript_edits(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from analysis.tools import complete_matched_real_data as completion
+    monkeypatch.setattr(completion, 'ROOT', tmp_path)
+    (tmp_path/'config').mkdir()
+    manuscript, draft = tmp_path/'manuscript.tex', tmp_path/'draft.tex'
+    manuscript.write_text('original manuscript')
+    draft.write_text('approved changes')
+    write_json(tmp_path/'config/matched-real-data-publication.json', {
+        'manuscript_source':'manuscript.tex', 'manuscript_draft':'draft.tex',
+        'manuscript_before_sha256':sha256(manuscript), 'manuscript_draft_sha256':sha256(draft)})
+    manuscript.write_text('later user edits')
+    with pytest.raises(ValueError, match='changed while jobs were queued'):
+        completion.main()
+    assert manuscript.read_text() == 'later user edits'
+
+
 @pytest.mark.parametrize('path,issue', [
     ('compute.py', 'Current computation dependency differs'),
     ('data/runs/test/test/source/compute.py', 'Saved computation source differs'),

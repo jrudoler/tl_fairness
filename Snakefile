@@ -125,9 +125,13 @@ rule table_real_data_inference:
         csv="results/data/real_data_inference.csv",
         tex="results/data/real_data_inference.tex",
     log: "logs/table_real_data_inference.log"
+    params:
+        comparison=("--adult-comparison data/generated/adult_model_comparison.pkl "
+                    "--law-comparison data/generated/law_model_comparison.pkl"
+                    if "data/generated/adult_model_comparison.pkl" in dependencies("real_data_inference") else ""),
     shell:
         "{RUN} analysis/table_real_data_inference/run.py --manuscript-only --body-only "
-        "--csv-output {output.csv:q} --tex-output {output.tex:q} > {log:q} 2>&1"
+        "{params.comparison} --csv-output {output.csv:q} --tex-output {output.tex:q} > {log:q} 2>&1"
 
 
 rule table_cmi_population_truth:

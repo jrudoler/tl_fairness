@@ -2,6 +2,17 @@
 
 ## Current publication selected 2026-10-13
 
+October 14 follow-up: matched Adult/Law data- and model-fairness fits are queued
+(94570, 94571), with dependent validation, selection and manuscript build job
+94588. The current selection stays intact until both fits pass provenance
+checks. The new table places both probabilistic metrics above both thresholded
+metrics, uses shared outcome predictions, and reconstructs every interval from
+cached scores. Its approved prose is staged in
+`analysis/matched_real_data/data_analysis.tex` until the results are ready.
+The selection registry and completion receipt, rather than this historical
+audit heading, identify the publication actually in use. See EXPERIMENTS.md
+for the guarded completion workflow and its logs.
+
 All seven analyses in `data/runs/reproduction-20261012/` completed using saved
 source snapshots and the current computation dependencies. Their outputs now
 provide the manuscript's selected inputs (`manuscript-2026-10-13`). Exact run

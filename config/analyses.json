@@ -253,6 +253,62 @@
         "tlfair/tmle.py",
         "uv.lock"
       ]
+    },
+    "model_fairness_adult": {
+      "script": "analysis/matched_real_data/run.py",
+      "parameters": {
+        "dataset": "adult",
+        "seed": 123
+      },
+      "inputs": {
+        "input": "data/raw/adult.csv"
+      },
+      "outputs": {
+        "output-dir": "."
+      },
+      "required": [
+        "comparison.pkl",
+        "predictions.npz",
+        "fit_metadata.json"
+      ],
+      "code": [
+        "analysis/analyze_adult/run.py",
+        "analysis/matched_real_data/run.py",
+        "config/datasets.json",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/provenance.py",
+        "tlfair/superlearner.py",
+        "uv.lock"
+      ]
+    },
+    "model_fairness_law": {
+      "script": "analysis/matched_real_data/run.py",
+      "parameters": {
+        "dataset": "law",
+        "seed": 123
+      },
+      "inputs": {
+        "input": "data/raw/law.csv"
+      },
+      "outputs": {
+        "output-dir": "."
+      },
+      "required": [
+        "comparison.pkl",
+        "predictions.npz",
+        "fit_metadata.json"
+      ],
+      "code": [
+        "analysis/analyze_law/run.py",
+        "analysis/matched_real_data/run.py",
+        "config/datasets.json",
+        "pyproject.toml",
+        "tlfair/metrics.py",
+        "tlfair/provenance.py",
+        "tlfair/superlearner.py",
+        "uv.lock"
+      ]
     }
   }
 }

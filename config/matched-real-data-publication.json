@@ -1,0 +1,8 @@
+{
+  "manuscript_before_sha256": "d3a1adf86b90029cdb83412a4b8a1a651d4bec57eb338f9d20472e85aece9df5",
+  "manuscript_draft": "analysis/matched_real_data/data_analysis.tex",
+  "manuscript_draft_sha256": "787a24f26ccc6fc960f3befc864442990f3966316ce9998e280d1fe4088ac14a",
+  "manuscript_source": "paper/sections/data_analysis.tex",
+  "publication_id": "manuscript-2026-10-14",
+  "run_id": "matched-real-data-20261014"
+}

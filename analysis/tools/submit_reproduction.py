@@ -27,6 +27,8 @@ RESOURCES = {
     'real_data_law': ('12:00:00', '32G'),
     'nuisance_reference': ('2-00:00:00', '32G'),
     'nuisance_early_stopping': ('2-00:00:00', '32G'),
+    'model_fairness_adult': ('12:00:00', '64G'),
+    'model_fairness_law': ('04:00:00', '32G'),
 }
 
 

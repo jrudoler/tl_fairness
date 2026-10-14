@@ -1,0 +1,31 @@
+% !TEX root = ../main.tex
+\section{Data Analysis}
+\label{sec:data}
+
+We show how our approach to data fairness can be used in practice by applying our estimators to real data.
+We analyze the Adult-Income dataset and the Law School dataset, two datasets common in the fairness literature, and discuss the interpretations and implications of our results from a data fairness perspective.
+To perform our analysis, we split the data into a 60/40 train/test split. For parity and equal opportunity, we train SuperLearner ensembles \cite{laanSuperLearner2007} for the outcome, group, and joint group--outcome distributions. For CMI, we fit a calibrated histogram gradient boosting classifier to the joint group--outcome distribution and derive its marginals from that fit.
+For both datasets, our analysis seeks to determine to what extent the distribution of $Y$ given $X$ violates definitions of fairness.
+We also report model-fairness intervals conditional on the fitted outcome model. Both targets use the same outcome predictions and held-out observations. The probabilistic data-fairness estimators include the nuisance corrections described above, whereas the model-fairness estimators compare group means of the fitted scores. With the same empirical influence-function variance convention, the thresholded estimates and intervals coincide numerically for the two targets.
+Thresholded inference assumes the stability conditions in Appendix \ref{app:threshold_stability}, which we have not verified for these fits.
+
+\begin{table}
+  \centering
+  \input{tables/real_data_inference}
+  \caption{Data- and model-fairness estimates with nominal $95\%$ confidence intervals in parentheses. Parity and equal-opportunity comparisons share the fitted outcome model and evaluation split. CMI is reported only for data fairness; its intervals near zero should be interpreted with caution (Section \ref{sec:cmi}).}
+  \label{tab:data_results}
+\end{table}
+
+\paragraph{Adult-Income.}
+The Adult-Income dataset contains economic and demographic information on individuals living in the United States \cite{dingRetiringAdultNew2021} \cite{floodIntegratedPublicUse2020}.
+For our analysis, the outcome is $Y = \ind\{\text{income} > 50,000\}$ and $G = \ind\{\text{is male}\}$.
+We find that both parity and probabilistic parity are violated, with confidence intervals bounded away from zero.
+Finally, the CMI estimate is near zero, but Wald inference is non-regular at conditional independence, so this result does not establish independence.
+
+\paragraph{Law School.}
+The Law School dataset contains educational, demographic, and economic information about law students \cite{wightmanLSACNationalLongitudinal1998} \cite{lequySurveyDatasetsFairnessaware2022}.
+Here, our outcome of interest is $Y=\ind\{\text{passed the bar}\}$ and $G = \ind\{\text{is white}\}$.
+Again we obtain positive estimates with intervals bounded away from zero for parity and equal opportunity.
+We note that both equal opportunity estimates have narrower intervals than in the Adult dataset.
+Positive outcomes are less prevalent in Adult than in Law, so conditioning on $Y=1$ retains a smaller fraction of the Adult observations.
+This is consistent with the wider equal-opportunity intervals observed for Adult.

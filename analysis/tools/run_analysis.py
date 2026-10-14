@@ -56,16 +56,22 @@ def run(analysis: str, run_id: str, config_path: str | Path, n_jobs: int = 1,
         design={key:getattr(module,key) for key in ['SCENARIOS','SIZES','CONTROL_SIZES','BOOST','HIGH','CASES']}
         design['seed']=inspect.signature(module.one_rep).parameters['seed'].default
         design['evaluation_size']=inspect.signature(module.run_shard).parameters['n_eval'].default
-    if analysis.startswith('real_data_'):
+    if analysis.startswith(('real_data_', 'model_fairness_')):
         from tlfair.superlearner import SuperLearnerClassifier
         from sklearn.ensemble import HistGradientBoostingClassifier
         seed=settings['parameters']['seed']
         learner=SuperLearnerClassifier(random_state=seed)
+        if analysis.startswith('model_fairness_'):
+            inner_jobs = max(1,n_jobs//min(3,n_jobs))
+            for base in learner.models:
+                if hasattr(base,'n_jobs'):
+                    base.set_params(n_jobs=inner_jobs)
         design={'test_fraction':.4,'folds':learner.folds,
                 'ensemble':[{'class':type(model).__name__,'parameters':{k:repr(v) for k,v in model.get_params().items()}}
                             for model in learner.models],
                 'cmi_outcome':HistGradientBoostingClassifier(random_state=seed).get_params()}
-        pinned=json.loads((ROOT/'config/datasets.json').read_text())[analysis.removeprefix('real_data_')]
+        dataset = analysis.removeprefix('real_data_').removeprefix('model_fairness_')
+        pinned=json.loads((ROOT/'config/datasets.json').read_text())[dataset]
         if sha256(inputs['input'])!=pinned['canonical_sha256']:
             raise ValueError('Real-data input differs from the pinned dataset')
     source_paths = sorted({ROOT/settings['script'], ROOT/'config/analyses.json', ROOT/'uv.lock',

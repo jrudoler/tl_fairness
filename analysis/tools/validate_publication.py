@@ -1,5 +1,6 @@
 """Validate frozen publication inputs without scheduling or modifying simulations."""
 import argparse
+import importlib
 import json
 import pickle
 from pathlib import Path
@@ -13,6 +14,51 @@ from tlfair.provenance import sha256, runtime, write_json
 from analysis.tools.validate import validate_csv, validate_results_pickle, validate_truth_pickle, EXPECTED_CSVS
 from analysis.nuisance_tables.validate import validate as validate_nuisance
 from analysis.tools.audit_publication_runs import audit
+
+
+def validate_matched_predictions() -> dict[str, int]:
+    """Reconstruct both targets from the exact shared held-out prediction cache."""
+    from analysis.matched_real_data.run import summarize_predictions
+    selections = json.loads((ROOT/'config/publication-runs.json').read_text())['analyses']
+    sizes = {}
+    for dataset in ['adult', 'law']:
+        if f'model_fairness_{dataset}' not in selections:
+            continue
+        directory = ROOT/selections[f'model_fairness_{dataset}']['run']
+        metadata = json.loads((directory/'fit_metadata.json').read_text())
+        with (ROOT/f'data/generated/{dataset}_model_comparison.pkl').open('rb') as stream:
+            expected = pickle.load(stream)
+        cache = directory/'predictions.npz'
+        assert sha256(cache) == metadata['prediction_sha256'] == expected['prediction_sha256']
+        loader = importlib.import_module(f'analysis.analyze_{dataset}.run')
+        raw = ROOT/f'data/raw/{dataset}.csv'
+        assert metadata['raw_sha256'] == sha256(raw)
+        assert metadata['preprocessing_sha256'] == sha256(Path(loader.__file__))
+        xtr, xte, _, yte, _, gte = loader.load_data(raw, metadata['seed'])
+        assert metadata['dataset'] == dataset
+        assert metadata['train_rows'] == len(xtr)
+        assert metadata['evaluation_rows'] == len(xte)
+        with np.load(cache) as saved:
+            for key, value in [('train_index', xtr.index), ('test_index', xte.index),
+                               ('outcomes', yte), ('groups', gte)]:
+                np.testing.assert_array_equal(saved[key], value)
+            for key in ['probabilities', 'group_probabilities', 'joint_probabilities']:
+                assert np.isfinite(saved[key]).all()
+                assert ((saved[key] >= 0) & (saved[key] <= 1)).all()
+            for key in ['group_probabilities', 'joint_probabilities']:
+                np.testing.assert_allclose(saved[key].sum(axis=1), 1)
+            np.testing.assert_array_equal(saved['decisions'], (saved['probabilities'] > .5).astype(int))
+            rebuilt = summarize_predictions(**{key:saved[key] for key in [
+                'probabilities', 'decisions', 'group_probabilities', 'joint_probabilities', 'outcomes', 'groups']})
+        for target in ['data_fairness', 'model_fairness']:
+            assert set(expected[target]) == set(rebuilt[target])
+            for metric, (estimate, interval) in rebuilt[target].items():
+                actual = expected[target][metric]
+                np.testing.assert_allclose([actual[0], *actual[1]], [estimate, *interval], atol=1e-12, rtol=1e-10)
+        for metric in ['parity', 'opportunity']:
+            assert expected['data_fairness'][metric] == expected['model_fairness'][metric]
+        sizes[dataset] = len(xte)
+    return sizes
 
 
 def validate_cmi_records() -> dict[str, int]:
@@ -106,6 +152,7 @@ def validate(deep=False):
     assert summary.coverage_data.between(0,1).all() and summary.rejection_rate.between(0,1).all()
     validate_nuisance(directory/'nuisance_early_stopping')
     cmi_records = validate_cmi_records()
+    matched_predictions = validate_matched_predictions()
     if deep:
         from experiments.parity_retraining import summarize
         rebuilt=[]
@@ -122,7 +169,7 @@ def validate(deep=False):
                 registry_sha256=sha256(ROOT/'config/publication.json'),runtime=runtime(),
                 retraining_summary_rows=len(summary),retraining_raw_verified=deep,
                 nuisance_rows=118000,conditioning_rows=len(cond),status='passed',
-                cmi_records=cmi_records,computation_lineage='verified',
+                cmi_records=cmi_records,matched_evaluation_rows=matched_predictions,computation_lineage='verified',
                 limitations=registry['limitations'])
 
 
