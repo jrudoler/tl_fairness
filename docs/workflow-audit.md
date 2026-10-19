@@ -1,8 +1,27 @@
 # Manuscript workflow and provenance audit
 
-## Current publication verified 2026-10-19
+## CMI TMLE transition initiated 2026-10-19
 
-The current selection is `manuscript-2026-10-14`. Both matched Adult/Law fits
+The primary CMI estimator is being replaced throughout by TMLE, retaining the
+one-step derivation and a paired appendix comparison. Adult/Law CMI-only jobs
+97231/97232 completed and their saved prediction caches reproduce both methods.
+Full coupling/conditioning simulations are jobs 97233/97234; dependent job 97236
+validates, selects and builds the new paper. The plan, code guards, source hashes,
+and completion records are documented in EXPERIMENTS.md. `config/publication.json`
+and `results/provenance/completion-manuscript-2026-10-19-tmle.json` identify the
+actual selected inputs and successful build. The pending transition does not
+recertify old CMI data against changed computation code.
+
+Targeting now preserves the KL identity, checks its score and increases the
+observed likelihood. The previous helper independently clipped the joint and
+marginal product; fixing this affects the substitution/targeting calculation,
+not the original unclipped one-step estimate. Nominal symmetric intervals are
+retained with the explicit zero-EIF qualification at conditional independence.
+No boundary-aware inference method is claimed.
+
+## Prior publication verified 2026-10-19
+
+The preceding selection was `manuscript-2026-10-14`. Both matched Adult/Law fits
 completed (94570, 94571). Their dependent build (94588) verified and selected
 the results, reconstructed the cached intervals and delivered the table/prose,
 but PDF compilation failed because the compute node lacked Perl `Time::HiRes`.

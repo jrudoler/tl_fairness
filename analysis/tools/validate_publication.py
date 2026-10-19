@@ -61,57 +61,112 @@ def validate_matched_predictions() -> dict[str, int]:
     return sizes
 
 
-def validate_cmi_records() -> dict[str, int]:
-    """Reconstruct manuscript CMI summaries from independent saved replicates."""
-    selections = json.loads((ROOT/'config/publication-runs.json').read_text())['analyses']
+def validate_cmi_runs(runs: dict[str, Path], canonical: Path | None = None) -> dict[str, int]:
+    """Reconstruct paired CMI summaries and reject any unsuccessful targeting."""
+    from tlfair.cmi_estimation import require_convergence
     specifications = json.loads((ROOT/'config/analyses.json').read_text())['analyses']
-    estimation = ROOT/selections['cmi_estimation']['run']
-    parameters = specifications['cmi_estimation']['parameters']
-    with (ROOT/'data/generated/cmi_population_truth.pkl').open('rb') as stream:
+    estimation = runs['cmi_estimation']
+    params = specifications['cmi_estimation']['parameters']
+    with (estimation/'population_truth.pkl').open('rb') as stream:
         truth = pickle.load(stream)
+    assert set(truth) == set(params['weights']) and truth[0] == 0
     records = pd.read_csv(estimation/'coverage_replicates.csv.gz')
-    keys = ['sample_size','kappa']
+    keys = ['sample_size','kappa','estimator']
+    assert set(records.estimator) == {'one_step','substitution','tmle'}
     assert not records.duplicated(keys+['replicate']).any()
-    assert records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(parameters['sims']))).all()
-    covered = (records.ci_low <= records.kappa.map(truth)) & (records.ci_high >= records.kappa.map(truth))
-    np.testing.assert_array_equal(records.covered,covered.astype(float))
-    rebuilt = records.groupby(keys).agg(coverage=('covered','mean'), estimate=('estimate','mean')).reset_index()
-    rebuilt['error'] = rebuilt.estimate - rebuilt.kappa.map(truth)
-    expected = pd.read_csv(ROOT/'data/generated/cmi_estimation_coverage.csv').sort_values(keys).reset_index(drop=True)
-    pd.testing.assert_frame_equal(expected,rebuilt[expected.columns],check_dtype=False,atol=1e-12,rtol=1e-10)
+    assert len(records) == len(params['sizes'])*len(params['weights'])*params['sims']*3
+    assert set(records.sample_size) == set(params['sizes']) and set(records.kappa) == set(params['weights'])
+    assert records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['sims']))).all()
+    require_convergence(records)
+    np.testing.assert_allclose(records.ci_low, records.estimate-1.96*records.se)
+    np.testing.assert_allclose(records.ci_high, records.estimate+1.96*records.se)
+    records['covered'] = ((records.ci_low<=records.kappa.map(truth)) &
+                          (records.ci_high>=records.kappa.map(truth))).astype(float)
+    rebuilt = records.groupby(keys).agg(coverage=('covered','mean'),estimate=('estimate','mean')).reset_index()
+    rebuilt['error'] = rebuilt.estimate-rebuilt.kappa.map(truth)
+    expected = pd.read_csv(canonical/'cmi_estimation_coverage.csv' if canonical else estimation/'coverage.csv')
+    pd.testing.assert_frame_equal(expected.sort_values(keys).reset_index(drop=True),
+        rebuilt[expected.columns].sort_values(keys).reset_index(drop=True),check_dtype=False,atol=1e-12,rtol=1e-10)
     comparisons = pd.read_csv(estimation/'comparison_replicates.csv.gz')
+    assert set(comparisons.estimator) == {'one_step','substitution','tmle','knn'}
     assert not comparisons.duplicated(keys+['replicate']).any()
-    assert comparisons.groupby(keys).replicate.apply(lambda r:set(r)==set(range(parameters['compare-repeats']))).all()
+    assert len(comparisons) == len(params['sizes'])*len(params['weights'])*params['compare-repeats']*4
+    assert comparisons.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['compare-repeats']))).all()
+    require_convergence(comparisons)
     rows = []
-    for (size,kappa),part in comparisons.groupby(keys):
-        for column,label in [('tl','TL'),('knn','KNN')]:
-            rows.append({'sample size':size,'kappa':kappa,'type':label,
-                         'mean':part[column].mean(),'bottom_five':part[column].quantile(.05),
-                         'top_five':part[column].quantile(.95)})
+    labels = {'tmle':'TMLE','one_step':'One-step','substitution':'Substitution','knn':'KNN'}
+    for (size,kappa,method),part in comparisons.groupby(keys):
+        rows.append({'sample size':size,'kappa':kappa,'estimator':method,'type':labels[method],
+                     'mean':part.estimate.mean(),'bottom_five':part.estimate.quantile(.05),
+                     'top_five':part.estimate.quantile(.95)})
     compare_keys = ['sample size','type','kappa']
-    expected = pd.read_csv(ROOT/'data/generated/cmi_estimation_comparison.csv').sort_values(compare_keys).reset_index(drop=True)
-    rebuilt = pd.DataFrame(rows).sort_values(compare_keys).reset_index(drop=True)
-    pd.testing.assert_frame_equal(expected,rebuilt[expected.columns],check_dtype=False,atol=1e-12,rtol=1e-10)
-    conditioning = ROOT/selections['cmi_conditioning_set']['run']
+    expected = pd.read_csv(canonical/'cmi_estimation_comparison.csv' if canonical else estimation/'comparison.csv')
+    rebuilt = pd.DataFrame(rows)
+    pd.testing.assert_frame_equal(expected.sort_values(compare_keys).reset_index(drop=True),
+        rebuilt[expected.columns].sort_values(compare_keys).reset_index(drop=True),check_dtype=False,atol=1e-12,rtol=1e-10)
+    conditioning = runs['cmi_conditioning_set']
     params = specifications['cmi_conditioning_set']['parameters']
-    conditional_records = pd.read_csv(conditioning/'replicates.csv.gz')
-    keys = ['sample_size','n_confounders_included']
-    assert not conditional_records.duplicated(keys+['replicate']).any()
-    assert conditional_records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['reps']))).all()
-    np.testing.assert_allclose(conditional_records.ci_low,conditional_records.estimate-1.96*conditional_records.se)
-    np.testing.assert_allclose(conditional_records.ci_high,conditional_records.estimate+1.96*conditional_records.se)
-    np.testing.assert_allclose(conditional_records.lower_one_sided,conditional_records.estimate-1.645*conditional_records.se)
-    np.testing.assert_array_equal(conditional_records.rejects_zero,(conditional_records.lower_one_sided>0).astype(float))
-    conditional_records['width'] = conditional_records.ci_high - conditional_records.ci_low
-    conditional_records['covered'] = ((conditional_records.ci_low<=0)&(conditional_records.ci_high>=0)).astype(float)
-    rebuilt = conditional_records.groupby(keys).agg(reject_rate=('rejects_zero','mean'),
-                  mean_estimate=('estimate','mean'),mean_ci_width=('width','mean'),coverage_at_null=('covered','mean')).reset_index()
+    conditional = pd.read_csv(conditioning/'replicates.csv.gz')
+    keys = ['sample_size','n_confounders_included','estimator']
+    assert not conditional.duplicated(keys+['replicate']).any()
+    assert set(conditional.estimator) == {'one_step','substitution','tmle'}
+    assert len(conditional) == len(params['sizes'])*(params['n-confounders']+1)*params['reps']*3
+    assert conditional.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['reps']))).all()
+    require_convergence(conditional)
+    np.testing.assert_allclose(conditional.ci_low,conditional.estimate-1.96*conditional.se)
+    np.testing.assert_allclose(conditional.ci_high,conditional.estimate+1.96*conditional.se)
+    np.testing.assert_allclose(conditional.lower_one_sided,conditional.estimate-1.645*conditional.se)
+    np.testing.assert_array_equal(conditional.rejects_zero,(conditional.lower_one_sided>0).astype(float))
+    conditional['width'] = conditional.ci_high-conditional.ci_low
+    conditional['covered'] = ((conditional.ci_low<=0)&(conditional.ci_high>=0)).astype(float)
+    rebuilt = conditional.groupby(keys).agg(reject_rate=('rejects_zero','mean'),
+        mean_estimate=('estimate','mean'),mean_ci_width=('width','mean'),coverage_at_null=('covered','mean')).reset_index()
     rebuilt.loc[rebuilt.n_confounders_included != params['n-confounders'],'coverage_at_null'] = np.nan
-    expected = pd.read_csv(ROOT/'data/generated/cmi_conditioning_set.csv').sort_values(keys).reset_index(drop=True)
-    rebuilt = rebuilt.sort_values(keys).reset_index(drop=True)
-    pd.testing.assert_frame_equal(expected[rebuilt.columns],rebuilt,check_dtype=False,atol=1e-12,rtol=1e-10)
+    expected = pd.read_csv(canonical/'cmi_conditioning_set.csv' if canonical else conditioning/'summary.csv')
+    pd.testing.assert_frame_equal(expected[rebuilt.columns].sort_values(keys).reset_index(drop=True),
+        rebuilt.sort_values(keys).reset_index(drop=True),check_dtype=False,atol=1e-12,rtol=1e-10)
     return {'coverage_replicates':len(records),'comparison_replicates':len(comparisons),
-            'conditioning_replicates':len(conditional_records)}
+            'conditioning_replicates':len(conditional)}
+
+
+def validate_cmi_real_data(runs: dict[str, Path], canonical: Path | None = None) -> dict[str, int]:
+    from tlfair.cmi_estimation import paired_cmi, require_convergence
+    from tlfair.metrics import _encode_joint
+    sizes = {}
+    for dataset in ['adult','law']:
+        directory = runs[f'real_data_{dataset}']
+        metadata = json.loads((directory/'cmi_fit_metadata.json').read_text())
+        cache = directory/'cmi_predictions.npz'
+        path = canonical/f'{dataset}_results.pkl' if canonical else directory/'inference.pkl'
+        with path.open('rb') as stream:
+            expected = pickle.load(stream)
+        assert sha256(cache) == metadata['prediction_sha256'] == expected['prediction_sha256']
+        loader = importlib.import_module(f'analysis.analyze_{dataset}.run')
+        raw = ROOT/f'data/raw/{dataset}.csv'
+        assert metadata['raw_sha256'] == sha256(raw)
+        assert metadata['preprocessing_sha256'] == sha256(Path(loader.__file__))
+        xtr,xte,_,yte,_,gte = loader.load_data(raw, metadata['seed'])
+        assert metadata['train_rows'] == len(xtr) and metadata['evaluation_rows'] == len(xte)
+        with np.load(cache) as saved:
+            for key,value in [('train_index',xtr.index),('test_index',xte.index),('outcomes',yte),('groups',gte)]:
+                np.testing.assert_array_equal(saved[key],value)
+            rebuilt = paired_cmi(saved['initial_raw_q'], _encode_joint(gte,yte))
+            np.testing.assert_allclose(saved['initial_q'],rebuilt['diagnostics']['initial_q'],atol=1e-14)
+            np.testing.assert_allclose(saved['targeted_q'],rebuilt['diagnostics']['q_star'],atol=1e-12)
+        assert metadata['diagnostics']['converged'] and rebuilt['diagnostics']['converged']
+        for method,(estimate,interval) in rebuilt['inference'].items():
+            actual = expected['inference'][f'cmi_{method}']
+            np.testing.assert_allclose([actual[0],*actual[1]],[estimate,*interval],atol=1e-12,rtol=1e-10)
+        require_convergence(pd.read_csv(directory/'cmi_diagnostics.csv'))
+        sizes[dataset] = len(xte)
+    return sizes
+
+
+def validate_cmi_records() -> dict[str, int]:
+    selections = json.loads((ROOT/'config/publication-runs.json').read_text())['analyses']
+    runs = {name:ROOT/item['run'] for name,item in selections.items()}
+    return {**validate_cmi_runs(runs, ROOT/'data/generated'),
+            'real_data_evaluation_rows':validate_cmi_real_data(runs, ROOT/'data/generated')}
 
 
 def verify_inputs(registry, root=ROOT):
@@ -133,10 +188,8 @@ def validate(deep=False):
     for name,columns in EXPECTED_CSVS.items():
         if name.startswith('cmi_'):validate_csv(directory/name,columns)
     validate_truth_pickle(directory/'cmi_population_truth.pkl')
-    for dataset in ['adult','law']:
-        validate_results_pickle(directory/f'{dataset}_results.pkl',
-                                ['parity','prob_parity','opportunity','prob_opp','cmi'])
     cond=pd.read_csv(directory/'cmi_conditioning_set.csv')
+    cond = cond[cond.estimator == 'tmle']
     assert len(cond)==12 and cond.reps.eq(200).all()
     assert set(cond.sample_size)=={2500,5000}
     assert not cond.duplicated(['sample_size','n_confounders_included']).any()

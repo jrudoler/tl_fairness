@@ -104,6 +104,8 @@ def select(run_id: str, publication_id: str, root: Path = ROOT,
             # retain them in place rather than duplicating them canonically.
             evidence = {'cmi_estimation':['coverage_replicates.csv.gz','comparison_replicates.csv.gz'],
                         'cmi_conditioning_set':['replicates.csv.gz'],
+                        'real_data_adult':['cmi_predictions.npz','cmi_fit_metadata.json','cmi_diagnostics.csv'],
+                        'real_data_law':['cmi_predictions.npz','cmi_fit_metadata.json','cmi_diagnostics.csv'],
                         'model_fairness_adult':['predictions.npz','fit_metadata.json'],
                         'model_fairness_law':['predictions.npz','fit_metadata.json']}.get(analysis,[])
             for name in evidence:

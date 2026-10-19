@@ -39,12 +39,12 @@ def validate_csv(path, columns):
 def validate_results_pickle(path, metrics=EXPECTED_METRICS):
     with open(path, 'rb') as f:
         data = pickle.load(f)
-    for key in ['inference', 'importance']:
+    for key in ['inference']:
         if key not in data:
             raise ValueError(f'{path}: missing key {key}')
     # Feature importance is optional (off by default); only validate it when the
     # run actually produced importance results.
-    has_importance = bool(data['importance'])
+    has_importance = bool(data.get('importance'))
     for metric in metrics:
         if metric not in data['inference']:
             raise ValueError(f'{path}: missing inference metric {metric}')
@@ -70,7 +70,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('directory', type=Path)
     parser.add_argument('--manuscript-only', action='store_true',
-                        help='Exclude retired robustness/TMLE analyses')
+                        help='Validate the current manuscript metrics only')
     args = parser.parse_args()
     csvs = {k: v for k, v in EXPECTED_CSVS.items()
             if not args.manuscript_only or k.startswith('cmi_')}
@@ -90,7 +90,10 @@ def main():
         if name == 'cmi_population_truth.pkl':
             print(f'{name}: keys={validate_truth_pickle(path)}')
         else:
-            print(f'{name}: keys={validate_results_pickle(path, metrics)}')
+            with path.open('rb') as stream:
+                keys = pickle.load(stream)['inference']
+            selected = ['cmi_one_step','cmi_substitution','cmi_tmle'] if 'cmi_one_step' in keys else metrics
+            print(f'{name}: keys={validate_results_pickle(path, selected)}')
 
 
 if __name__ == '__main__':

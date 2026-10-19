@@ -50,9 +50,9 @@ def test_comparison_table_prioritizes_probabilistic_metrics_and_keeps_cmi_data_o
     from analysis.table_real_data_inference.run import comparison_rows
     values = {key:(.123456,(.100001,.146911)) for key in ['prob_parity','prob_opp','parity','opportunity']}
     matched = {'data_fairness':values,'model_fairness':values}
-    rows = comparison_rows({'cmi':(-.001234,(-.002345,-.000123))},matched,'Adult',True)
+    rows = comparison_rows({'cmi_tmle':(.000134,(-.000101,.000373))},matched,'Adult',True)
     assert [row['Metric'] for row in rows] == [
-        'Prob. Parity','Prob. Eq. Opp.','Parity (thresholded)','Eq. Opp. (thresholded)','CMI']
+        'Prob. Parity','Prob. Eq. Opp.','Parity (thresholded)','Eq. Opp. (thresholded)','CMI (TMLE)']
     assert rows[0]['Data fairness'] == '0.123 (0.100, 0.147)'
-    assert rows[-1]['Data fairness'] == '-0.0012 (-0.0023, -0.0001)'
+    assert rows[-1]['Data fairness'] == '0.0001 (-0.0001, 0.0004)'
     assert rows[-1]['Model fairness'] == '--'

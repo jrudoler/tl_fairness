@@ -18,9 +18,15 @@ METRIC_LABELS = [
     ('prob_opp_tmle', 'Prob. Eq. Opp. (TMLE)'),
     ('parity', 'Parity (thresholded)'),
     ('opportunity', 'Eq. Opp. (thresholded)'),
-    ('cmi', 'CMI'),
+    ('cmi_one_step', 'CMI (one-step)'),
+    ('cmi_substitution', 'CMI (substitution)'),
     ('cmi_tmle', 'CMI (TMLE)'),
 ]
+
+
+def metric_labels(manuscript_only: bool) -> list[tuple[str,str]]:
+    keys = {'prob_parity','prob_opp','parity','opportunity','cmi_tmle'}
+    return [(key,label) for key,label in METRIC_LABELS if not manuscript_only or key in keys]
 
 
 def _load(path):
@@ -32,7 +38,7 @@ def _fmt(inference, key):
     if key not in inference:
         return "--"  # metric not run (e.g. a --metrics subset)
     est, ci = inference[key]
-    precision = 4 if key in ['cmi','cmi_tmle'] else 3
+    precision = 4 if key.startswith('cmi') else 3
     return f"{est:.{precision}f} ({ci[0]:.{precision}f}, {ci[1]:.{precision}f})"
 
 
@@ -40,7 +46,7 @@ def comparison_rows(original: dict, matched: dict, dataset: str, manuscript_only
     data = {**original, **matched['data_fairness']}
     return [{'Metric':label,'Dataset':dataset,'Data fairness':_fmt(data,key),
              'Model fairness':_fmt(matched['model_fairness'],key)}
-            for key,label in METRIC_LABELS if not manuscript_only or not key.endswith('_tmle')]
+            for key,label in metric_labels(manuscript_only)]
 
 
 def main():
@@ -52,7 +58,7 @@ def main():
     parser.add_argument('--csv-output', default='results/data/real_data_inference.csv')
     parser.add_argument('--tex-output', default='results/data/real_data_inference.tex')
     parser.add_argument('--manuscript-only', action='store_true',
-                        help='Omit TMLE comparisons not used in the manuscript')
+                        help='Use one-step parity/EO and targeted CMI in the manuscript')
     parser.add_argument('--body-only', action='store_true')
     args = parser.parse_args()
 
@@ -64,7 +70,7 @@ def main():
     # The existing selected publication remains buildable while new fits queue.
     if not args.adult_comparison:
         rows = [{'Metric':label,'Adult':_fmt(adult,key),'Law':_fmt(law,key)}
-                for key,label in METRIC_LABELS if not args.manuscript_only or not key.endswith('_tmle')]
+                for key,label in metric_labels(args.manuscript_only)]
         df = pd.DataFrame(rows)
         df.to_csv(args.csv_output,index=False)
         df.to_latex(args.tex_output,index=False)

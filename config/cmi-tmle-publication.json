@@ -1,0 +1,36 @@
+{
+  "analyses": [
+    "cmi_estimation",
+    "cmi_conditioning_set",
+    "real_data_adult",
+    "real_data_law"
+  ],
+  "approved_sources": {
+    "Snakefile": "d33427c0519a8f66647a7dacfdc6c87897791c26b50f3e3728e35c7a80ea5752",
+    "analysis/cmi_comparison/run.py": "055b88da3b3a368dbaad2eadca4bde759199e1a5720f33920d96ef13403d2a75",
+    "analysis/fig_cmi_estimation/run.py": "eb8f4303f865d71c27b8d5b151993769f1c33f8fc1c843627868c94d64d6ee33",
+    "analysis/table_real_data_inference/run.py": "1f17e20e811c8975ac8fec26e8940836733001a3ccf8130affecc3531926f749",
+    "analysis/tools/compile_paper.py": "2e40dd23a6b075025b55bc33e56ac8b9c4b2e7c9f8717acc93f612b7ed843884",
+    "analysis/tools/complete_cmi_tmle.py": "15c2d9eafcdd04bc2572666c1aa7ceda3804f1727e61ebe88afd64de8565fa97",
+    "analysis/tools/select_publication_runs.py": "1b466f3de5ec626b5edd1b5b6e3150fa795036acf75353cc4567e210ebc77463",
+    "analysis/tools/validate.py": "654e28e1e473bd1be14d49b7be1408d136fdae11d8e338e27afbe93d6b87c339",
+    "analysis/tools/validate_publication.py": "cc04f2ccc493d03c4073ddb46ed27e8a11a77d1149549789f40ca76300682afc",
+    "config/analyses.json": "c790eb038213160150b430d37642ac0bc147c9ddeef1b5af972f3dbf209bb1ba",
+    "config/artifacts.json": "be4f2376d2751fbc58bbf1989983cff275798a5fc8ec75689e0582e15eeab76b",
+    "paper/sections/appendix_cmi.tex": "ba6f2ae161779d8d4df29940ad8438139e5b4a2f1020bcdb2d9988777e43a5a8",
+    "paper/sections/appendix_cmi_derivation.tex": "f2455266f1b7a20dadcd6dfc6e41ab8f93f119cfeb95277c058e5679ee3ce3f8",
+    "paper/sections/data_analysis.tex": "05423b874a4efb7f78aeb62f0e10668268382727ed442b023553173bc139cee5",
+    "paper/sections/discussion.tex": "dfda719896c0965604978b35622b44d469c8c667cb30c6dac4966d4b0afb2b41",
+    "paper/sections/inference.tex": "1facd9545a973682a93fe1ec5b8eb8963a5c407848d07aaaadeee5cb23308157",
+    "paper/sections/simulations.tex": "24a4e139b6485412b72288b0793c6bae16ca86c5ba0950fcb80d2d8b18c0ee93"
+  },
+  "fit_jobs": {
+    "adult": "97231",
+    "conditioning": "97234",
+    "estimation": "97233",
+    "law": "97232"
+  },
+  "previous_registry_sha256": "c03c9ff0d0d6a058dae8e23a7c220e99d95aa2936c51858e3e9e240e92d76764",
+  "publication_id": "manuscript-2026-10-19-tmle",
+  "run_id": "cmi-tmle-20261019"
+}

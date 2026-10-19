@@ -28,6 +28,8 @@ existing one-step estimator. We therefore provide targeting only for the
 probabilistic metrics here.
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
@@ -318,121 +320,135 @@ def cross_fit_tmle(X, y, g, outcome, propensity, *, metric="prob_parity",
 
 
 # ---------------------------------------------------------------------------
-# CMI: substitution estimate, softmax fluctuation, boundary-aware CI.
+# CMI: a targeted KL substitution estimate and nominal Wald interval.
 # ---------------------------------------------------------------------------
-# Finding (derivation in the plan): the conditional mutual information estimand
-# has the complete efficient influence function phi = log[q/(a b)] - Psi. (The
-# paper's "Causal Explanation Formula" subsection, where this would be derived,
-# is an unwritten stub in the current manuscript draft, so there is no equation
-# number to cite; the EIF below is standard and matches metrics.cmi, which sets
-# Psi_hat = mean of the observed log-ratio.) A full point-mass/Gateaux derivation
-# -- perturbing the
-# marginal of X and the conditional joint law q(y,g|x) -- shows the suspected
-# extra correction terms cancel: the inner gradient dh/dq = log[q/(a b)] - 1 is
-# constant across classes after contraction, and the marginal Y|X / G|X
-# perturbations contribute zero at the truth (their gradient is the constant -1
-# and the perturbation direction sums to zero). So:
-#   * metrics.cmi already solves its empirical EIF equation by construction (it
-#     sets Psi_hat = mean of the observed log-ratio, so mean(EIF) = 0
-#     identically). There is no "missing augmentation" to add.
-#   * The poor coverage near CMI~0 is a BOUNDARY non-regularity: Psi >= 0 and the
-#     sampling distribution is one-sided there, so symmetric Wald CIs under-cover
-#     regardless of the EIF. The fix is positivity + a boundary-aware CI, not a
-#     richer EIF.
-# This module therefore contributes (1) a positivity-respecting substitution
-# estimate, mean_i KL(q(.|x_i) || a (x) b) >= 0, instead of the average raw
-# log-ratio (which can go negative near independence); and (2) an optional
-# softmax fluctuation of the joint PMF that drives the empirical EIF mean to zero.
-#
-# Class indexing matches _encode_joint: class c has g = c % 2, y = c // 2, i.e.
-#   0=(g0,y0)  1=(g1,y0)  2=(g0,y1)  3=(g1,y1).
-def _cmi_log_ratio(q):
-    """Per-class log-ratio L_c(x) = log[ q_c / (a_{y(c)} b_{g(c)}) ] for q:(n,4)."""
-    a0 = q[:, 0] + q[:, 1]      # P(Y=0|x)
-    a1 = q[:, 2] + q[:, 3]      # P(Y=1|x)
-    b0 = q[:, 0] + q[:, 2]      # P(G=0|x)
-    b1 = q[:, 1] + q[:, 3]      # P(G=1|x)
-    denom = np.column_stack([a0 * b0, a0 * b1, a1 * b0, a1 * b1])
-    return np.log(_clip(q) / _clip(denom))
+def _normalize_cmi_joint(q: np.ndarray) -> np.ndarray:
+    """Regularize the initial joint once; derive every margin from this law."""
+    q = np.asarray(q, dtype=float)
+    if q.ndim != 2 or q.shape[1] != 4 or len(q) == 0:
+        raise ValueError("CMI requires a nonempty (n, 4) joint probability matrix")
+    if not np.isfinite(q).all() or (q < 0).any() or (q.sum(axis=1) <= 0).any():
+        raise ValueError("Invalid joint probabilities")
+    q = q / q.sum(axis=1, keepdims=True)
+    q = np.maximum(q, _EPS)
+    return q / q.sum(axis=1, keepdims=True)
 
 
-def _softmax_rows(logq):
+def _cmi_log_ratio(q: np.ndarray) -> np.ndarray:
+    """Exact per-class log ratio for a positive, normalized joint law.
+
+    Work in logs to avoid underflow. Clipping a marginal product separately
+    from its joint distribution would destroy the KL identity.
+    """
+    a0, a1 = q[:, 0] + q[:, 1], q[:, 2] + q[:, 3]
+    b0, b1 = q[:, 0] + q[:, 2], q[:, 1] + q[:, 3]
+    log_a = np.log(np.column_stack([a0, a0, a1, a1]))
+    log_b = np.log(np.column_stack([b0, b1, b0, b1]))
+    return np.log(q) - log_a - log_b
+
+
+def _softmax_rows(logq: np.ndarray) -> np.ndarray:
     m = logq.max(axis=1, keepdims=True)
     e = np.exp(logq - m)
     return e / e.sum(axis=1, keepdims=True)
 
 
-def _cmi_target(q, lte, *, fluctuate=True, max_iter=50, tol=1e-8):
-    """Substitution CMI estimate (+ optional softmax targeting) and its EIF.
+def _cmi_target(q: np.ndarray, lte: np.ndarray, *, fluctuate: bool = True,
+                max_iter: int = 200, tol: float = 1e-8) -> tuple[float, np.ndarray, dict[str, Any]]:
+    """Target the joint law along H_c(x)=L_c(x)-E_q[L|x].
 
-    Returns ``(est, eif, info)`` where ``est = mean_i h(x_i)`` with
-    ``h(x) = sum_c q_c log[q_c/(a_y b_g)] = KL(q(.|x) || a(.|x) (x) b(.|x)) >= 0``,
-    and the complete EIF evaluated at the observed class,
-    ``phi_i = L_{C_i}(x_i) - est``. The optional fluctuation reweights q on the
-    softmax scale with clever covariate ``H_c = L_c - h`` so the empirical EIF
-    mean is driven to zero.
+    Each iteration takes a Fisher-scoring direction in an exponential tilt
+    and backtracks until the observed conditional likelihood increases.
+    Convergence means a small empirical score, not merely a small step or
+    small information. The returned diagnostics expose unsuccessful targeting.
     """
-    q = _clip(np.asarray(q, dtype=float))
-    q = q / q.sum(axis=1, keepdims=True)
-    n = len(q)
-    idx = np.arange(n)
-    eps_final = 0.0
+    if max_iter < 0 or tol <= 0:
+        raise ValueError("Require max_iter >= 0 and tol > 0")
+    q = _normalize_cmi_joint(q)
+    initial_q = q.copy()
+    lte = np.asarray(lte)
+    if lte.shape != (len(q),) or not np.isin(lte, np.arange(4)).all():
+        raise ValueError("Observed classes must be integers 0..3, one per row")
+    lte = lte.astype(int)
+    idx = np.arange(len(q))
+    loglik = float(np.mean(np.log(q[idx, lte])))
+    likelihood_history = [loglik]
+    initial_estimate = float(np.mean(np.sum(q * _cmi_log_ratio(q), axis=1)))
+    eps_final, iterations = 0.0, 0
+    reason = "substitution_only"
 
     if fluctuate:
-        logq = np.log(q)
-        for _ in range(max_iter):
-            q = _softmax_rows(logq)
+        reason = "iteration_limit"
+        for iteration in range(max_iter):
             L = _cmi_log_ratio(q)
             h = np.sum(q * L, axis=1)
-            H = L - h[:, None]                 # E_q[H] = 0 by construction
-            score = np.sum(H[idx, lte])        # = sum_i (L_{C_i} - h_i)
-            info = np.sum(q * H ** 2)           # = sum_i Var_q(H_i)
-            if not np.isfinite(info) or info < 1e-12:
+            H = L - h[:, None]
+            score = float(np.mean(H[idx, lte]))
+            if abs(score) <= tol:
+                reason = "score_tolerance"
                 break
-            eps = score / info
-            logq = logq + eps * H
-            eps_final = eps
-            if abs(eps) < tol:
+            information = float(np.mean(np.sum(q * H**2, axis=1)))
+            if not np.isfinite(information) or information <= np.finfo(float).tiny:
+                reason = "vanishing_information"
                 break
-        q = _softmax_rows(logq)
+            eps = score / information
+            # Limit the size of the first trial log-probability change. This
+            # keeps extreme Newton steps finite without clipping the new law.
+            eps *= min(1.0, 5.0 / max(abs(eps) * float(np.max(np.abs(H))), 5.0))
+            logq = np.log(q)
+            for _ in range(50):
+                candidate = _softmax_rows(logq + eps * H)
+                if (candidate > 0).all():
+                    candidate_loglik = float(np.mean(np.log(candidate[idx, lte])))
+                    if candidate_loglik >= loglik + 1e-4 * eps * score:
+                        break
+                eps *= 0.5
+            else:
+                reason = "line_search_failed"
+                break
+            q, loglik = candidate, candidate_loglik
+            likelihood_history.append(loglik)
+            eps_final, iterations = float(eps), iteration + 1
 
     L = _cmi_log_ratio(q)
     h = np.sum(q * L, axis=1)
-    est = float(np.mean(h))
-    eif = L[idx, lte] - est
+    estimate = float(np.mean(h))
+    eif = L[idx, lte] - estimate
+    score = float(np.mean(eif))
+    converged = bool(fluctuate and abs(score) <= tol)
+    if converged:
+        reason = "score_tolerance"
     info = {
-        "eps": eps_final,
-        "eif_mean": float(np.mean(eif)),
+        "eps": eps_final, "eif_mean": score, "converged": converged,
+        "iterations": iterations, "termination": reason, "tolerance": tol,
         "naive_mean_logratio": float(np.mean(L[idx, lte])),
-        "pointwise_min": float(h.min()),
+        "pointwise_min": float(h.min()), "initial_estimate": initial_estimate,
+        "initial_loglik": likelihood_history[0], "final_loglik": loglik,
+        "likelihood_history": likelihood_history, "initial_q": initial_q, "q_star": q,
+        "information": float(np.mean(np.sum(q * (L-h[:, None])**2, axis=1))),
     }
-    return est, eif, info
+    return estimate, eif, info
 
 
 def cmi_tmle(X_train, X_test, y_train, y_test, group_train, group_test,
              outcome, propensity=None, *,
-             fluctuate=True, max_iter=50, tol=1e-8,
+             fluctuate=True, max_iter=200, tol=1e-8,
              return_diagnostics=False):
-    """TMLE-style CMI estimator: positivity-respecting substitution + targeting.
+    """Targeted CMI substitution estimate with a nominal symmetric Wald interval.
 
-    Mirrors :func:`tlfair.metrics.cmi` (single, joint 4-class approach) but:
-      * the point estimate is the substitution form ``mean_i h(x_i) >= 0`` rather
-        than the average raw log-ratio, which can go negative near independence;
-      * an optional softmax fluctuation of the calibrated joint PMF drives the
-        empirical EIF mean to zero.
-
-    Following the metric API, ``y_*``/``group_*`` are the two discrete variables
-    whose conditional MI given ``X`` is estimated.
+    Targeting changes the fitted calibrated joint law so its KL substitution
+    estimate approximately solves the empirical EIF equation. Wald calibration
+    at conditional independence is not established: the population EIF is zero.
     """
     ltr = _encode_joint(group_train, y_train)
     model = CalibratedClassifierCV(outcome, cv=3).fit(X_train, ltr)
     q = _aligned_joint_proba(model, X_test)
     lte = _encode_joint(group_test, y_test)
-
-    est, eif, info = _cmi_target(q, lte, fluctuate=fluctuate,
-                                 max_iter=max_iter, tol=tol)
-    se = np.sqrt(np.var(eif) / len(eif))
-    ci = (est - 1.96 * se, est + 1.96 * se)
+    estimate, eif, info = _cmi_target(q, lte, fluctuate=fluctuate,
+                                     max_iter=max_iter, tol=tol)
+    if fluctuate and not info['converged']:
+        raise RuntimeError(f"CMI targeting failed: {info['termination']}, score={info['eif_mean']}")
+    ci = _wald_ci(estimate, eif)
     if return_diagnostics:
-        return est, ci, info
-    return est, ci
+        return estimate, ci, info
+    return estimate, ci

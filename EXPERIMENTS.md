@@ -14,6 +14,7 @@ explicit workflow with a fresh run ID.
 | `cmi_estimation` | `fig_cmi_estimation` | `figs/cmi_estimation_{error,coverage}.pdf` |
 | `real_data_adult`, `real_data_law` | `table_real_data_inference` | `tables/real_data_inference.tex` |
 | `cmi_estimation` | `table_cmi_population_truth` | `tables/cmi_population_truth.tex` |
+| CMI paired methods | `cmi_paired_comparison` | `figs/cmi_paired_comparison.pdf`, `tables/cmi_null_diagnostics.tex` |
 | `nuisance_early_stopping` | `nuisance_tables` | `tables/nuisance_{population,fitted,controls,sensitivity}.tex` |
 
 Paths in the last column are relative to `paper/`. Results are rendered under
@@ -44,7 +45,8 @@ used by early-stopping collection and validation; it is an active dependency.
 - [config/datasets.json](config/datasets.json) pins external raw data URLs to Git
   revisions and records byte checksums. Download helpers reject conflicting files.
 
-The current publication is `manuscript-2026-10-14`, selected from seven
+Before the October 19 TMLE transition, the selected publication was
+`manuscript-2026-10-14`, selected from seven
 completed analyses in `data/runs/reproduction-20261012/` and two matched real-data
 analyses in `data/runs/matched-real-data-20261014/`. Each ran its saved
 source snapshot with the current computation dependencies and recorded package
@@ -71,7 +73,7 @@ intervals from cached predictions, and delivered the table and approved prose.
 Its PDF compilation failed because the compute node lacked Perl `Time::HiRes`.
 On October 19, `snakemake verify_computation paper --cores 1 --quiet` completed
 successfully on the login environment; the resulting table was visually checked.
-The current publication ID is `manuscript-2026-10-14`. Completion is recorded in
+That publication ID is `manuscript-2026-10-14`. Completion is recorded in
 `results/provenance/selection-manuscript-2026-10-14.json`; the recovered build log
 is `logs/matched-paper-check-20261019.log`. The prior selection is retained in
 `data/imported/publication-before-manuscript-2026-10-14/`.
@@ -79,6 +81,52 @@ is `logs/matched-paper-check-20261019.log`. The prior selection is retained in
 The guarded completion script is for the original one-time selection. After
 selection has succeeded, recover a failed render/compile using the ordinary
 Snakemake build, rather than rerunning the selection script.
+
+### CMI TMLE transition
+
+The approved October 19 change makes TMLE the primary CMI estimator throughout
+Adult/Law, the coupling simulation and the conditioning-set simulation. The
+one-step derivation remains in the manuscript and paired one-step results remain
+in the appendix. Parity/EO retain their existing matched, certified results.
+
+Runs are under `data/runs/cmi-tmle-20261019/`: Adult job 97231, Law 97232,
+estimation 97233, conditioning set 97234. Adult/Law completed and their estimates
+and targeted probabilities reconstructed from saved caches. The two simulations
+were submitted with the original grids, data streams, seeds and learners.
+They fit the initial joint classifier once per replicate and save paired
+`one_step`, `substitution` and `tmle` records. Substitution is a computational
+diagnostic; the paper compares one-step and TMLE, with KNN retained as a baseline.
+Only TMLE and one-step intervals are interpreted in the paired manuscript outputs.
+
+`config/cmi-tmle-publication.json` records the guarded manuscript/workflow hashes.
+Dependent job 97236 runs `analysis/tools/complete_cmi_tmle.py` after the simulation
+jobs succeed. It checks those hashes, validates every saved summary and targeting
+score, validates both real-data prediction caches, and selects only the four CMI
+runs as `manuscript-2026-10-19-tmle`. All other native selected runs are retained.
+The updated `adult_results.pkl` and `law_results.pkl` contain CMI-only comparisons;
+all four parity/EO rows come from the matched-model comparison pickles.
+
+The actual current selection is always `config/publication.json`. Full completion
+is certified by `results/provenance/completion-manuscript-2026-10-19-tmle.json`;
+the job log is `logs/slurm/paper-cmi-tmle-97236.log`. Until the new runs are selected,
+the strict build rejects older CMI results that do not match the updated code.
+The previous compiled paper and all old native runs remain available. A watermarked
+syntax/layout check is under `results/review/cmi-tmle-preflight/`; its simulation
+figures are previews, not selected manuscript results. None of this review bundle
+is tracked in Git.
+
+The new completion script can resume after successful selection if a later build
+fails. It refuses to overwrite a different publication or proceed after guarded
+source changes. The compiler falls back to direct XeLaTeX/BibTeX passes when the
+compute node lacks Perl `Time::HiRes`, which prevented the earlier matched build.
+
+Targeting convergence requires an absolute empirical score at most `1e-8`, with
+at most 200 updates and likelihood-increasing line search. Convergence failures
+remain in native records and make the run fail. Joint probabilities are floored
+and renormalized once, then all marginals/log ratios use that same joint law.
+The original one-step log ratio remains unclipped. Symmetric Wald intervals are
+nominal; convergence/nonnegativity do not validate their calibration at conditional
+independence, where the population EIF and its first-order variance are zero.
 
 The former publication registry and generated inputs are retained outside Git
 under `data/imported/publication-before-manuscript-2026-10-13/`. The original

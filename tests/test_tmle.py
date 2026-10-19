@@ -24,6 +24,7 @@ from tlfair.tmle import (
     _encode_joint,
     _expit,
     _logit,
+    _normalize_cmi_joint,
     cmi_tmle,
     fit_fluctuation,
     prob_opportunity_tmle,
@@ -248,3 +249,72 @@ def test_cmi_target_without_fluctuation_is_substitution():
     est, eif, info = _cmi_target(q, lte, fluctuate=False)
     assert info["eps"] == 0.0
     assert est >= 0.0
+
+
+def test_cmi_extreme_probabilities_preserve_exact_kl_identity():
+    q = np.tile([.999999, 1e-6, 1e-6, 1e-12], (4, 1))
+    law = _normalize_cmi_joint(q)
+    a = law[:, 0] + law[:, 1]
+    b = law[:, 0] + law[:, 2]
+    product = np.column_stack([a*b, a*(1-b), (1-a)*b, (1-a)*(1-b)])
+    direct = np.sum(law*np.log(law/product), axis=1).mean()
+    estimate, _, _ = _cmi_target(q, np.arange(4), fluctuate=False)
+    assert estimate > 0
+    assert estimate == pytest.approx(direct, abs=1e-14)
+
+
+def test_cmi_eif_matches_numerical_joint_path_derivative():
+    px = np.array([.4, .6])
+    q = np.array([[.4, .1, .2, .3], [.12, .28, .25, .35]])
+    joint = px[:, None]*q
+    score = np.array([[-1., .5, 2., -.5], [.3, -.8, .7, 1.2]])
+    score -= np.sum(joint*score)
+
+    def functional(law):
+        marginal = law.sum(axis=1)
+        conditional = law/marginal[:, None]
+        return np.sum(law*_cmi_log_ratio(conditional))
+
+    epsilon = 1e-6
+    derivative = (functional(joint*(1+epsilon*score))-functional(joint*(1-epsilon*score)))/(2*epsilon)
+    psi = functional(joint)
+    expected = np.sum(joint*(_cmi_log_ratio(q)-psi)*score)
+    assert derivative == pytest.approx(expected, abs=1e-9)
+
+
+def test_cmi_targeting_likelihood_increases_and_final_equation_holds():
+    rng = np.random.default_rng(14)
+    q = rng.dirichlet([2, 1, 1, 3], 600)
+    observed = rng.integers(0, 4, len(q))
+    estimate, eif, info = _cmi_target(q, observed)
+    assert info['converged']
+    assert np.diff(info['likelihood_history']).min() >= 0
+    assert abs(eif.mean()) <= info['tolerance']
+    assert estimate == pytest.approx(info['naive_mean_logratio'], abs=info['tolerance'])
+    np.testing.assert_allclose(info['q_star'].sum(axis=1), 1)
+
+
+def test_cmi_iteration_limit_is_not_certified_as_convergence():
+    q = np.tile([.4, .1, .1, .4], (4, 1))
+    _, _, info = _cmi_target(q, np.arange(4), max_iter=0)
+    assert not info['converged']
+    assert info['termination'] == 'iteration_limit'
+
+
+def test_cmi_exact_independence_has_zero_eif_and_needs_no_update():
+    q = np.tile([.12, .18, .28, .42], (4, 1))
+    estimate, eif, info = _cmi_target(q, np.arange(4))
+    assert estimate == pytest.approx(0, abs=1e-14)
+    np.testing.assert_allclose(eif, 0, atol=1e-14)
+    assert info['converged'] and info['iterations'] == 0
+
+
+def test_paired_cmi_keeps_original_one_step_and_exposes_failed_targeting():
+    from tlfair.cmi_estimation import paired_cmi, replicate_records, require_convergence
+    q = np.tile([.4, .1, .1, .4], (4, 1))
+    result = paired_cmi(q, np.arange(4), max_iter=0)
+    assert result['inference']['one_step'][0] == pytest.approx(np.log(.8))
+    assert result['inference']['substitution'][0] > 0
+    records = pd.DataFrame(replicate_records(result, replicate=0))
+    with pytest.raises(RuntimeError, match='did not converge'):
+        require_convergence(records)

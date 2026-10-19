@@ -5,8 +5,10 @@ from sklearn.ensemble import GradientBoostingClassifier
 from joblib import Parallel, delayed
 
 from tlfair.metrics import *
+from tlfair.metrics import _encode_joint
 from tlfair.superlearner import *
 from tlfair.knncmi import *
+from tlfair.cmi_estimation import fit_joint_probabilities, paired_cmi
 
 
 def _draw_until_valid(fn, n, kappa, rng, max_attempts=20, **kwargs):
@@ -63,6 +65,25 @@ def cmi_sim(
         outcome = outcome,
         propensity = None,
     )
+
+
+def paired_cmi_sim(n: int, kappa: float, d: int = 3,
+                   rng: np.random.Generator | None = None) -> dict:
+    """Use the original DGP/stream and one joint fit for all CMI estimators."""
+    if rng is None:
+        rng = np.random.default_rng()
+    half = n // 2
+    z = rng.normal(size=(2*half, d))
+    shared = kappa*rng.uniform(size=2*half)
+    logits = 1/(1+np.exp(-z@np.ones(d)))
+    y = ((shared+rng.uniform(size=2*half)+logits)/(kappa+2) > .5).astype(np.int8)
+    g = ((shared+rng.uniform(size=2*half)+logits)/(kappa+2) > .5).astype(np.int8)
+    seed = int(rng.integers(0, 2**31-1))
+    if np.bincount(_encode_joint(g[:half], y[:half]), minlength=4).min() < 3:
+        raise ValueError('Insufficient training observations for joint-class calibration')
+    q = fit_joint_probabilities(z[:half], z[half:], y[:half], g[:half],
+                               GradientBoostingClassifier(random_state=seed))
+    return paired_cmi(q, _encode_joint(g[half:], y[half:]))
 
 def knncmi_sim(
     n,

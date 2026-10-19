@@ -42,6 +42,7 @@ Usage (smoke):
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -63,6 +64,8 @@ ALPHA = 0.05
 _Z2 = 1.96    # two-sided 95% -> recover se from the CMI CI half-width
 _Z1 = 1.645   # one-sided 0.05 critical value
 
+
+LOG = logging.getLogger(__name__)
 
 def _make_coefs(n_conf, n_out, signal, coef_seed):
     """Draw the (fixed, seeded) DGP coefficients once.
@@ -116,29 +119,42 @@ def _conditioning_cols(k, p, n_conf, n_out):
 
 
 def _one_rep(n, k, p, n_conf, n_out, coefs, rng, max_attempts=20):
-    """One replicate at conditioning level ``k``; returns (est, se, reject)."""
+    """Paired methods share the DGP, split, seed and calibrated joint fit."""
+    from tlfair.cmi_estimation import fit_joint_probabilities, paired_cmi, replicate_records
+    from tlfair.metrics import _encode_joint
     cols = _conditioning_cols(k, p, n_conf, n_out)
     h = n // 2
     last_err = None
     for _ in range(max_attempts):
-        x, g, y = _draw(2 * h, p, n_conf, n_out, coefs, rng)
+        x, g, y = _draw(2*h, p, n_conf, n_out, coefs, rng)
         xc = x[:, cols]
-        seed = int(rng.integers(0, 2**31 - 1))
+        seed = int(rng.integers(0, 2**31-1))
         try:
-            est, (lo, hi) = cmi(
-                X_train=xc[:h], X_test=xc[h:],
-                y_train=y[:h], y_test=y[h:],          # outcome
-                group_train=g[:h], group_test=g[h:],  # group
-                outcome=GradientBoostingClassifier(random_state=seed),
-            )
-            break
-        except ValueError as err:  # degenerate cv=3 calibration; redraw
+            if np.bincount(_encode_joint(g[:h],y[:h]), minlength=4).min() < 3:
+                raise ValueError('Insufficient training observations for joint calibration')
+            q = fit_joint_probabilities(xc[:h], xc[h:], y[:h], g[:h],
+                                       GradientBoostingClassifier(random_state=seed))
+            result = paired_cmi(q, _encode_joint(g[h:],y[h:]))
+            rows = replicate_records(result)
+            for row in rows:
+                row['lower_one_sided'] = row['estimate']-_Z1*row['se']
+                row['rejects_zero'] = float(row['lower_one_sided'] > 0)
+            return rows
+        except ValueError as err:
             last_err = err
-    else:
-        raise last_err
-    se = (hi - lo) / (2 * _Z2)
-    reject = 1.0 if (est - _Z1 * se) > 0 else 0.0
-    return est, se, reject
+    raise last_err
+
+
+def summarize_records(records: pd.DataFrame, n_conf: int) -> pd.DataFrame:
+    records = records.copy()
+    records['width'] = records.ci_high-records.ci_low
+    records['covered'] = ((records.ci_low <= 0)&(records.ci_high >= 0)).astype(float)
+    result = records.groupby(['sample_size','n_confounders_included','estimator']).agg(
+        reject_rate=('rejects_zero','mean'), mean_estimate=('estimate','mean'),
+        mean_ci_width=('width','mean'), coverage_at_null=('covered','mean'),
+        reps=('replicate','size')).reset_index()
+    result.loc[result.n_confounders_included != n_conf,'coverage_at_null'] = np.nan
+    return result
 
 
 def _marginal_mi(p, n_conf, n_out, coefs, seed, n=200_000):
@@ -151,55 +167,38 @@ def _marginal_mi(p, n_conf, n_out, coefs, seed, n=200_000):
 def run(p, n_conf, n_out, sizes, reps, signal, coef_seed, seed, n_jobs, records_path=None):
     coefs = _make_coefs(n_conf, n_out, signal, coef_seed)
     marg_mi = _marginal_mi(p, n_conf, n_out, coefs, seed)
-    print(f"Marginal MI(Y;G) = {marg_mi:.5f} nats  (>0 -> marginally biased; "
-          f"conditioning on Z should drive CMI -> 0)", flush=True)
+    LOG.info('Marginal MI(Y;G) = %.5f nats', marg_mi)
 
+    from tlfair.cmi_estimation import require_convergence
     records = []
-    ks = list(range(n_conf + 1))
-    rows = []
     for n in sizes:
-        for k in ks:
-            children = np.random.default_rng(np.random.SeedSequence([seed, n, k])).spawn(reps)
-            out = Parallel(n_jobs=n_jobs)(
-                delayed(_one_rep)(n, k, p, n_conf, n_out, coefs, ch) for ch in children)
+        for k in range(n_conf+1):
+            children = np.random.default_rng(np.random.SeedSequence([seed,n,k])).spawn(reps)
+            batches = Parallel(n_jobs=n_jobs)(
+                delayed(_one_rep)(n,k,p,n_conf,n_out,coefs,ch) for ch in children)
+            records.extend(dict(row,sample_size=n,n_confounders_included=k,replicate=i)
+                           for i,batch in enumerate(batches) for row in batch)
             if records_path is not None:
-                records.extend(dict(sample_size=n, n_confounders_included=k, replicate=i,
-                                    estimate=est, se=se, rejects_zero=reject,
-                                    ci_low=est-_Z2*se, ci_high=est+_Z2*se,
-                                    lower_one_sided=est-_Z1*se)
-                               for i, (est, se, reject) in enumerate(out))
-            ests = np.array([o[0] for o in out])
-            ses = np.array([o[1] for o in out])
-            rejects = np.array([o[2] for o in out])
-            full = (k == n_conf)  # true CMI = 0 only when all confounders are included
-            rows.append({
-                "coef_seed": coef_seed,
-                "n_features": len(_conditioning_cols(k, p, n_conf, n_out)),
-                "n_confounders_included": k,
-                "sample_size": n,
-                "reps": reps,
-                "reject_rate": float(np.mean(rejects)),
-                "kind": "Type-I error" if full else "power",
-                "mean_estimate": float(np.mean(ests)),
-                "mean_ci_width": float(np.mean(2 * _Z2 * ses)),
-                # coverage of the truth=0 null; only meaningful where truth is 0.
-                "coverage_at_null": float(np.mean((ests - _Z2 * ses <= 0)
-                                                  & (ests + _Z2 * ses >= 0))) if full else np.nan,
-            })
-            r = rows[-1]
-            tag = "null (all Z)" if full else "partial conditioning"
-            print(f"  n={n} k={k}/{n_conf} [{tag}]: reject={r['reject_rate']:.3f} "
-                  f"CMI_hat={r['mean_estimate']:.4f} width={r['mean_ci_width']:.4f}",
-                  flush=True)
-    if records_path is not None:
-        Path(records_path).parent.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(records).to_csv(records_path, index=False)
-    return pd.DataFrame(rows)
+                records_path = Path(records_path)
+                records_path.parent.mkdir(parents=True,exist_ok=True)
+                pd.DataFrame(records).to_csv(records_path,index=False)
+            LOG.info('Conditioning-set cell completed: n=%d included=%d/%d', n,k,n_conf)
+    frame = pd.DataFrame(records)
+    require_convergence(frame)
+    result = summarize_records(frame,n_conf)
+    result['coef_seed'] = coef_seed
+    result['n_features'] = result.n_confounders_included.map(lambda k:len(_conditioning_cols(k,p,n_conf,n_out)))
+    result['sample_size'] = result.sample_size.astype(int)
+    result['kind'] = np.where(result.n_confounders_included == n_conf,'null diagnostic','partial conditioning')
+    result['marginal_mi'] = marg_mi
+    return result
 
 
 def plot(df: pd.DataFrame, output: str | Path) -> None:
     import matplotlib.pyplot as plt
     import seaborn as sns
+    if 'estimator' in df:
+        df = df[df.estimator == 'tmle']
     configure_matplotlib()
     fig, axes = plt.subplots(1, 2, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
     # Left: mean CMI estimate and mean one-sided 95% lower confidence bound.
@@ -215,7 +214,7 @@ def plot(df: pd.DataFrame, output: str | Path) -> None:
     ax.axhline(0.0, ls="--", color="grey", lw=1)
     ax.set_xlabel("# confounders in conditioning set")
     ax.set_ylabel(r"$\hat{I}(Y;G\mid X)$")
-    ax.set_title("Mean CMI estimate")
+    ax.set_title("Mean TMLE CMI estimate")
     ax.legend(title=None, fontsize=7)
     # Right: empirical rejection rate vs #confounders included.
     ax = axes[1]

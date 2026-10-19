@@ -35,10 +35,20 @@ def compare_csv(old: Path, new: Path, analysis: str) -> pd.DataFrame:
         # absence from new computations as a failed scientific reproduction.
         previous = previous[previous['type'] != 'TL-sep']
         current = current[current['type'] != 'TL-sep']
+        if 'estimator' in current:
+            previous['type'] = previous['type'].replace({'TL':'One-step'})
+            current['type'] = current['type'].replace({'TL':'One-step'})
+            # A historical baseline can only assess the estimators it saved.
+            current = current[current['type'].isin(previous['type'].unique())]
     elif old.name == 'population.csv':
         keys = ['scenario']
     elif old.name == 'paired_comparisons.csv':
         keys = [p for p in keys if p != 'method']
+    if 'estimator' in current and not old.name.endswith('comparison.csv'):
+        if 'estimator' in previous:
+            keys = keys+['estimator']
+        else:
+            current = current[current.estimator == 'one_step']
     merged = previous.merge(current, on=keys, suffixes=('_old', '_new'), how='outer',
                             validate='one_to_one', indicator=True)
     if not merged['_merge'].eq('both').all():
@@ -117,8 +127,11 @@ def compare(run_id: str) -> dict[str, Any]:
                     targets = ['inference'] if original == 'inference.pkl' else ['data_fairness','model_fairness']
                     for target in targets:
                         for metric in current[target]:
+                            old_metric = 'cmi' if metric == 'cmi_one_step' and 'cmi' in previous[target] else metric
+                            if old_metric not in previous[target]:
+                                continue
                             for quantity, a, b in zip(['estimate','ci_low','ci_high'],
-                                [previous[target][metric][0], *previous[target][metric][1]],
+                                [previous[target][old_metric][0], *previous[target][old_metric][1]],
                                 [current[target][metric][0], *current[target][metric][1]]):
                                 rows.append({'target':target,'metric':metric,'quantity':quantity,'old':a,'new':b,'difference':b-a})
                     path = destination/f'{analysis}-inference.csv'
@@ -136,11 +149,13 @@ def compare(run_id: str) -> dict[str, Any]:
             if analysis == 'cmi_conditioning_set':
                 records = pd.read_csv(directory/'replicates.csv.gz')
                 n_conf = record['settings']['parameters']['n-confounders']
-                null_diagnostics(records[records.n_confounders_included == n_conf], ['sample_size']).to_csv(
+                diagnostic_keys = ['sample_size']+(['estimator'] if 'estimator' in records else [])
+                null_diagnostics(records[records.n_confounders_included == n_conf], diagnostic_keys).to_csv(
                     destination/'cmi_conditioning_set-null-diagnostics.csv',index=False)
             if analysis == 'cmi_estimation':
                 records = pd.read_csv(directory/'coverage_replicates.csv.gz')
-                null_diagnostics(records[records.kappa == 0], ['sample_size']).to_csv(
+                diagnostic_keys = ['sample_size']+(['estimator'] if 'estimator' in records else [])
+                null_diagnostics(records[records.kappa == 0], diagnostic_keys).to_csv(
                     destination/'cmi_estimation-null-diagnostics.csv',index=False)
             reports[analysis] = {'status':'compared','run':str(directory.relative_to(ROOT)),
                                  'manifest_sha256':sha256(manifest),'files':files}

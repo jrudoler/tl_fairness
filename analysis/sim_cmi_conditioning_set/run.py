@@ -9,6 +9,7 @@ See the experiment module docstring for the full rationale.
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -35,6 +36,7 @@ def main():
     parser.add_argument("--output", default="data/generated/cmi_conditioning_set.csv")
     parser.add_argument("--records-output", type=Path)
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
     if args.n_confounders + args.n_outcome > args.p:
         parser.error("--n-confounders + --n-outcome must not exceed --p")

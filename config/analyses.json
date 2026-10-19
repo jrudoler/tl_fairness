@@ -97,10 +97,12 @@
       "code": [
         "analysis/sim_cmi_estimation/run.py",
         "pyproject.toml",
+        "tlfair/cmi_estimation.py",
         "tlfair/cmi_sim.py",
         "tlfair/knncmi.py",
         "tlfair/metrics.py",
         "tlfair/superlearner.py",
+        "tlfair/tmle.py",
         "uv.lock"
       ]
     },
@@ -132,8 +134,10 @@
         "experiments/baselines.py",
         "experiments/cmi_conditioning_set.py",
         "pyproject.toml",
+        "tlfair/cmi_estimation.py",
         "tlfair/metrics.py",
         "tlfair/superlearner.py",
+        "tlfair/tmle.py",
         "uv.lock"
       ]
     },
@@ -191,17 +195,12 @@
       ]
     },
     "real_data_adult": {
-      "script": "analysis/analyze_adult/run.py",
+      "script": "analysis/cmi_real_data/run.py",
       "parameters": {
+        "dataset": "adult",
         "seed": 123,
-        "metrics": [
-          "parity",
-          "prob_parity",
-          "opportunity",
-          "prob_opp",
-          "cmi"
-        ],
-        "importance-samples": 0
+        "max-iter": 200,
+        "tol": 1e-08
       },
       "inputs": {
         "input": "data/raw/adult.csv"
@@ -210,30 +209,31 @@
         "output": "inference.pkl"
       },
       "required": [
-        "inference.pkl"
+        "inference.pkl",
+        "cmi_predictions.npz",
+        "cmi_fit_metadata.json",
+        "cmi_diagnostics.csv"
       ],
       "code": [
         "analysis/analyze_adult/run.py",
+        "analysis/cmi_real_data/run.py",
         "config/datasets.json",
         "pyproject.toml",
+        "tlfair/cmi_estimation.py",
         "tlfair/metrics.py",
+        "tlfair/provenance.py",
         "tlfair/superlearner.py",
         "tlfair/tmle.py",
         "uv.lock"
       ]
     },
     "real_data_law": {
-      "script": "analysis/analyze_law/run.py",
+      "script": "analysis/cmi_real_data/run.py",
       "parameters": {
+        "dataset": "law",
         "seed": 123,
-        "metrics": [
-          "parity",
-          "prob_parity",
-          "opportunity",
-          "prob_opp",
-          "cmi"
-        ],
-        "importance-samples": 0
+        "max-iter": 200,
+        "tol": 1e-08
       },
       "inputs": {
         "input": "data/raw/law.csv"
@@ -242,13 +242,19 @@
         "output": "inference.pkl"
       },
       "required": [
-        "inference.pkl"
+        "inference.pkl",
+        "cmi_predictions.npz",
+        "cmi_fit_metadata.json",
+        "cmi_diagnostics.csv"
       ],
       "code": [
         "analysis/analyze_law/run.py",
+        "analysis/cmi_real_data/run.py",
         "config/datasets.json",
         "pyproject.toml",
+        "tlfair/cmi_estimation.py",
         "tlfair/metrics.py",
+        "tlfair/provenance.py",
         "tlfair/superlearner.py",
         "tlfair/tmle.py",
         "uv.lock"

@@ -32,3 +32,4 @@ outputs/*
 /data/imported/
 /data/runs/
 /results/provenance/
+/results/review/

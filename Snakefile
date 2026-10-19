@@ -134,6 +134,20 @@ rule table_real_data_inference:
         "{params.comparison} --csv-output {output.csv:q} --tex-output {output.tex:q} > {log:q} 2>&1"
 
 
+rule cmi_paired_comparison:
+    input:
+        verified=VALIDATION,
+        deps=dependencies("cmi_paired_comparison", "cmi_null_diagnostics"),
+    output:
+        figure="results/figures/cmi_paired_comparison.pdf",
+        table="results/data/cmi_null_diagnostics.tex",
+        csv="results/data/cmi_null_diagnostics.csv",
+    log: "logs/cmi_paired_comparison.log"
+    shell:
+        "{RUN} analysis/cmi_comparison/run.py --figure-output {output.figure:q} "
+        "--table-output {output.table:q} --csv-output {output.csv:q} > {log:q} 2>&1"
+
+
 rule table_cmi_population_truth:
     input:
         verified=VALIDATION,

@@ -138,6 +138,40 @@
       "id": "nuisance_sensitivity",
       "paper": "paper/tables/nuisance_sensitivity.tex",
       "result": "results/data/nuisance_sensitivity.tex"
+    },
+    {
+      "id": "cmi_paired_comparison",
+      "result": "results/figures/cmi_paired_comparison.pdf",
+      "paper": "paper/figs/cmi_paired_comparison.pdf",
+      "dependencies": [
+        "analysis/cmi_comparison/run.py",
+        "config/publication-runs.json",
+        "data/generated/cmi_estimation_coverage.csv",
+        "data/generated/cmi_conditioning_set.csv",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock",
+        "config/analyses.json",
+        "config/publication-provenance/cmi_estimation/run_manifest.json",
+        "config/publication-provenance/cmi_conditioning_set/run_manifest.json"
+      ]
+    },
+    {
+      "id": "cmi_null_diagnostics",
+      "result": "results/data/cmi_null_diagnostics.tex",
+      "paper": "paper/tables/cmi_null_diagnostics.tex",
+      "dependencies": [
+        "analysis/cmi_comparison/run.py",
+        "config/publication-runs.json",
+        "data/generated/cmi_estimation_coverage.csv",
+        "data/generated/cmi_conditioning_set.csv",
+        "tlfair/plotting.py",
+        "clean-figs.mplstyle",
+        "uv.lock",
+        "config/analyses.json",
+        "config/publication-provenance/cmi_estimation/run_manifest.json",
+        "config/publication-provenance/cmi_conditioning_set/run_manifest.json"
+      ]
     }
   ]
 }

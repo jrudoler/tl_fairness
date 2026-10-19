@@ -39,7 +39,7 @@ def main():
     cmp = pd.read_csv(args.compare_input)
     # Compare only the targeted-learning (TL) and KNN estimators; the legacy
     # separate-marginals variant (TL-sep) was dropped.
-    cmp = cmp[cmp['type'].isin(['TL', 'KNN'])]
+    cmp = cmp[cmp['type'].isin(['TMLE', 'KNN'])]
     with open(args.truth_input, 'rb') as f:
         truth = pickle.load(f)
     truth_f = {float(k): v for k, v in truth.items()}
@@ -70,6 +70,7 @@ def main():
 
     # --- TL coverage heatmap over (sample size, kappa) ---
     cov = pd.read_csv(args.coverage_input)
+    cov = cov[cov.estimator == 'tmle']
     plot = cov.pivot(index='sample_size', columns='kappa', values='coverage')
     plot.columns = [f'{c:g}' for c in plot.columns]
     fig, ax = plt.subplots(
