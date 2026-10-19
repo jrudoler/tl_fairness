@@ -1,17 +1,18 @@
 # Manuscript workflow and provenance audit
 
-## Current publication selected 2026-10-13
+## Current publication verified 2026-10-19
 
-October 14 follow-up: matched Adult/Law data- and model-fairness fits are queued
-(94570, 94571), with dependent validation, selection and manuscript build job
-94588. The current selection stays intact until both fits pass provenance
-checks. The new table places both probabilistic metrics above both thresholded
-metrics, uses shared outcome predictions, and reconstructs every interval from
-cached scores. Its approved prose is staged in
-`analysis/matched_real_data/data_analysis.tex` until the results are ready.
-The selection registry and completion receipt, rather than this historical
-audit heading, identify the publication actually in use. See EXPERIMENTS.md
-for the guarded completion workflow and its logs.
+The current selection is `manuscript-2026-10-14`. Both matched Adult/Law fits
+completed (94570, 94571). Their dependent build (94588) verified and selected
+the results, reconstructed the cached intervals and delivered the table/prose,
+but PDF compilation failed because the compute node lacked Perl `Time::HiRes`.
+The normal `verify_computation paper` build succeeded on October 19 in the login
+environment. The rendered comparison table was visually checked. It puts both
+probabilistic metrics above both thresholded metrics and uses shared outcome
+predictions for data- and model-fairness intervals. CMI retains the previously
+verified data-fairness results. See EXPERIMENTS.md for completion records and logs.
+
+The following describes the preceding October 13 selection.
 
 All seven analyses in `data/runs/reproduction-20261012/` completed using saved
 source snapshots and the current computation dependencies. Their outputs now

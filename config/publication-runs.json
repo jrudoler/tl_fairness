@@ -21,6 +21,24 @@
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
       "run": "data/runs/reproduction-20261012/cmi_estimation"
     },
+    "model_fairness_adult": {
+      "complete": "config/publication-provenance/model_fairness_adult/complete.json",
+      "inputs": {
+        "data/generated/adult_model_comparison.pkl": "comparison.pkl"
+      },
+      "manifest": "config/publication-provenance/model_fairness_adult/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/matched-real-data-20261014/model_fairness_adult"
+    },
+    "model_fairness_law": {
+      "complete": "config/publication-provenance/model_fairness_law/complete.json",
+      "inputs": {
+        "data/generated/law_model_comparison.pkl": "comparison.pkl"
+      },
+      "manifest": "config/publication-provenance/model_fairness_law/run_manifest.json",
+      "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
+      "run": "data/runs/matched-real-data-20261014/model_fairness_law"
+    },
     "nuisance_early_stopping": {
       "complete": "config/publication-provenance/nuisance_early_stopping/complete.json",
       "inputs": {

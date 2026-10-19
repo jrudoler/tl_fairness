@@ -44,8 +44,9 @@ used by early-stopping collection and validation; it is an active dependency.
 - [config/datasets.json](config/datasets.json) pins external raw data URLs to Git
   revisions and records byte checksums. Download helpers reject conflicting files.
 
-The current publication is `manuscript-2026-10-13`, selected from all seven
-completed analyses in `data/runs/reproduction-20261012/`. Each ran its saved
+The current publication is `manuscript-2026-10-14`, selected from seven
+completed analyses in `data/runs/reproduction-20261012/` and two matched real-data
+analyses in `data/runs/matched-real-data-20261014/`. Each ran its saved
 source snapshot with the current computation dependencies and recorded package
 versions. Exact source hashes certify computations made before the workflow
 changes were committed; the recorded Git commit alone is not used as proof.
@@ -64,18 +65,20 @@ metrics in the table. Native `predictions.npz` and `fit_metadata.json` records
 allow both sets of intervals to be reconstructed without refitting. CMI keeps
 the previously verified data-fairness result and has no model-fairness column entry.
 
-The October 14 comparison fits are queued as Slurm jobs 94570 (Adult) and 94571
-(Law), under `data/runs/matched-real-data-20261014/`. Dependent job 94588 runs
-`analysis/tools/complete_matched_real_data.py` after both succeed. It checks the
-approved manuscript draft has not changed, selects only these additional runs,
-validates the prediction caches, adds the table dependencies, and rebuilds the
-paper. Until selection succeeds, the previous publication remains selected and
-buildable. Consult `config/publication.json` for the actual current selection;
-the planned publication ID is `manuscript-2026-10-14`. Completion is recorded in
-`results/provenance/selection-manuscript-2026-10-14.json` and
-`logs/slurm/paper-matched-fairness-94588.log`. Failed prerequisites prevent the
-dependent job from running. Manuscript edits made while jobs queue cause a
-guarded failure requiring reconciliation, rather than an overwrite.
+Both matched fits completed on October 15: Slurm jobs 94570 (Adult) and 94571
+(Law). Dependent job 94588 selected the verified results, reconstructed the
+intervals from cached predictions, and delivered the table and approved prose.
+Its PDF compilation failed because the compute node lacked Perl `Time::HiRes`.
+On October 19, `snakemake verify_computation paper --cores 1 --quiet` completed
+successfully on the login environment; the resulting table was visually checked.
+The current publication ID is `manuscript-2026-10-14`. Completion is recorded in
+`results/provenance/selection-manuscript-2026-10-14.json`; the recovered build log
+is `logs/matched-paper-check-20261019.log`. The prior selection is retained in
+`data/imported/publication-before-manuscript-2026-10-14/`.
+
+The guarded completion script is for the original one-time selection. After
+selection has succeeded, recover a failed render/compile using the ordinary
+Snakemake build, rather than rerunning the selection script.
 
 The former publication registry and generated inputs are retained outside Git
 under `data/imported/publication-before-manuscript-2026-10-13/`. The original
