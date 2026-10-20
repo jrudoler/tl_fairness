@@ -2,34 +2,35 @@
   "analysis": "real_data_law",
   "code": {
     "analysis/analyze_law/run.py": "f5212eafd25341df84ddb9a5da82a91baa0cc7ace367ccc7cb867320b7778929",
+    "analysis/cmi_real_data/run.py": "09f796ca5a4ee831c8a1958e346c901dedff694f190e02da835e5442c5d98588",
     "config/datasets.json": "103a611668901f758c676bf15510a1528bf927e07e5b8e3bec8eef3e50f1026c",
     "pyproject.toml": "9694d73f23f212dca2e24382b9e258176ef80243d051852993652033cbfaa414",
+    "tlfair/cmi_estimation.py": "1121945189a4941bb563d23a034050bcbdbf6e6fa152db92506c3b8e7f3e8322",
     "tlfair/metrics.py": "e268797c87544adb38fe630345e9c21594b03eca088058f8447f1579eaa8af0e",
+    "tlfair/provenance.py": "f2a0eb5fc8215229a3bd6f1c77fdc220f5804bcd434b233721dfec8d28a9b99a",
     "tlfair/superlearner.py": "5e73065e2bf20a9a927e44d6ee4d9e3172cc4856c711c73df924d00c9a49404d",
-    "tlfair/tmle.py": "a780fb27bdc949e81745941b9af821d326f3bbab1711cd210ab17942ea4f0d3b",
+    "tlfair/tmle.py": "c346740be2315d1b38354466727dd93f7a817826b4833e269c3c935251cfb6a6",
     "uv.lock": "e833e9766f35bf3170c3bc1228d8007bcb899b36d79eaec4c4645d19921e3d5a"
   },
   "command": [
     "/home/jrudoler/tl_fairness/.venv/bin/python",
-    "/home/jrudoler/tl_fairness/data/runs/reproduction-20261012/real_data_law/source/analysis/analyze_law/run.py",
+    "/home/jrudoler/tl_fairness/data/runs/cmi-tmle-20261019/real_data_law/source/analysis/cmi_real_data/run.py",
     "--n-jobs",
-    "8",
+    "2",
+    "--dataset",
+    "law",
     "--seed",
     "123",
-    "--metrics",
-    "parity",
-    "prob_parity",
-    "opportunity",
-    "prob_opp",
-    "cmi",
-    "--importance-samples",
-    "0",
+    "--max-iter",
+    "200",
+    "--tol",
+    "1e-08",
     "--input",
     "/home/jrudoler/tl_fairness/data/raw/law.csv",
     "--output",
-    "/home/jrudoler/tl_fairness/data/runs/reproduction-20261012/real_data_law/inference.pkl"
+    "/home/jrudoler/tl_fairness/data/runs/cmi-tmle-20261019/real_data_law/inference.pkl"
   ],
-  "configuration_sha256": "bec1e3b2fb700e290dbb0f69faec48a000239feaeb94f20576f4cd52c08a0cc1",
+  "configuration_sha256": "c790eb038213160150b430d37642ac0bc147c9ddeef1b5af972f3dbf209bb1ba",
   "design": {
     "cmi_outcome": {
       "categorical_features": "from_dtype",
@@ -231,11 +232,11 @@
     "test_fraction": 0.4
   },
   "execution": "source_snapshot",
-  "finished": "2026-10-12T19:34:10.566451+00:00",
+  "finished": "2026-10-19T19:20:42.851541+00:00",
   "git": {
-    "commit": "a6f64d691c052d18b1e30b3a28debe88d01c88ca",
-    "paper_commit": "858f7446a1e58642218ef37354da76e6c3c01f36",
-    "status": "M EXPERIMENTS.md\n M Snakefile\n M analysis/nuisance_tables/validate.py\n M analysis/tools/deliver.py\n M analysis/tools/run_analysis.py\n M config/analyses.json\n M slurm/analysis.sbatch\n?? analysis/tools/audit_publication_runs.py\n?? analysis/tools/compare_reproduction.py\n?? analysis/tools/submit_reproduction.py\n?? config/publication-runs.json\n?? tests/test_computation_lineage.py"
+    "commit": "f33d9abae96c03686e7f8315ff7f17c69253bc2c",
+    "paper_commit": "72f9bfd73879e3ea99d27e306dd57ff99c169cd9",
+    "status": "M config/analyses.json\n M tests/test_tmle.py\n M tlfair/tmle.py\n?? analysis/cmi_real_data/\n?? tlfair/cmi_estimation.py"
   },
   "input_files": {
     "data/raw/law.csv": "23c1b173f3480beb7afc4957b107a9917dfc4a8dc9d87ea6034ec35222152452"
@@ -244,16 +245,19 @@
     "/home/jrudoler/tl_fairness/data/raw/law.csv": "23c1b173f3480beb7afc4957b107a9917dfc4a8dc9d87ea6034ec35222152452"
   },
   "outputs": {
-    "execution.log": "764eaad6d78beb3d10cf18b4cd0b1f427aed884b1330ce7f1f4428aee5cca9bc",
-    "inference.pkl": "c57e5cbd498304186eb2407c52b692c436b890b547c2548834cfa18084729e66",
-    "resolved_config.json": "bec1e3b2fb700e290dbb0f69faec48a000239feaeb94f20576f4cd52c08a0cc1"
+    "cmi_diagnostics.csv": "1b2200c6710cda788c0d56e256e16484388a1928622573f98406ec52f925dfa8",
+    "cmi_fit_metadata.json": "cbfa22f4a6781db8181fd555b2be349e329e19f28be35554683fde1fdcfb4b14",
+    "cmi_predictions.npz": "c132954e54e56f4aa1fd2b0f8a2fb77aa6cb6ab159ad295124ad5d9e53eae438",
+    "execution.log": "c4ae916878469f1fad7174e596ddb0045e0865320a7507ca249d40afc3288617",
+    "inference.pkl": "d844052805c018c74911032df13c3e5d44fd03fad1c89b3829cac80c4f94dd41",
+    "resolved_config.json": "c790eb038213160150b430d37642ac0bc147c9ddeef1b5af972f3dbf209bb1ba"
   },
   "resources": {
     "compare_mem_gb": 24.0,
-    "workers": 8
+    "workers": 2
   },
   "rng_version": "task-streams-v2",
-  "run_id": "reproduction-20261012",
+  "run_id": "cmi-tmle-20261019",
   "runtime": {
     "joblib": "1.5.3",
     "matplotlib": "3.10.9",
@@ -269,9 +273,12 @@
   "settings": {
     "code": [
       "analysis/analyze_law/run.py",
+      "analysis/cmi_real_data/run.py",
       "config/datasets.json",
       "pyproject.toml",
+      "tlfair/cmi_estimation.py",
       "tlfair/metrics.py",
+      "tlfair/provenance.py",
       "tlfair/superlearner.py",
       "tlfair/tmle.py",
       "uv.lock"
@@ -283,24 +290,23 @@
       "output": "inference.pkl"
     },
     "parameters": {
-      "importance-samples": 0,
-      "metrics": [
-        "parity",
-        "prob_parity",
-        "opportunity",
-        "prob_opp",
-        "cmi"
-      ],
-      "seed": 123
+      "dataset": "law",
+      "max-iter": 200,
+      "seed": 123,
+      "tol": 1e-08
     },
     "required": [
-      "inference.pkl"
+      "inference.pkl",
+      "cmi_predictions.npz",
+      "cmi_fit_metadata.json",
+      "cmi_diagnostics.csv"
     ],
-    "script": "analysis/analyze_law/run.py"
+    "script": "analysis/cmi_real_data/run.py"
   },
   "sources": {
     "analysis/analyze_adult/run.py": "d4321d657a8a3ac8c69b83e337f13c67f862855c0c72ada4fc3ea36173c6eeac",
     "analysis/analyze_law/run.py": "f5212eafd25341df84ddb9a5da82a91baa0cc7ace367ccc7cb867320b7778929",
+    "analysis/cmi_real_data/run.py": "09f796ca5a4ee831c8a1958e346c901dedff694f190e02da835e5442c5d98588",
     "analysis/download_adult/run.py": "1a56ddd0b17b74c146331435da3a21e2d0e1ebceea50de06ffed2897b81b1ea9",
     "analysis/download_law/run.py": "7ad76104806f66880e06d7047969b341bb6ccf39b3d6a57ceab9e048cd36078a",
     "analysis/eif_regeneration/paired_data.py": "6719b444adfb117d36f67a2f5a52f09b709855e944d634fd8d6f394b91ba87fb",
@@ -316,6 +322,7 @@
     "analysis/fig_cmi_conditioning_set/run.py": "b4395e73d4b7c3c1356d96af05652cbd33765b547c34cf3e0eb4ec5c2e131346",
     "analysis/fig_cmi_estimation/run.py": "401a4aeb936bf165c83108caad5a0bdcf1454cecc07c67c0f8fb18b2b028e21a",
     "analysis/fig_parity_nuisance_training/run.py": "410e9c32f43b3e22692b326b67f9d642cc7d303a7064cf9343293ed26d12e0b9",
+    "analysis/matched_real_data/run.py": "32e5f4459d5a3d50cd8defe4ab547d71a11b59f054c8413250e39a5308b2d9b7",
     "analysis/naive_real_data/run.py": "b7e18bed17f7f9ae1d8dda6e6983f3a241d569be7af2a06f5d54ffe756eea24c",
     "analysis/nuisance_tables/control_audit.py": "0e537de8b7c3f1a6f1de780781fa526c942a756af38505b8058aa1a5adc30bbf",
     "analysis/nuisance_tables/diagnose_bias.py": "200723af4ace3f5bf7a9ff3fa5eed749b08670a2e3904224165251dbc59545de",
@@ -332,24 +339,27 @@
     "analysis/sim_robust/run.py": "3b98f854fda5749fbde32d37fd98c0263472f0a50349303737cfd5a58373fdb5",
     "analysis/sim_tmle/run.py": "6c895a2a1535d328d7252c249749f67015cba847a36b9e648c81d31c1d2f80d4",
     "analysis/table_cmi_population_truth/run.py": "c97633c4cc4975a86b4eea0b30fd741a4408a3adbb68bf093384a151a98c96ab",
-    "analysis/table_real_data_inference/run.py": "6b9dff8eaf8b1894299d440e25bd7e75aad182091b29e68ae9dba34f8bac6390",
-    "analysis/tools/audit_publication_runs.py": "f6de358ab7fd7b233039421dadcbc714f131fb7bbe22955b9211889f561666d2",
-    "analysis/tools/compare_reproduction.py": "96d919eddb12150df45aec1307fcf6c12b365883e8c1f0f81ccc6964a9d6e2e6",
-    "analysis/tools/compile_paper.py": "7788e7d2fe99c391a38b140040761c929dfdc02a40540fa7c075fd15b54bf1fb",
-    "analysis/tools/deliver.py": "07bca1d6be43e030b6eb9675d35be54f6e2a17f987906e772a9d685f332b6b5f",
+    "analysis/table_real_data_inference/run.py": "bbec22094764e7a280cb298ddd3d6016888626a83ee60b7466589d0eac65303e",
+    "analysis/tools/audit_publication_runs.py": "5e081f80159cff56e6872f90311726c5b96b81c4b0c9a2445b1b4d8e574e5d08",
+    "analysis/tools/compare_reproduction.py": "eb51542be5b503b56e6b4323f875cd971150409bdba2d6ae9dff41761986a194",
+    "analysis/tools/compile_paper.py": "1feffd915001d452156c9237c9fe323ed731ab0678cecff07dc0ca73cababe05",
+    "analysis/tools/complete_matched_real_data.py": "e361b646cf055a70a43b01d79b729e62b751d7d8de10fa98344934630d8650c1",
+    "analysis/tools/deliver.py": "6aef2d645d15bc35b43a00f1f85aeb301715541d9e9bc5bd7a8d9dd08023a692",
     "analysis/tools/download_dataset.py": "5039852568067c78f8936435335d9837683aa6e49b89b9938245bbb3e46882a8",
-    "analysis/tools/restore_publication.py": "9afcee8638c985f6d4ba545b703b0832bae5ca18a6003ea9b1fb5199d8cb2fb0",
-    "analysis/tools/run_analysis.py": "41d2b468a85d54b864ae96c4d777f6f46a0a15f72c49f39ec84edf125ae7305f",
-    "analysis/tools/submit_reproduction.py": "4f514b3b6ac2269a7f0baa50b1800a1d74c061bf7f8166b61c47f16b0831ed82",
+    "analysis/tools/restore_publication.py": "6fbb277364413f30f12ecdd589d02f4197ce87ede45dd0b8db436d77e03019bd",
+    "analysis/tools/run_analysis.py": "db0cdc9df1778bc731c24297fe193893f2b8edd84fcbf6eebbd7ec3c4fa3b3ab",
+    "analysis/tools/select_publication_runs.py": "4a10f4cfa81a841e4a3c5cfb20ba1fb042d65d63dfa9438b1bb85c0cab466748",
+    "analysis/tools/submit_reproduction.py": "6599388a6d86957a0fcd544a9bed2ae4837444b50a8bb2c2548af37e7029e458",
     "analysis/tools/validate.py": "cd2e565331083acbcb8595526802e9b1e3fb217021123309420c06d4a08287e7",
-    "analysis/tools/validate_publication.py": "40ef825908cb29d1c8e886f8cc4ca089f3108a36af13ca4f21de7c36c5d39997",
+    "analysis/tools/validate_publication.py": "fa8ce2afc1d232144446eaf0898f42c3228ac4eaf35ac25d8589ea55651b3aca",
     "clean-figs.mplstyle": "4a40a91a2008365dd49dae7f73150daf96a8322a7351c206a249cafcc98aa102",
-    "config/analyses.json": "bec1e3b2fb700e290dbb0f69faec48a000239feaeb94f20576f4cd52c08a0cc1",
-    "config/artifacts.json": "b8d584d8916bcb14b3233f382e33926b2d6969b9cb868b31327a426fe6de6802",
+    "config/analyses.json": "c790eb038213160150b430d37642ac0bc147c9ddeef1b5af972f3dbf209bb1ba",
+    "config/artifacts.json": "77853d1c783b839ad02ab95cbf53f09a3fe4df81e5bd5b1ec6903ec936b8507d",
     "config/datasets.json": "103a611668901f758c676bf15510a1528bf927e07e5b8e3bec8eef3e50f1026c",
     "config/locust-recovery.json": "56d9bb0afdfee66f886d68ad49fc159e7f6dc31ff238ef888a07232a048abadf",
-    "config/publication-runs.json": "34f4d1c6bff6deeafe155510f3768f48860ff60b528a7ec3305362da6539ed0b",
-    "config/publication.json": "f13e93e6e01de88d0bb05c4ac2bc97a59c6956bfa0ae5acbb56c3ead43a2aafd",
+    "config/matched-real-data-publication.json": "37f9265f943a80cf8c744ddc5de4345b66bfdbe8eab3194142633e8196a57bec",
+    "config/publication-runs.json": "d3509fbf431f68b96d1434106edd23dd9ede781a1b12e80831a3287b936e5eb7",
+    "config/publication.json": "c03c9ff0d0d6a058dae8e23a7c220e99d95aa2936c51858e3e9e240e92d76764",
     "experiments/audit_glm.py": "b6fa0eab445d9596a59a3fdb2e939edee85950a7a473b7721f5e8e4abcee784e",
     "experiments/baselines.py": "96dfda2b6367e40e227985d632a081f12bd18f2e3bb3020a0f0591a086027002",
     "experiments/cmi_conditioning_set.py": "5d4208c7b44756a1cd773a09f37a3964d0cdebf05b036342ef16b43c7559fbfa",
@@ -363,6 +373,7 @@
     "experiments/nuisance_tuning.py": "02e2ec59a361f0ac6e08132b358de7a6a338ae6f1ffecdb587ab2c415f8d452b",
     "experiments/parity_retraining.py": "f6fdea336877c60780733274b325f0b166d2c5cc992f27b455167871035a4720",
     "pyproject.toml": "9694d73f23f212dca2e24382b9e258176ef80243d051852993652033cbfaa414",
+    "tlfair/cmi_estimation.py": "1121945189a4941bb563d23a034050bcbdbf6e6fa152db92506c3b8e7f3e8322",
     "tlfair/cmi_sim.py": "10ce845180238f0ff57edde21c4e57742923962fd04342e762713e50bde60595",
     "tlfair/knncmi.py": "838e2d1706c763cdc4bb36f6c7051a1c2f38ace15127b9c711fa63f797430e33",
     "tlfair/metrics.py": "e268797c87544adb38fe630345e9c21594b03eca088058f8447f1579eaa8af0e",
@@ -370,11 +381,11 @@
     "tlfair/provenance.py": "f2a0eb5fc8215229a3bd6f1c77fdc220f5804bcd434b233721dfec8d28a9b99a",
     "tlfair/simulations.py": "c578fd523108ef08b7a11d36f28e8460156d2b04704a4c1ed1f22dceb5ec1698",
     "tlfair/superlearner.py": "5e73065e2bf20a9a927e44d6ee4d9e3172cc4856c711c73df924d00c9a49404d",
-    "tlfair/tmle.py": "a780fb27bdc949e81745941b9af821d326f3bbab1711cd210ab17942ea4f0d3b",
+    "tlfair/tmle.py": "c346740be2315d1b38354466727dd93f7a817826b4833e269c3c935251cfb6a6",
     "tlfair/tmle_jax.py": "8a079064c821675cf1e90b8b0298e35f3b176ebab18a745492aa1813303741fa",
     "tlfair/tmle_sim.py": "2c06db5421102dc60796d728d2e3140d1cc36d43782c540714222c62d6f3c211",
     "uv.lock": "e833e9766f35bf3170c3bc1228d8007bcb899b36d79eaec4c4645d19921e3d5a"
   },
-  "started": "2026-10-12T19:28:36.203594+00:00",
+  "started": "2026-10-19T19:20:39.549675+00:00",
   "status": "complete"
 }

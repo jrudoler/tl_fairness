@@ -7,7 +7,7 @@
       },
       "manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/cmi_conditioning_set"
+      "run": "data/runs/cmi-tmle-20261019/cmi_conditioning_set"
     },
     "cmi_estimation": {
       "complete": "config/publication-provenance/cmi_estimation/complete.json",
@@ -19,7 +19,7 @@
       },
       "manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/cmi_estimation"
+      "run": "data/runs/cmi-tmle-20261019/cmi_estimation"
     },
     "model_fairness_adult": {
       "complete": "config/publication-provenance/model_fairness_adult/complete.json",
@@ -85,7 +85,7 @@
       },
       "manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/real_data_adult"
+      "run": "data/runs/cmi-tmle-20261019/real_data_adult"
     },
     "real_data_law": {
       "complete": "config/publication-provenance/real_data_law/complete.json",
@@ -94,7 +94,7 @@
       },
       "manifest": "config/publication-provenance/real_data_law/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/real_data_law"
+      "run": "data/runs/cmi-tmle-20261019/real_data_law"
     }
   },
   "schema_version": 1
