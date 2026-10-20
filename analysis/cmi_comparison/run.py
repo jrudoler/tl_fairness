@@ -66,7 +66,8 @@ def render(output: Path, table: Path, csv: Path) -> None:
     plt.close(fig)
     lines=[r'\small',r'\begin{tabular}{@{}lrlrrr@{}}',r'\toprule',
            r'Experiment & $n$ & Method & Bias & Coverage & Rejection \\',r'\midrule']
-    for _,row in diagnostics.sort_values(['experiment','sample_size','estimator']).iterrows():
+    table_rows = diagnostics[diagnostics.sample_size == diagnostics.groupby('experiment').sample_size.transform('max')]
+    for _,row in table_rows.sort_values(['experiment','sample_size','estimator']).iterrows():
         bias=f"{row.bias:.3g} ({row.bias_mcse:.2g})"
         covered=f"{row.coverage:.2f} ({row.coverage_mcse:.2f})"
         rejected=f"{row.rejection:.2f} ({row.rejection_mcse:.2f})"
