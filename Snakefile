@@ -18,7 +18,7 @@ FIGURES = [a["result"] for a in ARTIFACTS if a["result"].endswith(".pdf")]
 TABLES = [a["result"] for a in ARTIFACTS if a["result"].endswith(".tex")]
 PAPER_ASSETS = [a["paper"] for a in ARTIFACTS]
 NUISANCE_TABLES = [f"results/data/nuisance_{name}.tex"
-                   for name in ["fitted", "controls", "sensitivity", "population", "findings"]]
+                   for name in ["specification", "fitted", "controls", "sensitivity", "population", "findings"]]
 
 
 def dependencies(*names):
@@ -164,7 +164,7 @@ rule table_cmi_population_truth:
 rule nuisance_tables:
     input:
         verified=VALIDATION,
-        deps=dependencies("nuisance_population", "nuisance_fitted", "nuisance_controls", "nuisance_sensitivity"),
+        deps=dependencies("nuisance_specification"),
     output: NUISANCE_TABLES + ["results/data/nuisance_tables.csv"]
     log: "logs/nuisance_tables.log"
     shell: "{RUN} analysis/nuisance_tables/run.py > {log:q} 2>&1"

@@ -99,45 +99,9 @@
         "analysis/nuisance_tables/run.py",
         "uv.lock"
       ],
-      "id": "nuisance_population",
-      "paper": "paper/tables/nuisance_population.tex",
-      "result": "results/data/nuisance_population.tex"
-    },
-    {
-      "dependencies": [
-        "data/generated/nuisance_early_stopping/summary.csv",
-        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
-        "data/generated/nuisance_early_stopping/population.csv",
-        "analysis/nuisance_tables/run.py",
-        "uv.lock"
-      ],
-      "id": "nuisance_fitted",
-      "paper": "paper/tables/nuisance_fitted.tex",
-      "result": "results/data/nuisance_fitted.tex"
-    },
-    {
-      "dependencies": [
-        "data/generated/nuisance_early_stopping/summary.csv",
-        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
-        "data/generated/nuisance_early_stopping/population.csv",
-        "analysis/nuisance_tables/run.py",
-        "uv.lock"
-      ],
-      "id": "nuisance_controls",
-      "paper": "paper/tables/nuisance_controls.tex",
-      "result": "results/data/nuisance_controls.tex"
-    },
-    {
-      "dependencies": [
-        "data/generated/nuisance_early_stopping/summary.csv",
-        "data/generated/nuisance_early_stopping/paired_comparisons.csv",
-        "data/generated/nuisance_early_stopping/population.csv",
-        "analysis/nuisance_tables/run.py",
-        "uv.lock"
-      ],
-      "id": "nuisance_sensitivity",
-      "paper": "paper/tables/nuisance_sensitivity.tex",
-      "result": "results/data/nuisance_sensitivity.tex"
+      "id": "nuisance_specification",
+      "paper": "paper/tables/nuisance_specification.tex",
+      "result": "results/data/nuisance_specification.tex"
     },
     {
       "id": "cmi_paired_comparison",

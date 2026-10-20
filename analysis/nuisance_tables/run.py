@@ -12,6 +12,38 @@ CONTROLS = ['oracle_oracle', 'oracle_linear', 'linear_oracle', 'quadratic_quadra
             'quadratic_linear', 'linear_quadratic']
 
 
+def write_specification_table(summary: pd.DataFrame, path: Path) -> None:
+    """Keep the specification controls and misspecified baseline at both endpoints."""
+    primary = summary[(summary.scenario == 'primary') & (summary.method == 'TL data fairness')]
+    cases = CONTROLS + ['linear_linear']
+    sizes = (500, 10000)
+    lines = [r'\begin{table}[t]', r'\centering\small',
+             r'\caption{TL coverage and signed bias at the smallest and largest training sizes '
+             r'in the nuisance-specification experiment. Intervals have nominal 95\% coverage. '
+             r'Parentheses contain Monte Carlo standard errors; bias is in percentage points (pp).}',
+             r'\label{tab:nuisance-specification}', r'\begin{tabular}{@{}llrrrr@{}}', r'\toprule',
+             r' & & \multicolumn{2}{c}{$n_{\rm train}=500$} & \multicolumn{2}{c}{$n_{\rm train}=10{,}000$}\\',
+             r'\cmidrule(lr){3-4}\cmidrule(l){5-6}',
+             r'Outcome $\hat D$ & Group $\hat\pi$ & Coverage & Bias (pp) & Coverage & Bias (pp)\\',
+             r'\midrule']
+    for case in cases:
+        rows = primary[primary.case == case]
+        cells = []
+        for size in sizes:
+            selected = rows[rows.train_size == size]
+            if len(selected) != 1:
+                raise ValueError(f'Expected one specification summary: {case}/{size}')
+            row = selected.iloc[0]
+            cells += [f'{row.coverage:.3f} ({row.coverage_mcse:.3f})',
+                      f'{100*row.bias:.2f} ({100*row.bias_mcse:.2f})']
+        labels = [LABELS[row.outcome_model], LABELS[row.group_model]]
+        lines.append(' & '.join(labels + cells) + r'\\')
+        if case == 'linear_oracle':
+            lines.append(r'\midrule')
+    lines += [r'\bottomrule', r'\end{tabular}', r'\end{table}']
+    path.write_text('\n'.join(lines) + '\n')
+
+
 def write_table(df, path, caption, label, sections):
     lines = [r'{\small', r'\setlength{\tabcolsep}{3pt}',
              r'\begin{longtable}{rllrrrr}',
@@ -88,6 +120,7 @@ def render(summary, population, output, paired):
         raise ValueError("Publication tables require 1000 replicates and evaluation size 2000")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
+    write_specification_table(summary, output/'nuisance_specification.tex')
     selected = summary[summary.train_size.isin([500, 2500, 10000])]
     primary = selected[selected.scenario == 'primary']
     note = ('All intervals are evaluated against population data fairness, with evaluation size 2000 '

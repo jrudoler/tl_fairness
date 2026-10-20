@@ -15,15 +15,19 @@ explicit workflow with a fresh run ID.
 | `real_data_adult`, `real_data_law` | `table_real_data_inference` | `tables/real_data_inference.tex` |
 | `cmi_estimation` | `table_cmi_population_truth` | `tables/cmi_population_truth.tex` |
 | CMI paired methods | `cmi_paired_comparison` | `figs/cmi_paired_comparison.pdf`, `tables/cmi_null_diagnostics.tex` |
-| `nuisance_early_stopping` | `nuisance_tables` | `tables/nuisance_{population,fitted,controls,sensitivity}.tex` |
+| `nuisance_early_stopping` | `nuisance_tables` | `tables/nuisance_specification.tex` |
 
 Paths in the last column are relative to `paper/`. Results are rendered under
 `results/figures/` and `results/data/`, then copied with the same basename.
 The real-data and CMI-truth tables are generated inputs; captions stay in the
-manuscript. `nuisance_findings.tex` and `nuisance_tables.csv` are reporting aids,
-not additional manuscript tables. `stopping_summary.csv` supports numbers in
-appendix prose; those prose claims remain editorial text rather than generated
-LaTeX. The `nuisance_reference` analysis supplies the fixed-tree control audit
+manuscript. Appendix G includes one specification table, with TL coverage and
+signed bias at the smallest and largest training sizes for all oracle/quadratic
+controls and the doubly misspecified linear baseline. The capacity comparison
+remains in the main figure. Full population, fitted-learner, control, and
+sensitivity tables, `nuisance_findings.tex`, and `nuisance_tables.csv` remain
+reporting aids under `results/data/`; they are not delivered to the manuscript.
+`stopping_summary.csv` retains the learner-fitting diagnostics. The
+`nuisance_reference` analysis supplies the fixed-tree control audit
 used by early-stopping collection and validation; it is an active dependency.
 
 ## Publication inputs and provenance
