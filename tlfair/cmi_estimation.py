@@ -5,15 +5,37 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import GradientBoostingClassifier
 
 from tlfair.metrics import _encode_joint, _cmi_log_ratio
 from tlfair.tmle import _cmi_target, _wald_ci
 
 
+CMI_LEARNER_PARAMETERS = dict(n_estimators=100, max_depth=3, learning_rate=0.1,
+                              validation_fraction=0.2, n_iter_no_change=20, tol=1e-4)
+
+
+def make_cmi_learner(random_state: int | None = None) -> GradientBoostingClassifier:
+    """Use Figure 2's lower-capacity protocol for the four-class joint law."""
+    return GradientBoostingClassifier(**CMI_LEARNER_PARAMETERS, random_state=random_state)
+
+
+def joint_fit_metadata(model: GradientBoostingClassifier) -> dict[str, Any]:
+    """Record the stopping outcome as well as the configured maximum size."""
+    return {'class': type(model).__name__, 'parameters': model.get_params(),
+            'calibration': None, 'full_training_refit': False,
+            'boosting_rounds': int(model.n_estimators_),
+            'tree_count': int(model.estimators_.size)}
+
+
 def fit_joint_probabilities(x_train: Any, x_test: Any, y_train: np.ndarray,
                             group_train: np.ndarray, outcome: Any) -> np.ndarray:
-    model = CalibratedClassifierCV(outcome, cv=3).fit(x_train, _encode_joint(group_train, y_train))
+    """Fit the supplied joint classifier directly, without probability calibration.
+
+    The publication learner is ``make_cmi_learner``. Its validation subset is
+    drawn only from x_train; the fitted model is retained without a full-data refit.
+    """
+    model = outcome.fit(x_train, _encode_joint(group_train, y_train))
     np.testing.assert_array_equal(model.classes_, np.arange(4))
     return model.predict_proba(x_test)
 
@@ -39,7 +61,11 @@ def paired_cmi(q: np.ndarray, classes: np.ndarray, *, max_iter: int = 200,
 
 def replicate_records(result: dict[str, Any], **identity: Any) -> list[dict[str, Any]]:
     diagnostics = result['diagnostics']
-    return [{**identity, 'estimator': method, 'estimate': estimate,
+    fit = result.get('nuisance_fit', {})
+    fitted_size = {key: fit[key] for key in ['boosting_rounds', 'tree_count'] if key in fit}
+    if fit:
+        fitted_size['model_seed'] = fit['parameters']['random_state']
+    return [{**identity, **fitted_size, 'estimator': method, 'estimate': estimate,
              'ci_low': interval[0], 'ci_high': interval[1],
              'se': (interval[1]-interval[0])/(2*1.96),
              'converged': diagnostics['converged'] if method == 'tmle' else True,

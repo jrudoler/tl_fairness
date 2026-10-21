@@ -1,4 +1,4 @@
-"""CMI-only real-data comparison from a single cached calibrated joint fit."""
+"""CMI-only real-data comparison using Figure 2's depth-3 fitting protocol."""
 from __future__ import annotations
 
 import argparse
@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingClassifier
 from tlfair.metrics import _encode_joint
 from tlfair.cmi_estimation import fit_joint_probabilities, paired_cmi, replicate_records, require_convergence
+from tlfair.cmi_estimation import make_cmi_learner, joint_fit_metadata
 from tlfair.provenance import sha256, write_json
 
 LOG = logging.getLogger(__name__)
@@ -24,10 +24,11 @@ def run(dataset: str, input_path: Path, output: Path, seed: int,
         max_iter: int = 200, tol: float = 1e-8) -> None:
     loader = importlib.import_module(f'analysis.analyze_{dataset}.run')
     xtr, xte, ytr, yte, gtr, gte = loader.load_data(input_path, seed)
-    LOG.info('Fitting calibrated joint classifier: %s, train=%d evaluation=%d', dataset, len(xtr), len(xte))
-    outcome = HistGradientBoostingClassifier(random_state=seed)
+    LOG.info('Fitting depth-3 joint classifier with early stopping: %s, train=%d evaluation=%d', dataset, len(xtr), len(xte))
+    outcome = make_cmi_learner(seed)
     q = fit_joint_probabilities(xtr, xte, ytr, gtr, outcome)
     result = paired_cmi(q, _encode_joint(gte, yte), max_iter=max_iter, tol=tol)
+    result['nuisance_fit'] = joint_fit_metadata(outcome)
     output.parent.mkdir(parents=True, exist_ok=True)
     cache = output.parent/'cmi_predictions.npz'
     diagnostics = result['diagnostics']
@@ -41,8 +42,9 @@ def run(dataset: str, input_path: Path, output: Path, seed: int,
     write_json(output.parent/'cmi_fit_metadata.json', {
         'dataset':dataset, 'seed':seed, 'train_rows':len(xtr), 'evaluation_rows':len(xte),
         'raw_sha256':sha256(input_path), 'preprocessing_sha256':sha256(Path(loader.__file__)),
-        'prediction_sha256':sha256(cache), 'calibration_folds':3,
-        'learner':outcome.get_params(), 'diagnostics':scalar_diagnostics})
+        'prediction_sha256':sha256(cache), 'calibration_folds':0,
+        'learner':outcome.get_params(), 'nuisance_fit':result['nuisance_fit'],
+        'diagnostics':scalar_diagnostics})
     records = pd.DataFrame(replicate_records(result, dataset=dataset))
     records.to_csv(output.parent/'cmi_diagnostics.csv', index=False)
     LOG.info('CMI estimates: %s; targeting: %s', inference, scalar_diagnostics)

@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
 import scipy as sp
-from sklearn.ensemble import GradientBoostingClassifier
 from joblib import Parallel, delayed
 
 from tlfair.metrics import *
 from tlfair.metrics import _encode_joint
 from tlfair.superlearner import *
 from tlfair.knncmi import *
-from tlfair.cmi_estimation import fit_joint_probabilities, paired_cmi
+from tlfair.cmi_estimation import (fit_joint_probabilities, paired_cmi,
+                                   make_cmi_learner, joint_fit_metadata)
 
 
 def _draw_until_valid(fn, n, kappa, rng, max_attempts=20, **kwargs):
@@ -16,7 +16,7 @@ def _draw_until_valid(fn, n, kappa, rng, max_attempts=20, **kwargs):
     the estimator undefined.
 
     At large kappa the joint (G, Y) classes become correlated, so a small-n draw
-    can leave a class with too few members for the cv=3 calibration in cmi(),
+    can leave a class with too few members for the stratified validation split,
     which raises ValueError. Such draws are rare (<1%); redrawing
     rejects them and estimates coverage conditional on a computable estimate.
     Deterministic because ``rng`` is seeded (each retry advances it). If every
@@ -38,33 +38,7 @@ def cmi_sim(
     rng=None
     ):
 
-    n = n //2 #sample splitting
-    if rng is None:
-        rng = np.random.default_rng()
-    z = rng.normal(size=(2*n,d))
-    beta = np.array([1,1,1])
-    kappa_prob = kappa*rng.uniform(size=2*n)
-    x_prob = (kappa_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
-    y_prob = (kappa_prob + rng.uniform(size=2*n) + 1/(1+np.exp(-z@beta)))/(kappa+2)
-    x = (x_prob > 0.5).astype(np.int8)
-    y = (y_prob > 0.5).astype(np.int8)
-
-    # Seed the estimator from the (deterministic) RNG so the fit is reproducible.
-    # Without this, GradientBoostingClassifier falls back to the global numpy
-    # singleton, which makes results vary run-to-run and across worker processes.
-    model_seed = int(rng.integers(0, 2**31 - 1))
-    outcome = GradientBoostingClassifier(random_state=model_seed)
-
-    return cmi(
-        X_train = z[:n,:],
-        X_test = z[n:,:],
-        y_train = x[:n],
-        y_test = x[n:],
-        group_train = y[:n],
-        group_test = y[n:],
-        outcome = outcome,
-        propensity = None,
-    )
+    return paired_cmi_sim(n, kappa, d=d, rng=rng)['inference']['one_step']
 
 
 def paired_cmi_sim(n: int, kappa: float, d: int = 3,
@@ -80,10 +54,13 @@ def paired_cmi_sim(n: int, kappa: float, d: int = 3,
     g = ((shared+rng.uniform(size=2*half)+logits)/(kappa+2) > .5).astype(np.int8)
     seed = int(rng.integers(0, 2**31-1))
     if np.bincount(_encode_joint(g[:half], y[:half]), minlength=4).min() < 3:
-        raise ValueError('Insufficient training observations for joint-class calibration')
+        raise ValueError('Insufficient training observations for stratified joint fitting')
+    learner = make_cmi_learner(seed)
     q = fit_joint_probabilities(z[:half], z[half:], y[:half], g[:half],
-                               GradientBoostingClassifier(random_state=seed))
-    return paired_cmi(q, _encode_joint(g[half:], y[half:]))
+                               learner)
+    result = paired_cmi(q, _encode_joint(g[half:], y[half:]))
+    result['nuisance_fit'] = joint_fit_metadata(learner)
+    return result
 
 def knncmi_sim(
     n,

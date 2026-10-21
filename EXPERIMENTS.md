@@ -4,6 +4,16 @@ Use semantic names; LaTeX supplies figure and table numbers. The publication
 workflow renders frozen, checksummed results. New computation is a separate,
 explicit workflow with a fresh run ID.
 
+All selected CMI analyses use Figure 2's depth-3 boosting protocol: at most
+100 rounds, learning rate .1, a stratified 20% validation subset within training,
+patience 20, and tolerance 1e-4. The joint four-class classifier uses no probability
+calibration or full-training refit. `tlfair/cmi_estimation.py` defines the shared
+learner; simulation replicate records retain the model seed, stopped round count,
+and tree count, and real-data fit metadata records the full configuration.
+The CMI protocol reruns use run ID `cmi-depth3-20261021` and publication ID
+`manuscript-2026-10-21-cmi-depth3`. Earlier runs and diagnostic source snapshots
+retain the older fitting procedures for historical reproduction.
+
 ## Current manuscript artifacts
 
 | Analysis ID | Rendering target | Manuscript artifact |

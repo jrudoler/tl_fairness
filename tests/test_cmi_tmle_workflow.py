@@ -5,16 +5,40 @@ import subprocess
 import numpy as np
 import pytest
 
-from tlfair.cmi_sim import cmi_sim, paired_cmi_sim
+from tlfair.cmi_sim import paired_cmi_sim
 from tlfair.provenance import sha256,write_json
 
 
-def test_paired_simulation_preserves_original_one_step_draw_and_fit():
-    expected = cmi_sim(500,2,rng=np.random.default_rng(37))
-    actual = paired_cmi_sim(500,2,rng=np.random.default_rng(37))
-    estimate,interval = actual['inference']['one_step']
-    np.testing.assert_allclose([estimate,*interval],[expected[0],*expected[1]],atol=1e-12)
+def test_paired_simulation_uses_exact_figure2_fit_without_calibration():
+    from sklearn.ensemble import GradientBoostingClassifier
+    from experiments.nuisance_early_stopping import BOOST
+    from tlfair.cmi_estimation import paired_cmi, replicate_records
+    from tlfair.metrics import _encode_joint
+    rng = np.random.default_rng(37)
+    x = rng.normal(size=(500, 3))
+    shared = 2*rng.uniform(size=500)
+    logits = 1/(1+np.exp(-x@np.ones(3)))
+    y = ((shared+rng.uniform(size=500)+logits)/4 > .5).astype(np.int8)
+    g = ((shared+rng.uniform(size=500)+logits)/4 > .5).astype(np.int8)
+    seed = int(rng.integers(0, 2**31-1))
+    expected_model = GradientBoostingClassifier(**BOOST, random_state=seed).fit(
+        x[:250], _encode_joint(g[:250], y[:250]))
+    expected_q = expected_model.predict_proba(x[250:])
+    expected = paired_cmi(expected_q, _encode_joint(g[250:], y[250:]))
+    actual = paired_cmi_sim(500, 2, rng=np.random.default_rng(37))
+    np.testing.assert_allclose(actual['diagnostics']['initial_q'],
+                               expected['diagnostics']['initial_q'], atol=1e-12)
+    for method in expected['inference']:
+        estimate, interval = actual['inference'][method]
+        expected_estimate, expected_interval = expected['inference'][method]
+        np.testing.assert_allclose([estimate, *interval], [expected_estimate, *expected_interval], atol=1e-12)
     assert actual['diagnostics']['converged']
+    assert actual['nuisance_fit']['calibration'] is None
+    assert actual['nuisance_fit']['full_training_refit'] is False
+    for record in replicate_records(actual):
+        assert record['boosting_rounds'] == expected_model.n_estimators_
+        assert record['tree_count'] == 4*expected_model.n_estimators_
+        assert record['model_seed'] == seed
 
 
 def test_cmi_completion_refuses_changed_manuscript(tmp_path: Path):

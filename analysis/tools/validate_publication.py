@@ -61,6 +61,22 @@ def validate_matched_predictions() -> dict[str, int]:
     return sizes
 
 
+def validate_cmi_fit_protocol(directory: Path, records: pd.DataFrame) -> None:
+    """Certify the shared depth-3 protocol and actual fitted model sizes."""
+    from tlfair.cmi_estimation import CMI_LEARNER_PARAMETERS
+    record = json.loads((directory/'run_manifest.json').read_text())
+    learner = record['design']['cmi_learner']
+    assert learner['class'] == 'GradientBoostingClassifier'
+    assert learner['calibration'] is None and learner['full_training_refit'] is False
+    for key, value in CMI_LEARNER_PARAMETERS.items():
+        assert learner['parameters'][key] == value, (key, learner['parameters'][key], value)
+    fitted = records[records.estimator != 'knn']
+    assert fitted.boosting_rounds.between(1, 100).all()
+    assert (fitted.boosting_rounds % 1 == 0).all()
+    np.testing.assert_array_equal(fitted.tree_count, 4*fitted.boosting_rounds)
+    assert fitted.model_seed.between(0, 2**31-1).all()
+
+
 def validate_cmi_runs(runs: dict[str, Path], canonical: Path | None = None) -> dict[str, int]:
     """Reconstruct paired CMI summaries and reject any unsuccessful targeting."""
     from tlfair.cmi_estimation import require_convergence
@@ -78,6 +94,7 @@ def validate_cmi_runs(runs: dict[str, Path], canonical: Path | None = None) -> d
     assert set(records.sample_size) == set(params['sizes']) and set(records.kappa) == set(params['weights'])
     assert records.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['sims']))).all()
     require_convergence(records)
+    validate_cmi_fit_protocol(estimation, records)
     np.testing.assert_allclose(records.ci_low, records.estimate-1.96*records.se)
     np.testing.assert_allclose(records.ci_high, records.estimate+1.96*records.se)
     records['covered'] = ((records.ci_low<=records.kappa.map(truth)) &
@@ -93,6 +110,7 @@ def validate_cmi_runs(runs: dict[str, Path], canonical: Path | None = None) -> d
     assert len(comparisons) == len(params['sizes'])*len(params['weights'])*params['compare-repeats']*4
     assert comparisons.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['compare-repeats']))).all()
     require_convergence(comparisons)
+    validate_cmi_fit_protocol(estimation, comparisons)
     rows = []
     labels = {'tmle':'TMLE','one_step':'One-step','substitution':'Substitution','knn':'KNN'}
     for (size,kappa,method),part in comparisons.groupby(keys):
@@ -113,6 +131,7 @@ def validate_cmi_runs(runs: dict[str, Path], canonical: Path | None = None) -> d
     assert len(conditional) == len(params['sizes'])*(params['n-confounders']+1)*params['reps']*3
     assert conditional.groupby(keys).replicate.apply(lambda r:set(r)==set(range(params['reps']))).all()
     require_convergence(conditional)
+    validate_cmi_fit_protocol(conditioning, conditional)
     np.testing.assert_allclose(conditional.ci_low,conditional.estimate-1.96*conditional.se)
     np.testing.assert_allclose(conditional.ci_high,conditional.estimate+1.96*conditional.se)
     np.testing.assert_allclose(conditional.lower_one_sided,conditional.estimate-1.645*conditional.se)
@@ -157,7 +176,13 @@ def validate_cmi_real_data(runs: dict[str, Path], canonical: Path | None = None)
         for method,(estimate,interval) in rebuilt['inference'].items():
             actual = expected['inference'][f'cmi_{method}']
             np.testing.assert_allclose([actual[0],*actual[1]],[estimate,*interval],atol=1e-12,rtol=1e-10)
-        require_convergence(pd.read_csv(directory/'cmi_diagnostics.csv'))
+        fit_records = pd.read_csv(directory/'cmi_diagnostics.csv')
+        require_convergence(fit_records)
+        validate_cmi_fit_protocol(directory, fit_records)
+        assert metadata['calibration_folds'] == 0
+        assert metadata['nuisance_fit']['calibration'] is None
+        assert metadata['nuisance_fit']['full_training_refit'] is False
+        assert fit_records.boosting_rounds.eq(metadata['nuisance_fit']['boosting_rounds']).all()
         sizes[dataset] = len(xte)
     return sizes
 

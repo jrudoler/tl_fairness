@@ -51,7 +51,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from sklearn.ensemble import GradientBoostingClassifier
 
 from tlfair.metrics import cmi
 from tlfair.plotting import configure_matplotlib, FULL_WIDTH
@@ -119,8 +118,9 @@ def _conditioning_cols(k, p, n_conf, n_out):
 
 
 def _one_rep(n, k, p, n_conf, n_out, coefs, rng, max_attempts=20):
-    """Paired methods share the DGP, split, seed and calibrated joint fit."""
-    from tlfair.cmi_estimation import fit_joint_probabilities, paired_cmi, replicate_records
+    """Paired methods share the DGP, split, seed and early-stopped joint fit."""
+    from tlfair.cmi_estimation import (fit_joint_probabilities, paired_cmi, replicate_records,
+                                      make_cmi_learner, joint_fit_metadata)
     from tlfair.metrics import _encode_joint
     cols = _conditioning_cols(k, p, n_conf, n_out)
     h = n // 2
@@ -131,10 +131,12 @@ def _one_rep(n, k, p, n_conf, n_out, coefs, rng, max_attempts=20):
         seed = int(rng.integers(0, 2**31-1))
         try:
             if np.bincount(_encode_joint(g[:h],y[:h]), minlength=4).min() < 3:
-                raise ValueError('Insufficient training observations for joint calibration')
+                raise ValueError('Insufficient training observations for stratified joint fitting')
+            learner = make_cmi_learner(seed)
             q = fit_joint_probabilities(xc[:h], xc[h:], y[:h], g[:h],
-                                       GradientBoostingClassifier(random_state=seed))
+                                       learner)
             result = paired_cmi(q, _encode_joint(g[h:],y[h:]))
+            result['nuisance_fit'] = joint_fit_metadata(learner)
             rows = replicate_records(result)
             for row in rows:
                 row['lower_one_sided'] = row['estimate']-_Z1*row['se']

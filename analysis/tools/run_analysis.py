@@ -56,7 +56,15 @@ def run(analysis: str, run_id: str, config_path: str | Path, n_jobs: int = 1,
         design={key:getattr(module,key) for key in ['SCENARIOS','SIZES','CONTROL_SIZES','BOOST','HIGH','CASES']}
         design['seed']=inspect.signature(module.one_rep).parameters['seed'].default
         design['evaluation_size']=inspect.signature(module.run_shard).parameters['n_eval'].default
-    if analysis.startswith(('real_data_', 'model_fairness_')):
+    if analysis in ['cmi_estimation', 'cmi_conditioning_set'] or analysis.startswith('real_data_'):
+        from tlfair.cmi_estimation import make_cmi_learner
+        model_seed = settings['parameters']['seed'] if analysis.startswith('real_data_') else None
+        design = {'cmi_learner': {'class':'GradientBoostingClassifier',
+                                 'parameters':make_cmi_learner(model_seed).get_params(),
+                                 'seed_policy':'fixed' if model_seed is not None else 'per-replicate RNG draw',
+                                 'calibration':None, 'full_training_refit':False},
+                  'training_fraction':.6 if analysis.startswith('real_data_') else .5}
+    if analysis.startswith('model_fairness_'):
         from tlfair.superlearner import SuperLearnerClassifier
         from sklearn.ensemble import HistGradientBoostingClassifier
         seed=settings['parameters']['seed']
@@ -70,6 +78,7 @@ def run(analysis: str, run_id: str, config_path: str | Path, n_jobs: int = 1,
                 'ensemble':[{'class':type(model).__name__,'parameters':{k:repr(v) for k,v in model.get_params().items()}}
                             for model in learner.models],
                 'cmi_outcome':HistGradientBoostingClassifier(random_state=seed).get_params()}
+    if analysis.startswith(('real_data_', 'model_fairness_')):
         dataset = analysis.removeprefix('real_data_').removeprefix('model_fairness_')
         pinned=json.loads((ROOT/'config/datasets.json').read_text())[dataset]
         if sha256(inputs['input'])!=pinned['canonical_sha256']:
