@@ -13,6 +13,18 @@ and tree count, and real-data fit metadata records the full configuration.
 The CMI protocol reruns use run ID `cmi-depth3-20261021` and publication ID
 `manuscript-2026-10-21-cmi-depth3`. Earlier runs and diagnostic source snapshots
 retain the older fitting procedures for historical reproduction.
+The four completed production runs execute the saved source from commit `05ea0c5`:
+Slurm jobs 98244 (Adult), 98245 (Law), 98246 (CMI grid), and 98247
+(conditioning sets). Simulation grids, replicate counts, random streams,
+dataset versions, and outer train/evaluation splits are unchanged.
+All 11,312 TMLE fits converged. Validation reconstructs the simulation summaries
+and real-data intervals from their saved records. All 300 datasets shared with
+the earlier Figure 2 protocol review reproduce its estimates, intervals, and
+stopping rounds; simulation truths and KNN estimates match the October 19 runs.
+Comparison and validation reports are under `results/review/cmi-depth3-20261021/`.
+Only the four CMI run selections changed; the other five analyses retain their
+verified inputs. The selection receipt is
+`results/provenance/selection-manuscript-2026-10-21-cmi-depth3.json`.
 
 ## Current manuscript artifacts
 
@@ -78,8 +90,8 @@ The approved data/model comparison uses `analysis/matched_real_data/run.py` to
 fit one outcome model per dataset and reuse its held-out predictions for both
 targets. Probabilistic parity and equal opportunity precede the thresholded
 metrics in the table. Native `predictions.npz` and `fit_metadata.json` records
-allow both sets of intervals to be reconstructed without refitting. CMI keeps
-the previously verified data-fairness result and has no model-fairness column entry.
+allow both sets of intervals to be reconstructed without refitting. CMI uses
+the separately selected joint-classifier run and has no model-fairness column entry.
 
 Both matched fits completed on October 15: Slurm jobs 94570 (Adult) and 94571
 (Law). Dependent job 94588 selected the verified results, reconstructed the
@@ -300,9 +312,9 @@ configured runs, use the generic launcher and the new-run manifest workflow.
 `analysis/cmi_learner_review/run.py` compares nuisance fitting choices without
 altering the publication selection or manuscript. The fixed plan replays all
 100 native coverage datasets at n=10,000 for kappa=0, 2.5, and 4. The original
-calibrated boosting estimates and intervals must match the selected run.
+calibrated boosting estimates and intervals must match the October 19 run.
 
-Comparisons include the current three-fold sigmoid-calibrated ensemble, the
+Comparisons include the October 19 three-fold sigmoid-calibrated ensemble, the
 same three base fits without calibration, a full-training default fit with and
 without sigmoid calibration, tuned boosting with and without calibration,
 smooth multinomial logistic regression, and the analytic oracle joint law.

@@ -14,84 +14,84 @@
     },
     {
       "path": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "sha256": "3cf0118a9a63b5b1bc6a0592a25decbc3359685d640d27fe4a61d5a58da7fb72",
-      "source": "data/runs/cmi-tmle-20261019/cmi_conditioning_set/run_manifest.json",
+      "sha256": "98975f46b2db8d6b9b34e7daf39e938d611f0a5c4207931e1c667fcd7ce31748",
+      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/cmi_conditioning_set/complete.json",
-      "sha256": "60bbe9e7037afd18f0e3550e345206648ad020ee006db59357edcdedd33c3630",
-      "source": "data/runs/cmi-tmle-20261019/cmi_conditioning_set/complete.json",
+      "sha256": "ed9a868a219df504bebf336aee5e69cdf7fa7ca97b2d4cdef6a4956a075b30d4",
+      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/cmi_conditioning_set.csv",
       "run_manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "run_manifest_sha256": "3cf0118a9a63b5b1bc6a0592a25decbc3359685d640d27fe4a61d5a58da7fb72",
-      "sha256": "27dab3c01d0eb7408c6804a0c2b5b97cb9c1e339971e6880ffeaa307cbfc6d1e",
-      "source": "data/runs/cmi-tmle-20261019/cmi_conditioning_set/summary.csv",
+      "run_manifest_sha256": "98975f46b2db8d6b9b34e7daf39e938d611f0a5c4207931e1c667fcd7ce31748",
+      "sha256": "7a3a690b87a659b4cf6f28b295b03d0b9b54b19f7e25bb1cae219bf55a5a12a0",
+      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/summary.csv",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/cmi_conditioning_set/replicates.csv.gz",
+      "path": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "sha256": "0774ce5df6817908865abc6652348a12778cc0e18b039170c26ebc7c26adadda",
+      "sha256": "1926aa8cd09ad9dd3163c128f87bbcd38d9978bfd7630120c5a8c25eebbe3d7f",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "ea24777f860aa74b79acb2b719c9f537fd55f345cc69696468d90fbd321b599f",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/run_manifest.json",
+      "sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/cmi_estimation/complete.json",
-      "sha256": "838395af126d4c4bca913ba76c241af217f92f8375051c420dd44f320f065a88",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/complete.json",
+      "sha256": "62e14c4a118ecf246e89dd1d37a81bf3f0be1d6ba3215508fae5de921832ab43",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/cmi_estimation_comparison.csv",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "ea24777f860aa74b79acb2b719c9f537fd55f345cc69696468d90fbd321b599f",
-      "sha256": "8e6bbe1eb8d34e3fa907207ef9139d87186f5e4321ebb5764ede91943ed32153",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/comparison.csv",
+      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "sha256": "d56d6433a503698ccf545791f3c197bba0b6ca180a071ca73fc7aef5abbee96a",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/comparison.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_estimation_coverage.csv",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "ea24777f860aa74b79acb2b719c9f537fd55f345cc69696468d90fbd321b599f",
-      "sha256": "d4392eb3b4053bcdd531361667b9b7bcbdd3e09662c46a4f02674180a5e8e668",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/coverage.csv",
+      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "sha256": "85528bc428149142e830185d713f496c64c835116cd627d041b4939730a08c34",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/coverage.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_estimation_timing.pkl",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "ea24777f860aa74b79acb2b719c9f537fd55f345cc69696468d90fbd321b599f",
-      "sha256": "ec7b60293ee666c31bebaaf3e367979cc64a2f1a5cfae3ebe59d33c97e4824b4",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/timing.pkl",
+      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "sha256": "9652ef99e1f117a6d8ace4b5f9a43034ceaa8710acdfbe0266b9e9b1b03672bb",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/timing.pkl",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_population_truth.pkl",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "ea24777f860aa74b79acb2b719c9f537fd55f345cc69696468d90fbd321b599f",
+      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
       "sha256": "950bda82b3a6109ef7367586250f6868c48a09eb0918b079cea58e9b3b524ae3",
-      "source": "data/runs/cmi-tmle-20261019/cmi_estimation/population_truth.pkl",
+      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/population_truth.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/cmi_estimation/coverage_replicates.csv.gz",
+      "path": "data/runs/cmi-depth3-20261021/cmi_estimation/coverage_replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "6e7bd279648710090b3cf1975c9b69b8bc0e88c96d633277057f1eab53e969b7",
+      "sha256": "36c75f03189cba569d03283c2d4356ffed063474c851ceeca969569cb4b43bc9",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/cmi_estimation/comparison_replicates.csv.gz",
+      "path": "data/runs/cmi-depth3-20261021/cmi_estimation/comparison_replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "b0c90c63aefd15f1ec63e86103fb963cffa8241124ee0dfec57fdaa6450cf6f8",
+      "sha256": "253386f5f74465d07d0b8a807d11262cc48461836c1b1d75d04b0ae879d5106a",
       "source_kind": "completed-run-output"
     },
     {
@@ -316,78 +316,78 @@
     },
     {
       "path": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "d9f08e885d4a2c6df7514c1cd513caffbf0b23a7afa0784cb65810a8db175d24",
-      "source": "data/runs/cmi-tmle-20261019/real_data_adult/run_manifest.json",
+      "sha256": "f67994892faa19b359cd7c68f13aa3c337856e91d4fd6d07fe16879b96df578f",
+      "source": "data/runs/cmi-depth3-20261021/real_data_adult/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/real_data_adult/complete.json",
-      "sha256": "de580b9a01df590bbd2d4896e0269253369fb51caa2ba506171d5ed7479f7899",
-      "source": "data/runs/cmi-tmle-20261019/real_data_adult/complete.json",
+      "sha256": "c5f423d82b1aa37d151df688c70e249044be9983c9a97077d1f107ade26ac0ba",
+      "source": "data/runs/cmi-depth3-20261021/real_data_adult/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/adult_results.pkl",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "run_manifest_sha256": "d9f08e885d4a2c6df7514c1cd513caffbf0b23a7afa0784cb65810a8db175d24",
-      "sha256": "86153ee5c4c24f3d3cc0ce886a4bdb1155f6542079d3dfd872fad54e9de9491d",
-      "source": "data/runs/cmi-tmle-20261019/real_data_adult/inference.pkl",
+      "run_manifest_sha256": "f67994892faa19b359cd7c68f13aa3c337856e91d4fd6d07fe16879b96df578f",
+      "sha256": "c30037ebdcdbe6151732ed51e2e62a0fd7e1a90411c85da44ef580ec803987a3",
+      "source": "data/runs/cmi-depth3-20261021/real_data_adult/inference.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_adult/cmi_predictions.npz",
+      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_predictions.npz",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "7826cf524211c8384758225dd8b12ef9958961c1fa65204f236d736a327bc956",
+      "sha256": "523162ed4a4eced2e5b9018e274f0ab78f212a1feba5378a2490f6c2b3c790d9",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_adult/cmi_fit_metadata.json",
+      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_fit_metadata.json",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "7675171641ec652d9b7e7d29cd46c03a2ed084bb8d2f96874a01c4e44db33720",
+      "sha256": "27c7234875fc3419477285b91f7e9b63d7b406f03730deb0cc64a31a4c3f85d6",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_adult/cmi_diagnostics.csv",
+      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_diagnostics.csv",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "efa2c39695c9fc2b6472516220cb36941f41006efcf8f4a3e0c7cc223978d909",
+      "sha256": "657f697ba2095bc12cbeea792d3219692b553bc0f1b4c0282e441dbc82cf3fbc",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "dccf9fe32881e08c47023f1c6d453e71e13db349b15b0003b902d136172c44b7",
-      "source": "data/runs/cmi-tmle-20261019/real_data_law/run_manifest.json",
+      "sha256": "3be738f06afa6b4d1fa21413f7581ebc49943b95aafc3758ca9fb48452f104b5",
+      "source": "data/runs/cmi-depth3-20261021/real_data_law/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/real_data_law/complete.json",
-      "sha256": "466981ab16a813c43680ac76c81abe4087613dd3b83dbeed5488b55e952ec4a4",
-      "source": "data/runs/cmi-tmle-20261019/real_data_law/complete.json",
+      "sha256": "f1af2cfc56d77c28c40a82ca4213b14a99c26d7daec128349fec690968a1a5eb",
+      "source": "data/runs/cmi-depth3-20261021/real_data_law/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/law_results.pkl",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "run_manifest_sha256": "dccf9fe32881e08c47023f1c6d453e71e13db349b15b0003b902d136172c44b7",
-      "sha256": "d844052805c018c74911032df13c3e5d44fd03fad1c89b3829cac80c4f94dd41",
-      "source": "data/runs/cmi-tmle-20261019/real_data_law/inference.pkl",
+      "run_manifest_sha256": "3be738f06afa6b4d1fa21413f7581ebc49943b95aafc3758ca9fb48452f104b5",
+      "sha256": "a891b619188f6d3cb34e5494025740f608af89c76f0710ffc5a3bc72a05c4e02",
+      "source": "data/runs/cmi-depth3-20261021/real_data_law/inference.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_law/cmi_predictions.npz",
+      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_predictions.npz",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "c132954e54e56f4aa1fd2b0f8a2fb77aa6cb6ab159ad295124ad5d9e53eae438",
+      "sha256": "fd9452894d16d7cc8d077c2e305d89b63cc352e6f7129e799f3378983cb1fb35",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_law/cmi_fit_metadata.json",
+      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_fit_metadata.json",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "cbfa22f4a6781db8181fd555b2be349e329e19f28be35554683fde1fdcfb4b14",
+      "sha256": "cc0556977efa73d982bb7827aca77bf0c6dc6ae605beab317e887760d1d91bf3",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-tmle-20261019/real_data_law/cmi_diagnostics.csv",
+      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_diagnostics.csv",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "1b2200c6710cda788c0d56e256e16484388a1928622573f98406ec52f925dfa8",
+      "sha256": "fe6a859e38518c2b38a8c81ca9dfa81043cde029ef72c3199277af13073d1a90",
       "source_kind": "completed-run-output"
     }
   ],
@@ -395,6 +395,6 @@
     "CMI Wald inference is not calibrated at conditional independence; provenance verification does not establish statistical validity.",
     "Exact numerical reproduction requires the recorded dependency versions and source snapshot."
   ],
-  "publication_id": "manuscript-2026-10-19-tmle",
+  "publication_id": "manuscript-2026-10-21-cmi-depth3",
   "schema_version": 2
 }
