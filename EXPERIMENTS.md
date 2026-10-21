@@ -285,6 +285,54 @@ use them only with their matching frozen source snapshots. Shared-data snapshots
 from October 5–6 are preserved separately from the working checkout. For new
 configured runs, use the generic launcher and the new-run manifest workflow.
 
+## CMI learner diagnostic comparison (2026-10-21)
+
+`analysis/cmi_learner_review/run.py` compares nuisance fitting choices without
+altering the publication selection or manuscript. The fixed plan replays all
+100 native coverage datasets at n=10,000 for kappa=0, 2.5, and 4. The original
+calibrated boosting estimates and intervals must match the selected run.
+
+Comparisons include the current three-fold sigmoid-calibrated ensemble, the
+same three base fits without calibration, a full-training default fit with and
+without sigmoid calibration, tuned boosting with and without calibration,
+smooth multinomial logistic regression, and the analytic oracle joint law.
+All CMI estimators share each learner's joint predictions and evaluation data.
+
+The tuned learners use a stratified 20% holdout inside the training half of the
+sample. Boosting considers depths 1, 3, and 5, minimum leaf size 20, learning
+rate .05, plus the original depth-3/leaf-size-1/rate-.1 path. Each path checks
+validation log loss every 25 rounds through at most 1,000 rounds and stops
+after four checks without improvement of at least 1e-5. The best observed
+configuration is refitted on the full training half. The smooth learner selects
+polynomial degree 1, 2, or 3 and C=.1, 1, or 10 by the same holdout loss, then
+refits on all training rows. Polynomial features include interactions; no true
+simulation index or probabilities are supplied to these learners. Calibrated
+full fits use three-fold out-of-fold scores and `ensemble=False`. Their
+hyperparameters have been selected within training before calibration CV.
+
+```sh
+XDG_CACHE_HOME=logs/cache .venv/bin/snakemake \
+  -s workflow/cmi_learner_review.smk --cores 4
+```
+
+For cluster execution, first run the `prepare` command, then submit
+`sbatch slurm/cmi_learner_review.sbatch`. After the array completes, run
+`MPLCONFIGDIR=logs/matplotlib .venv/bin/python analysis/cmi_learner_review/run.py collect`.
+The launcher uses whartonstat, at most four concurrent four-CPU tasks, and
+merged logs under `logs/slurm/`. Paths are configurable in the Python CLI and
+the diagnostic Snakemake workflow. A different plan or source requires a fresh
+run directory.
+
+Source snapshots, runtime and input hashes, per-replicate tuning audits, data
+hashes, and checksummed completion records live outside Git under
+`data/runs/cmi-learner-review-20261021/`. Reports and figures are under
+`results/review/cmi-learner-review-20261021/`. Accuracy compares predictions
+with the analytic probabilities at evaluation covariates; targeted accuracy
+uses the evaluation labels and is not an independent validation score. Exact
+CMI truth comes from one-dimensional quadrature; coverage against the original
+Monte Carlo truth is also retained. Oracle Wald inference at kappa=0 is
+degenerate and cannot be interpreted as a regular nominal-coverage control.
+
 ## Retired work and naming history
 
 [The archive index](archive/workflow_2026-10-09/README.md) records inactive analyses,
