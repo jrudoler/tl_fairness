@@ -333,6 +333,24 @@ CMI truth comes from one-dimensional quadrature; coverage against the original
 Monte Carlo truth is also retained. Oracle Wald inference at kappa=0 is
 degenerate and cannot be interpreted as a regular nominal-coverage control.
 
+The exact Figure 2 protocol is a separate extension:
+
+```sh
+XDG_CACHE_HOME=logs/cache .venv/bin/snakemake \
+  -s workflow/cmi_figure2_review.smk --cores 8
+```
+
+`slurm/cmi_figure2_review.sbatch` launches this extension on whartonstat.
+It imports the two configurations directly from
+`experiments/nuisance_early_stopping.py`: depth 3 with at most 100 rounds,
+or depth 5 with at most 1,000 rounds, both learning rate .1, a stratified
+20% validation split, patience 20 and tolerance 1e-4. There is no probability
+calibration, configuration selection, or full-training refit. The models fit
+the four-class joint response, so each round adds four trees. Dataset hashes
+must match all 300 datasets in the earlier learner review. Sources and
+per-replicate outputs are in `data/runs/cmi-figure2-review-20261021/`;
+reports are in `results/review/cmi-figure2-review-20261021/`.
+
 ## Retired work and naming history
 
 [The archive index](archive/workflow_2026-10-09/README.md) records inactive analyses,
