@@ -18,8 +18,9 @@ def write_specification_table(summary: pd.DataFrame, path: Path) -> None:
     cases = CONTROLS + ['linear_linear']
     sizes = (500, 10000)
     lines = [r'\begin{table}[t]', r'\centering\small',
-             r'\caption{TL coverage and signed bias at the smallest and largest training sizes '
-             r'in the nuisance-specification experiment. Intervals have nominal 95\% coverage. '
+             r'\caption{TL coverage and signed bias for $R=1000$ replicates per configuration, '
+             r'at the smallest and largest training sizes in the nuisance-specification experiment. '
+             r'Intervals have nominal 95\% coverage. '
              r'Parentheses contain Monte Carlo standard errors; bias is in percentage points (pp).}',
              r'\label{tab:nuisance-specification}', r'\begin{tabular}{@{}llrrrr@{}}', r'\toprule',
              r' & & \multicolumn{2}{c}{$n_{\rm train}=500$} & \multicolumn{2}{c}{$n_{\rm train}=10{,}000$}\\',
