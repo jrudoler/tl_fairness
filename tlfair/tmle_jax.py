@@ -124,7 +124,7 @@ if HAS_JAX:
         eif = (H * (yte - d_star)
                + (gte == 1) * (d_star - jnp.mean(plug1)) / p_g1
                - (gte == 0) * (d_star - jnp.mean(plug0)) / (1.0 - p_g1))
-        se = jnp.sqrt(jnp.var(eif) / eif.shape[0])
+        se = jnp.sqrt(jnp.var(eif, ddof=1) / eif.shape[0])
         return est, se, est - 1.96 * se, est + 1.96 * se
 
 

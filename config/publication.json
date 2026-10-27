@@ -14,380 +14,380 @@
     },
     {
       "path": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "sha256": "98975f46b2db8d6b9b34e7daf39e938d611f0a5c4207931e1c667fcd7ce31748",
-      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/run_manifest.json",
+      "sha256": "430a3bcf94f93438f1abb9189f894c4e608872eade6cbe37e4ba9199a405e900",
+      "source": "data/runs/variance-nminus1-20261023/cmi_conditioning_set/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/cmi_conditioning_set/complete.json",
-      "sha256": "ed9a868a219df504bebf336aee5e69cdf7fa7ca97b2d4cdef6a4956a075b30d4",
-      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/complete.json",
+      "sha256": "e71f457ef0c77f1d99507e014cac54a8c5afbfd1f6eaf6258818ad99c3813e3b",
+      "source": "data/runs/variance-nminus1-20261023/cmi_conditioning_set/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/cmi_conditioning_set.csv",
       "run_manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "run_manifest_sha256": "98975f46b2db8d6b9b34e7daf39e938d611f0a5c4207931e1c667fcd7ce31748",
-      "sha256": "7a3a690b87a659b4cf6f28b295b03d0b9b54b19f7e25bb1cae219bf55a5a12a0",
-      "source": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/summary.csv",
+      "run_manifest_sha256": "430a3bcf94f93438f1abb9189f894c4e608872eade6cbe37e4ba9199a405e900",
+      "sha256": "41e9dfa3232b5552562cdbf61b565e7a21ff2c91ffffa8ec1e710a792eda6a02",
+      "source": "data/runs/variance-nminus1-20261023/cmi_conditioning_set/summary.csv",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/cmi_conditioning_set/replicates.csv.gz",
+      "path": "data/runs/variance-nminus1-20261023/cmi_conditioning_set/replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
-      "sha256": "1926aa8cd09ad9dd3163c128f87bbcd38d9978bfd7630120c5a8c25eebbe3d7f",
+      "sha256": "d9a1bb8f781230c1806c9751412bb9b93a47d49d79ede3f10bb82131464841fa",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/run_manifest.json",
+      "sha256": "9af75f59a8f1f3072f0970909069fa09e0329c1035d9022a9683effe1c41acb5",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/cmi_estimation/complete.json",
-      "sha256": "62e14c4a118ecf246e89dd1d37a81bf3f0be1d6ba3215508fae5de921832ab43",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/complete.json",
+      "sha256": "0e7619cd70ce0e74381664b4df008ba8d4ad5798011e61ed5699672a1f679f7b",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/cmi_estimation_comparison.csv",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "run_manifest_sha256": "9af75f59a8f1f3072f0970909069fa09e0329c1035d9022a9683effe1c41acb5",
       "sha256": "d56d6433a503698ccf545791f3c197bba0b6ca180a071ca73fc7aef5abbee96a",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/comparison.csv",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/comparison.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_estimation_coverage.csv",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
-      "sha256": "85528bc428149142e830185d713f496c64c835116cd627d041b4939730a08c34",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/coverage.csv",
+      "run_manifest_sha256": "9af75f59a8f1f3072f0970909069fa09e0329c1035d9022a9683effe1c41acb5",
+      "sha256": "3a5a9df22a95d1bf712dc51dcf5b3310c7c74a7a536db71606daa3a558da65e0",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/coverage.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_estimation_timing.pkl",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
-      "sha256": "9652ef99e1f117a6d8ace4b5f9a43034ceaa8710acdfbe0266b9e9b1b03672bb",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/timing.pkl",
+      "run_manifest_sha256": "9af75f59a8f1f3072f0970909069fa09e0329c1035d9022a9683effe1c41acb5",
+      "sha256": "3594b8282c1bb432f1d99c2643090b7ddd3810073a927a4629afe6b42178e996",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/timing.pkl",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/cmi_population_truth.pkl",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "run_manifest_sha256": "32b9c955bbbd672b7774e2f5eb3fca128ae020983b2667afe677e8b8e18b05af",
+      "run_manifest_sha256": "9af75f59a8f1f3072f0970909069fa09e0329c1035d9022a9683effe1c41acb5",
       "sha256": "950bda82b3a6109ef7367586250f6868c48a09eb0918b079cea58e9b3b524ae3",
-      "source": "data/runs/cmi-depth3-20261021/cmi_estimation/population_truth.pkl",
+      "source": "data/runs/variance-nminus1-20261023/cmi_estimation/population_truth.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/cmi_estimation/coverage_replicates.csv.gz",
+      "path": "data/runs/variance-nminus1-20261023/cmi_estimation/coverage_replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "36c75f03189cba569d03283c2d4356ffed063474c851ceeca969569cb4b43bc9",
+      "sha256": "349df018983d72437ac5618ccdc7d6b74cb355947fcfa15593e2180d0e29527b",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/cmi_estimation/comparison_replicates.csv.gz",
+      "path": "data/runs/variance-nminus1-20261023/cmi_estimation/comparison_replicates.csv.gz",
       "run_manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
-      "sha256": "253386f5f74465d07d0b8a807d11262cc48461836c1b1d75d04b0ae879d5106a",
+      "sha256": "f31347aa018357713b1b706269a72d52f4a3becec5fd4ba0b12279a501ffd487",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/model_fairness_adult/run_manifest.json",
-      "sha256": "c25f264dfaf9a813be7ae7ae2e1d567ea80e298cff09a3edd545de608b5c1a39",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_adult/run_manifest.json",
+      "sha256": "73e74ebbc1046ec543973431354748d67998aa080efec7a6adf46fb15631a9f5",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_adult/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/model_fairness_adult/complete.json",
-      "sha256": "d1633c79658f15d9d523ade8e6ac6459f448cd674ac44746d824e129c562276d",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_adult/complete.json",
+      "sha256": "c616b6f89aaa753a7cc159b6dc457bfd45eabdc2cb432bebac646240d2f3214a",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_adult/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/adult_model_comparison.pkl",
       "run_manifest": "config/publication-provenance/model_fairness_adult/run_manifest.json",
-      "run_manifest_sha256": "c25f264dfaf9a813be7ae7ae2e1d567ea80e298cff09a3edd545de608b5c1a39",
-      "sha256": "2903050aab205bc5afbb4153188006d45191ac40dc4e10894e819aec4fbb88f4",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_adult/comparison.pkl",
+      "run_manifest_sha256": "73e74ebbc1046ec543973431354748d67998aa080efec7a6adf46fb15631a9f5",
+      "sha256": "b30b7707bb476d6514ab01fb1e9b55b505ff6b9f2b93dcecdcac667a0869c2dd",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_adult/comparison.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/matched-real-data-20261014/model_fairness_adult/predictions.npz",
+      "path": "data/runs/variance-nminus1-20261023/model_fairness_adult/predictions.npz",
       "run_manifest": "config/publication-provenance/model_fairness_adult/run_manifest.json",
-      "sha256": "d0d1775913a392f7dbf853892ee6c38ba9f62bc86eefe17814b052354e599944",
+      "sha256": "6157aec549389fe589e560d489135e62a57a90646f5f3824e01ad72e1679bec4",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/matched-real-data-20261014/model_fairness_adult/fit_metadata.json",
+      "path": "data/runs/variance-nminus1-20261023/model_fairness_adult/fit_metadata.json",
       "run_manifest": "config/publication-provenance/model_fairness_adult/run_manifest.json",
-      "sha256": "3711a9a05b999a03141dc7fc8d07a0dea7ccfb7364e6078cc87532424845b289",
+      "sha256": "68c5892ce105e883adfea4e1ab2e4ee2b002f60372c2bf48f64c18f696ecd60e",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/model_fairness_law/run_manifest.json",
-      "sha256": "152e6c2e74b308218dc2061c88ba038e5d7cdffef85ebeb8a703a96d3b48d412",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_law/run_manifest.json",
+      "sha256": "8285502f517930a757f1c8d2ea29d2f19245b07642ff5fdd6d6f7d0216a81d13",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_law/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/model_fairness_law/complete.json",
-      "sha256": "caec432d519e66fea84c9daa1c622f3dcdaf6c92ff762862243cd5bd239a2188",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_law/complete.json",
+      "sha256": "e6a90905d3f15f575645d61d8899ddc4c47d855a521e0658d6784e8261f8894f",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_law/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/law_model_comparison.pkl",
       "run_manifest": "config/publication-provenance/model_fairness_law/run_manifest.json",
-      "run_manifest_sha256": "152e6c2e74b308218dc2061c88ba038e5d7cdffef85ebeb8a703a96d3b48d412",
-      "sha256": "a364270c6673177a6ac4d2aacb9284f295aef79d504526bd3461548cd0f2194e",
-      "source": "data/runs/matched-real-data-20261014/model_fairness_law/comparison.pkl",
+      "run_manifest_sha256": "8285502f517930a757f1c8d2ea29d2f19245b07642ff5fdd6d6f7d0216a81d13",
+      "sha256": "3e60bf8eb20a3f11df3984d668c332a1b9d6fd9c8ded132b09292ba57415a93b",
+      "source": "data/runs/variance-nminus1-20261023/model_fairness_law/comparison.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/matched-real-data-20261014/model_fairness_law/predictions.npz",
+      "path": "data/runs/variance-nminus1-20261023/model_fairness_law/predictions.npz",
       "run_manifest": "config/publication-provenance/model_fairness_law/run_manifest.json",
       "sha256": "4d2b41c2ff626c4366cfa6bdb5f397c7da453259ee1217eba82bc27d9d50795e",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/matched-real-data-20261014/model_fairness_law/fit_metadata.json",
+      "path": "data/runs/variance-nminus1-20261023/model_fairness_law/fit_metadata.json",
       "run_manifest": "config/publication-provenance/model_fairness_law/run_manifest.json",
-      "sha256": "df1b7f1265bf9dac107a7bb41d4f7307eade095d3a555dfc054e267947d11d11",
+      "sha256": "13599576332e75cde60aec373f7bc5852bd161ca5fa365fdc7ad41938c31d197",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/run_manifest.json",
+      "sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/nuisance_early_stopping/complete.json",
-      "sha256": "8ed7b4fd939fd36e976c5c15bbd555fd50a2146dce6aee2d3870eab2737c7f8c",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/complete.json",
+      "sha256": "f06a88205d4037318497be591fee378aa82c78f8f9c76dfba8036e977dcf464c",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/nuisance_early_stopping/control_audit.json",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
       "sha256": "1ceb00edaf59c365d78d61fd23afcb1088d4b0be6eab037843da105481815d04",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/control_audit.json",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/control_audit.json",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/fit_diagnostics.csv.gz",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "sha256": "eaebe9d60ae7f679f2b2c2f6f455c85f81aaf823533cf10dd92a99ce6e992011",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/fit_diagnostics.csv.gz",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "sha256": "329e277aa23e3c2cf86d146e4ade324a8d1c94c363e18dcfe1b4b15c03235854",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/fit_diagnostics.csv.gz",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/manifest.json",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "sha256": "ffd37f167ec99075806c9c45fb5c5e4f0b2c7df52443b042e41cc3d4ebd8b1e9",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/manifest.json",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "sha256": "9d2302ee2eee96d1474cc420033323de395e92498af6a3b29aaf37d81ae4faa5",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/manifest.json",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/paired_comparisons.csv",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "sha256": "319d9c0b076e215c234a31598e464a0998f81ddc915a40700ea071c1c1674146",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/paired_comparisons.csv",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "sha256": "49c33a252203042c86f6ebb3ca6faf01a6eaf383defb25b45e1ffc051bb3ccde",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/paired_comparisons.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/population.csv",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
       "sha256": "1d2630faa601d702fd1150aaf54e70775fe2eddd625db623b6a50ca83768f50f",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/population.csv",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/population.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/replicates.csv.gz",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "sha256": "ed5b4f8b83945dd70cd01a4fba38829a699a75f3454970c19e9598d9ef489f9b",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/replicates.csv.gz",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "sha256": "c4ce88082f97541e6cf2ae9308b734b16d4271554e81e3a8f1a01381a431cae9",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/replicates.csv.gz",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_early_stopping/summary.csv",
       "run_manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
-      "run_manifest_sha256": "5be6cd3e9bea78b5f9b0505807a564e81b4e6d77e994ec9a84b21e21cf2ffeab",
-      "sha256": "8f90778a2b55f0190bf03cd094f5403b592ceeec5e7fd6af5549580f5feb5010",
-      "source": "data/runs/reproduction-20261012/nuisance_early_stopping/summary.csv",
+      "run_manifest_sha256": "58c9caa20076a568725b30925e058704487b896f6ac37e04d033c2d738dd08d6",
+      "sha256": "2a5e7919c8694b744831487bb9581bc0b10e470425c65dd661912b31881b9298",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_early_stopping/summary.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/run_manifest.json",
+      "sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/nuisance_reference/complete.json",
-      "sha256": "2d36449d5b7156c04bc6e48a21760b7d330f5206e340c3c2782f47ced647716b",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/complete.json",
+      "sha256": "da6ca1d43e9a76237f1b8865d592b4b3367d0a11c2350bb804e98209676d4a6e",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/nuisance_training/manifest.json",
       "run_manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "run_manifest_sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
-      "sha256": "90a43c014577430a36156b13c7f1ad659a635c655ed3c989e6aa40f48642f627",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/manifest.json",
+      "run_manifest_sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
+      "sha256": "6cec97e7fdc463da3e945ae67431b67f080fff128c3221cf9442b638a239ab77",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/manifest.json",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_training/paired_comparisons.csv",
       "run_manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "run_manifest_sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
-      "sha256": "e673f1b162d578b6929817a955dabe19de50e042681a69b1be5480803dce914a",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/paired_comparisons.csv",
+      "run_manifest_sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
+      "sha256": "439a561534abd1bc7c90847b0643e3e64636919d7016e38cb9788f17732775fb",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/paired_comparisons.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_training/population.csv",
       "run_manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "run_manifest_sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
+      "run_manifest_sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
       "sha256": "27abf1f8cc15fd6be24522f059914da16bdeeeed07ca1f2dba28270a00c65fec",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/population.csv",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/population.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_training/replicates.csv.gz",
       "run_manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "run_manifest_sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
-      "sha256": "9be6fe2b0e854fc703baeb8a18d6096ca5f048b105d6640da9d3a68ef69ef982",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/replicates.csv.gz",
+      "run_manifest_sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
+      "sha256": "b161482eab0ddd121848c7253fbb345e8cf0b9e3337b6cf09a3b46954ef45afc",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/replicates.csv.gz",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/nuisance_training/summary.csv",
       "run_manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
-      "run_manifest_sha256": "a6d08d9f64085f6b19f0338e36c99e2dd03005ed6c72b4828939fa40b1fae95d",
-      "sha256": "9be0f951cb3a1fe7c66ded04fec07aa22b4f4c573f1c386442f8db5ba3380ab0",
-      "source": "data/runs/reproduction-20261012/nuisance_reference/summary.csv",
+      "run_manifest_sha256": "965d4ffa2a6af48951a1d6298d7624ca36b2137304b1c178bf65664bd8bcdfc8",
+      "sha256": "febccd958ec11d43c692113a6857d2313486afa551d6a2567826a6c41d2db1ca",
+      "source": "data/runs/variance-nminus1-20261023/nuisance_reference/summary.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/parity_retraining/run_manifest.json",
-      "sha256": "68eae74b420d7548c1b28a70caea37e355f3f7bc89015bb87e32ee7aab6435bd",
-      "source": "data/runs/reproduction-20261012/parity_retraining/run_manifest.json",
+      "sha256": "d7bd0babec201be39d9d6bff701ad878925636a88174f3082b0445973071a6f7",
+      "source": "data/runs/variance-nminus1-20261023/parity_retraining/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/parity_retraining/complete.json",
-      "sha256": "11de0345bb67140cbffe3bc6ae68469ee24f8bec7a3f48a0ff100245b7f4bab5",
-      "source": "data/runs/reproduction-20261012/parity_retraining/complete.json",
+      "sha256": "b4e65e9ae567206451b58d43d128acf68f791d3314932ce56e8451f1c62f8b5e",
+      "source": "data/runs/variance-nminus1-20261023/parity_retraining/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/parity_retraining/config.json",
       "run_manifest": "config/publication-provenance/parity_retraining/run_manifest.json",
-      "run_manifest_sha256": "68eae74b420d7548c1b28a70caea37e355f3f7bc89015bb87e32ee7aab6435bd",
-      "sha256": "c67254d1ebbcc90913f2f5d31f0b8768dd3f90f2bb58286d4ca48884c69baa25",
-      "source": "data/runs/reproduction-20261012/parity_retraining/config.json",
+      "run_manifest_sha256": "d7bd0babec201be39d9d6bff701ad878925636a88174f3082b0445973071a6f7",
+      "sha256": "2d1cd349e07dfef5a1b2c2b57f52e5893eac84c910c426d5ed092ce180941783",
+      "source": "data/runs/variance-nminus1-20261023/parity_retraining/config.json",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/parity_retraining/replicates.csv.gz",
       "run_manifest": "config/publication-provenance/parity_retraining/run_manifest.json",
-      "run_manifest_sha256": "68eae74b420d7548c1b28a70caea37e355f3f7bc89015bb87e32ee7aab6435bd",
-      "sha256": "fe5672104e7d96eed3a7d456793cf9cbd2f4455263ced28a1cf6d6112e409a76",
-      "source": "data/runs/reproduction-20261012/parity_retraining/replicates.csv.gz",
+      "run_manifest_sha256": "d7bd0babec201be39d9d6bff701ad878925636a88174f3082b0445973071a6f7",
+      "sha256": "203c96ebf55674798e9f30085212328018c8083727c43949f0e67ea69cc03ed5",
+      "source": "data/runs/variance-nminus1-20261023/parity_retraining/replicates.csv.gz",
       "source_kind": "completed-run-output"
     },
     {
       "path": "data/generated/parity_retraining/summary.csv",
       "run_manifest": "config/publication-provenance/parity_retraining/run_manifest.json",
-      "run_manifest_sha256": "68eae74b420d7548c1b28a70caea37e355f3f7bc89015bb87e32ee7aab6435bd",
-      "sha256": "b95ecda41cc45d38f052398259778140277f35e6552beb6585ecedaa49f73101",
-      "source": "data/runs/reproduction-20261012/parity_retraining/summary.csv",
+      "run_manifest_sha256": "d7bd0babec201be39d9d6bff701ad878925636a88174f3082b0445973071a6f7",
+      "sha256": "05493bc3b78ca3b351918f605294ac51205346f0b05c31206571baa3b94bc5aa",
+      "source": "data/runs/variance-nminus1-20261023/parity_retraining/summary.csv",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "f67994892faa19b359cd7c68f13aa3c337856e91d4fd6d07fe16879b96df578f",
-      "source": "data/runs/cmi-depth3-20261021/real_data_adult/run_manifest.json",
+      "sha256": "ea471044b28e3ba4d99d4c4c08372ff0f8cad5c702cd8d6a8e5ec830799ec5c3",
+      "source": "data/runs/variance-nminus1-20261023/real_data_adult/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/real_data_adult/complete.json",
-      "sha256": "c5f423d82b1aa37d151df688c70e249044be9983c9a97077d1f107ade26ac0ba",
-      "source": "data/runs/cmi-depth3-20261021/real_data_adult/complete.json",
+      "sha256": "e30583a2bb988db8c569ae645ff2cb1e8811e24cdb74638968f41c77666d0bd7",
+      "source": "data/runs/variance-nminus1-20261023/real_data_adult/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/adult_results.pkl",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "run_manifest_sha256": "f67994892faa19b359cd7c68f13aa3c337856e91d4fd6d07fe16879b96df578f",
-      "sha256": "c30037ebdcdbe6151732ed51e2e62a0fd7e1a90411c85da44ef580ec803987a3",
-      "source": "data/runs/cmi-depth3-20261021/real_data_adult/inference.pkl",
+      "run_manifest_sha256": "ea471044b28e3ba4d99d4c4c08372ff0f8cad5c702cd8d6a8e5ec830799ec5c3",
+      "sha256": "a146ed728aa0510669a9ae59c38ca49af67279a83ffae7acda717e830ef24c30",
+      "source": "data/runs/variance-nminus1-20261023/real_data_adult/inference.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_predictions.npz",
+      "path": "data/runs/variance-nminus1-20261023/real_data_adult/cmi_predictions.npz",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
       "sha256": "523162ed4a4eced2e5b9018e274f0ab78f212a1feba5378a2490f6c2b3c790d9",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_fit_metadata.json",
+      "path": "data/runs/variance-nminus1-20261023/real_data_adult/cmi_fit_metadata.json",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
       "sha256": "27c7234875fc3419477285b91f7e9b63d7b406f03730deb0cc64a31a4c3f85d6",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_adult/cmi_diagnostics.csv",
+      "path": "data/runs/variance-nminus1-20261023/real_data_adult/cmi_diagnostics.csv",
       "run_manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
-      "sha256": "657f697ba2095bc12cbeea792d3219692b553bc0f1b4c0282e441dbc82cf3fbc",
+      "sha256": "145740829f66c94b56604e57ddaba24dcdeda1d80450b214fa40c741a2138826",
       "source_kind": "completed-run-output"
     },
     {
       "path": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "3be738f06afa6b4d1fa21413f7581ebc49943b95aafc3758ca9fb48452f104b5",
-      "source": "data/runs/cmi-depth3-20261021/real_data_law/run_manifest.json",
+      "sha256": "af313b5595f08d84a9feacae9b2513f7a46487c65674c9c9c6264cca8552e28d",
+      "source": "data/runs/variance-nminus1-20261023/real_data_law/run_manifest.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "config/publication-provenance/real_data_law/complete.json",
-      "sha256": "f1af2cfc56d77c28c40a82ca4213b14a99c26d7daec128349fec690968a1a5eb",
-      "source": "data/runs/cmi-depth3-20261021/real_data_law/complete.json",
+      "sha256": "04cd5c9f04dab386c8c5326b716336d4c451f61bd004e8a4d31838186dbcfb00",
+      "source": "data/runs/variance-nminus1-20261023/real_data_law/complete.json",
       "source_kind": "completed-run-record"
     },
     {
       "path": "data/generated/law_results.pkl",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "run_manifest_sha256": "3be738f06afa6b4d1fa21413f7581ebc49943b95aafc3758ca9fb48452f104b5",
-      "sha256": "a891b619188f6d3cb34e5494025740f608af89c76f0710ffc5a3bc72a05c4e02",
-      "source": "data/runs/cmi-depth3-20261021/real_data_law/inference.pkl",
+      "run_manifest_sha256": "af313b5595f08d84a9feacae9b2513f7a46487c65674c9c9c6264cca8552e28d",
+      "sha256": "23155002b1d1913c132bd73bc1e229a4e38e713ec6aa9ad7a44aec74e9bd42ba",
+      "source": "data/runs/variance-nminus1-20261023/real_data_law/inference.pkl",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_predictions.npz",
+      "path": "data/runs/variance-nminus1-20261023/real_data_law/cmi_predictions.npz",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
       "sha256": "fd9452894d16d7cc8d077c2e305d89b63cc352e6f7129e799f3378983cb1fb35",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_fit_metadata.json",
+      "path": "data/runs/variance-nminus1-20261023/real_data_law/cmi_fit_metadata.json",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
       "sha256": "cc0556977efa73d982bb7827aca77bf0c6dc6ae605beab317e887760d1d91bf3",
       "source_kind": "completed-run-output"
     },
     {
-      "path": "data/runs/cmi-depth3-20261021/real_data_law/cmi_diagnostics.csv",
+      "path": "data/runs/variance-nminus1-20261023/real_data_law/cmi_diagnostics.csv",
       "run_manifest": "config/publication-provenance/real_data_law/run_manifest.json",
-      "sha256": "fe6a859e38518c2b38a8c81ca9dfa81043cde029ef72c3199277af13073d1a90",
+      "sha256": "fc8d364cfd4df21301f517af923ab1cdf301a0a01d822e0a6edd79a2f27b19b8",
       "source_kind": "completed-run-output"
     }
   ],
@@ -395,6 +395,6 @@
     "CMI Wald inference is not calibrated at conditional independence; provenance verification does not establish statistical validity.",
     "Exact numerical reproduction requires the recorded dependency versions and source snapshot."
   ],
-  "publication_id": "manuscript-2026-10-21-cmi-depth3",
+  "publication_id": "manuscript-2026-10-23-sample-variance",
   "schema_version": 2
 }

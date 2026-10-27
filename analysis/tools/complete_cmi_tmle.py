@@ -1,6 +1,7 @@
-"""Validate, select and build approved CMI TMLE runs; safe to retry a failed build."""
+"""Validate, select and build approved runs; safe to retry a failed build."""
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import os
@@ -18,8 +19,8 @@ from tlfair.provenance import sha256, write_json
 LOG = logging.getLogger(__name__)
 
 
-def complete(root: Path = ROOT) -> dict:
-    plan = json.loads((root/'config/cmi-tmle-publication.json').read_text())
+def complete(root: Path = ROOT, plan_path: Path | None = None) -> dict:
+    plan = json.loads((root/(plan_path or Path('config/cmi-tmle-publication.json'))).read_text())
     for path,expected in plan['approved_sources'].items():
         if sha256(root/path) != expected:
             raise ValueError(f'Approved manuscript/workflow changed while jobs queued: {path}; reconcile before completion')
@@ -32,7 +33,7 @@ def complete(root: Path = ROOT) -> dict:
             if selections[name]['run'] != str(path.relative_to(root)):
                 raise ValueError('Publication ID already exists with different selected runs')
         if audit(root)['status'] != 'verified':
-            raise ValueError('Previously selected CMI publication no longer verifies')
+            raise ValueError('Previously selected publication no longer verifies')
         selection = {'publication_id':plan['publication_id'],'run_id':plan['run_id'],'status':'verified','resumed':True}
     else:
         if sha256(root/'config/publication.json') != plan['previous_registry_sha256']:
@@ -45,10 +46,13 @@ def complete(root: Path = ROOT) -> dict:
                    cwd=root,env=environment,check=True)
     result = dict(selection,build='passed',validation=validation,pdf_sha256=sha256(root/'paper/main.pdf'))
     write_json(root/'results/provenance'/f"completion-{plan['publication_id']}.json",result)
-    LOG.info('CMI TMLE manuscript built: %s',result)
+    LOG.info('Verified manuscript built: %s',result)
     return result
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--plan', type=Path, help='Approved publication plan, relative to the repository root.')
+    args = parser.parse_args()
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-    complete()
+    complete(plan_path=args.plan)

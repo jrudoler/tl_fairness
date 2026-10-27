@@ -40,7 +40,7 @@ def test_ratio_eif_matches_numerical_empirical_derivative(opportunity: bool) -> 
         (functional(mass + eps * v) - functional(mass - eps * v)) / (2 * eps)
         for v in directions
     ])
-    assert (hi - lo) / 3.92 == pytest.approx(np.std(derivative) / np.sqrt(n), rel=1e-7)
+    assert (hi - lo) / 3.92 == pytest.approx(np.std(derivative, ddof=1) / np.sqrt(n), rel=1e-7)
 
 
 
@@ -49,7 +49,10 @@ def test_fixed_score_limit_has_no_artificial_group_mean_variance() -> None:
     d = np.linspace(0.1, 0.8, len(g))
     weights = np.column_stack([1 - g, g])
     estimate, (lo, hi) = _prob_group_contrast(d, np.zeros(len(g)), weights, weights)
-    expected_var = sum(d[g == k].var() / sum(g == k) for k in (0, 1))
+    # The sample correction applies to the full evaluation EIF, not each group.
+    expected_var = len(g) / (len(g) - 1) * sum(
+        d[g == k].var(ddof=0) / sum(g == k) for k in (0, 1)
+    )
     assert estimate == pytest.approx(d[g == 1].mean() - d[g == 0].mean())
     assert ((hi - lo) / 3.92) ** 2 == pytest.approx(expected_var)
     shifted, shifted_ci = _prob_group_contrast(d + 3, np.zeros(len(g)), weights, weights)
@@ -80,12 +83,12 @@ def test_tmle_interval_uses_centered_group_scores(opportunity: bool) -> None:
            + strata[:, 1] * (star - means[1]) / p[1]
            - strata[:, 0] * (star - means[0]) / p[0])
     assert est == pytest.approx(means[1] - means[0])
-    assert (ci[1] - ci[0]) / 3.92 == pytest.approx(phi.std() / np.sqrt(n))
+    assert (ci[1] - ci[0]) / 3.92 == pytest.approx(phi.std(ddof=1) / np.sqrt(n))
 
 
 
 @pytest.mark.parametrize('metric_name', ['parity', 'opportunity'])
-def test_threshold_intervals_match_two_group_mean_variance(metric_name: str) -> None:
+def test_threshold_intervals_match_full_sample_eif_variance(metric_name: str) -> None:
     """Conditioning must retain the full row index and use group centering."""
     from tlfair import metrics
 
@@ -103,7 +106,9 @@ def test_threshold_intervals_match_two_group_mean_variance(metric_name: str) -> 
     eligible = y == 1 if metric_name == 'opportunity' else np.ones(len(g), dtype=bool)
     groups = [pred[(g == k) & eligible] for k in (0, 1)]
     expected = groups[1].mean() - groups[0].mean()
-    variance = sum(values.var(ddof=0) / len(values) for values in groups)
+    variance = len(g) / (len(g) - 1) * sum(
+        values.var(ddof=0) / len(values) for values in groups
+    )
     est, (lo, hi) = getattr(metrics, metric_name)(x, x, y, y, g, g, FixedClassifier())
     assert est == pytest.approx(expected)
     assert ((hi - lo) / 3.92) ** 2 == pytest.approx(variance)

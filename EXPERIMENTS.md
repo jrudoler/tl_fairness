@@ -4,6 +4,37 @@ Use semantic names; LaTeX supplies figure and table numbers. The publication
 workflow renders frozen, checksummed results. New computation is a separate,
 explicit workflow with a fresh run ID.
 
+The sample-variance regeneration requested on 2026-10-23 uses run ID
+`variance-nminus1-20261023`. All nine analyses are rerun from saved source
+snapshots with `ddof=1` for the evaluation influence-function variance. The
+conditioning-set figure displays the mean endpoints of two-sided 95% CMI
+intervals; its rejection rates still use the one-sided rule
+`estimate - 1.645 * se > 0`. The bands summarize replicate intervals, not
+uncertainty in the Monte Carlo mean.
+
+[config/variance-publication.json](config/variance-publication.json) records
+the approved sources for the selected publication
+`manuscript-2026-10-23-sample-variance`. All nine analyses and the manuscript
+build completed on 2026-10-26; the current-code provenance audit verifies all
+nine selected runs. Seven of the original analysis jobs
+100876–100884 completed; the nuisance reference hit the home-directory quota
+while collecting its 16,000 saved replicates. After space was freed, recovery
+job 105571 resumed the original saved source, checking that every existing
+replicate remained unchanged. Early-stopping job 105572, comparison job 105573,
+and guarded completion job 105574 then completed. The completion job
+validated the CMI records, selected all nine certified runs, validated the full
+publication, and rebuilt the manuscript. It refuses changed source files or
+an unexpected publication selection and can resume after a failed build.
+The submission receipt is
+`results/provenance/submission-variance-nminus1-20261023.json`; the recovery
+submission is recorded separately in
+`results/provenance/recovery-submission-variance-nminus1-20261023-20261026.json`.
+The successful build and PDF checksum are recorded in
+`results/provenance/completion-manuscript-2026-10-23-sample-variance.json`.
+The selected inputs and their checksums are tracked in `config/publication.json`
+and `config/publication-provenance/`; previous inputs remain available locally
+under `data/imported/publication-before-manuscript-2026-10-23-sample-variance/`.
+
 All selected CMI analyses use Figure 2's depth-3 boosting protocol: at most
 100 rounds, learning rate .1, a stratified 20% validation subset within training,
 patience 20, and tolerance 1e-4. The joint four-class classifier uses no probability

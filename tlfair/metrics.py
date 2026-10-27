@@ -53,7 +53,7 @@ def _clone_estimator(estimator):
 
 def _wald_ci(estimate, eif):
     """95% Wald interval from the EIF's sample variance."""
-    half_width = _Z * np.sqrt(np.var(eif) / len(eif))
+    half_width = _Z * np.sqrt(np.var(eif, ddof=1) / len(eif))
     return (estimate - half_width, estimate + half_width)
 
 

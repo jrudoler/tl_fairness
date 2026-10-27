@@ -7,7 +7,7 @@
       },
       "manifest": "config/publication-provenance/cmi_conditioning_set/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/cmi-depth3-20261021/cmi_conditioning_set"
+      "run": "data/runs/variance-nminus1-20261023/cmi_conditioning_set"
     },
     "cmi_estimation": {
       "complete": "config/publication-provenance/cmi_estimation/complete.json",
@@ -19,7 +19,7 @@
       },
       "manifest": "config/publication-provenance/cmi_estimation/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/cmi-depth3-20261021/cmi_estimation"
+      "run": "data/runs/variance-nminus1-20261023/cmi_estimation"
     },
     "model_fairness_adult": {
       "complete": "config/publication-provenance/model_fairness_adult/complete.json",
@@ -28,7 +28,7 @@
       },
       "manifest": "config/publication-provenance/model_fairness_adult/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/matched-real-data-20261014/model_fairness_adult"
+      "run": "data/runs/variance-nminus1-20261023/model_fairness_adult"
     },
     "model_fairness_law": {
       "complete": "config/publication-provenance/model_fairness_law/complete.json",
@@ -37,7 +37,7 @@
       },
       "manifest": "config/publication-provenance/model_fairness_law/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/matched-real-data-20261014/model_fairness_law"
+      "run": "data/runs/variance-nminus1-20261023/model_fairness_law"
     },
     "nuisance_early_stopping": {
       "complete": "config/publication-provenance/nuisance_early_stopping/complete.json",
@@ -52,7 +52,7 @@
       },
       "manifest": "config/publication-provenance/nuisance_early_stopping/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/nuisance_early_stopping"
+      "run": "data/runs/variance-nminus1-20261023/nuisance_early_stopping"
     },
     "nuisance_reference": {
       "complete": "config/publication-provenance/nuisance_reference/complete.json",
@@ -65,7 +65,7 @@
       },
       "manifest": "config/publication-provenance/nuisance_reference/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/nuisance_reference"
+      "run": "data/runs/variance-nminus1-20261023/nuisance_reference"
     },
     "parity_retraining": {
       "complete": "config/publication-provenance/parity_retraining/complete.json",
@@ -76,7 +76,7 @@
       },
       "manifest": "config/publication-provenance/parity_retraining/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/reproduction-20261012/parity_retraining"
+      "run": "data/runs/variance-nminus1-20261023/parity_retraining"
     },
     "real_data_adult": {
       "complete": "config/publication-provenance/real_data_adult/complete.json",
@@ -85,7 +85,7 @@
       },
       "manifest": "config/publication-provenance/real_data_adult/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/cmi-depth3-20261021/real_data_adult"
+      "run": "data/runs/variance-nminus1-20261023/real_data_adult"
     },
     "real_data_law": {
       "complete": "config/publication-provenance/real_data_law/complete.json",
@@ -94,7 +94,7 @@
       },
       "manifest": "config/publication-provenance/real_data_law/run_manifest.json",
       "note": "Selected completed computation; source snapshot, current computation code, inputs, runtime and outputs verified.",
-      "run": "data/runs/cmi-depth3-20261021/real_data_law"
+      "run": "data/runs/variance-nminus1-20261023/real_data_law"
     }
   },
   "schema_version": 1

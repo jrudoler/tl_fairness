@@ -41,14 +41,16 @@ def test_paired_simulation_uses_exact_figure2_fit_without_calibration():
         assert record['model_seed'] == seed
 
 
-def test_cmi_completion_refuses_changed_manuscript(tmp_path: Path):
+@pytest.mark.parametrize('plan_name', ['cmi-tmle-publication.json', 'variance-publication.json'])
+def test_cmi_completion_refuses_changed_manuscript(tmp_path: Path, plan_name: str):
     from analysis.tools.complete_cmi_tmle import complete
     manuscript = tmp_path/'manuscript.tex'
     manuscript.write_text('approved prose')
-    write_json(tmp_path/'config/cmi-tmle-publication.json',{'approved_sources':{'manuscript.tex':sha256(manuscript)}})
+    plan_path = Path('config')/plan_name
+    write_json(tmp_path/plan_path,{'approved_sources':{'manuscript.tex':sha256(manuscript)}})
     manuscript.write_text('later user edits')
     with pytest.raises(ValueError,match='changed while jobs queued'):
-        complete(tmp_path)
+        complete(tmp_path, plan_path)
     assert manuscript.read_text() == 'later user edits'
 
 

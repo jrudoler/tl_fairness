@@ -202,32 +202,31 @@ def plot(df: pd.DataFrame, output: str | Path) -> None:
     if 'estimator' in df:
         df = df[df.estimator == 'tmle']
     configure_matplotlib()
-    fig, axes = plt.subplots(1, 2, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
-    # Left: mean CMI estimate and mean one-sided 95% lower confidence bound.
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(FULL_WIDTH, FULL_WIDTH * 0.42))
+    # Left: mean CMI estimate and mean endpoints of two-sided 95% intervals.
     ax = axes[0]
     for n, sub in df.groupby("sample_size"):
         sub = sub.sort_values("n_confounders_included")
         x = sub["n_confounders_included"].to_numpy()
         m = sub["mean_estimate"].to_numpy()
-        mean_se = sub["mean_ci_width"].to_numpy() / (2 * _Z2)
-        lower = m - _Z1 * mean_se
+        half_width = sub["mean_ci_width"].to_numpy() / 2
         line, = ax.plot(x, m, marker="o", label=f"n={n}")
-        ax.fill_between(x, lower, m, color=line.get_color(), alpha=0.15)
+        ax.fill_between(x, m - half_width, m + half_width,
+                        color=line.get_color(), alpha=0.15)
     ax.axhline(0.0, ls="--", color="grey", lw=1)
-    ax.set_xlabel("# confounders in conditioning set")
+    ax.set_xlabel("")
     ax.set_ylabel(r"$\hat{I}(Y;G\mid X)$")
-    ax.set_title("Mean TMLE CMI estimate")
     ax.legend(title=None, fontsize=7)
     # Right: empirical rejection rate vs #confounders included.
     ax = axes[1]
     sns.lineplot(data=df, x="n_confounders_included", y="reject_rate",
                  hue="sample_size", marker="o", ax=ax, palette="tab10")
     ax.axhline(ALPHA, ls="--", color="grey", lw=1)
-    ax.set_xlabel("# confounders in conditioning set")
+    ax.set_xlabel("")
     ax.set_ylabel("Wald rejection rate")
-    ax.set_title("Diagnostic Wald rule")
     ax.set_ylim(-0.02, 1.02)
     ax.legend(title="n", fontsize=7)
+    fig.supxlabel("# confounders in conditioning set", fontsize=plt.rcParams["axes.labelsize"])
     fig.tight_layout()
     fig.savefig(output, bbox_inches="tight")
     print(f"Wrote {output}", flush=True)

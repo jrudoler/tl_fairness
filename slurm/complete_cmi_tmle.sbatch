@@ -9,4 +9,4 @@
 #SBATCH --error=logs/slurm/%x-%j.log
 set -euo pipefail
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
-.venv/bin/python analysis/tools/complete_cmi_tmle.py
+.venv/bin/python analysis/tools/complete_cmi_tmle.py "$@"

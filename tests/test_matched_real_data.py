@@ -39,7 +39,7 @@ def test_shared_predictions_reproduce_all_four_public_data_fairness_estimators()
         eligible = outcomes == 1 if name in ['prob_opp','opportunity'] else np.ones(12,dtype=bool)
         samples = [prediction[eligible & (groups == g)] for g in [0,1]]
         mean = samples[1].mean()-samples[0].mean()
-        se = np.sqrt(sum(s.var(ddof=0)/len(s) for s in samples))
+        se = np.sqrt(len(groups)/(len(groups)-1) * sum(s.var(ddof=0)/len(s) for s in samples))
         estimate,interval = paired['model_fairness'][name]
         np.testing.assert_allclose([estimate,*interval],[mean,mean-1.96*se,mean+1.96*se])
     for name in ['parity','opportunity']:

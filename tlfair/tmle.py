@@ -104,7 +104,8 @@ def fit_fluctuation(y, d_hat, H, *, max_iter=50, tol=1e-10):
 
 
 def _wald_ci(est, eif):
-    se = np.sqrt(np.var(eif) / len(eif))
+    """95% Wald interval using the sample variance of the evaluation EIF."""
+    se = np.sqrt(np.var(eif, ddof=1) / len(eif))
     return (est - 1.96 * se, est + 1.96 * se)
 
 

@@ -91,7 +91,7 @@ def run(dataset: str, input_path: Path, output: Path, seed: int, n_jobs: int) ->
                'concurrent_roles':roles,'inner_jobs':inner_jobs,'prediction_sha256':sha256(cache),
                'roles':{role:{'learner_specification':fit['specification'],'fit_seconds':fit['seconds']}
                         for (role,_),fit in zip(tasks,fits)},
-               'variance_convention':'Empirical influence-function variance with ddof=0 for both targets.'})
+               'variance_convention':'Sample influence-function variance with ddof=1 for both targets.'})
     LOG.info('Saved matched comparison and prediction cache: %s',output)
 
 
